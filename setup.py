@@ -2,7 +2,7 @@ import os
 from setuptools import setup, find_packages
 
 setup(
-    name='2021_jchavas_lguillon_deepcingulate',
+    name='2022_jchavas_cingulate_inhibitory_control',
     version='0.0.1',
     packages=find_packages(
         exclude=['tests*', 'notebooks*']),
@@ -26,11 +26,15 @@ setup(
                       'pytorch-lightning',
                       'lightly',
                       'toolz',
-		      'ipykernel',
-                      'deep_folding @ \
-                        git+https://git@github.com/neurospin/deep_folding@2022_midl',
+		                  'ipykernel',
+                      'pytorch_ssim',
                       ],
-    url='https://github.com/neurospin-projects/2021_jchavas_lguillon_deepcingulate',
-    author='Joël Chavas, Louise Guillon',
-    author_email='joel.chavas@cea.fr, louise.guillon@cea.fr'
+    extras_require={
+      "anatomist": ['deep_folding @ \
+                        git+https://git@github.com/neurospin/deep_folding',
+                      ],
+    },
+    url='https://github.com/neurospin-projects/2022_jchavas_cingulate_inhibitory_control',
+    author='Joël Chavas',
+    author_email='joel.chavas@cea.fr'
 )
