@@ -1,4 +1,3 @@
-.. -*- mode: rst -*-
 
 People
 ------
@@ -11,9 +10,8 @@ CEA Neurospin BAOBAB laboratory.
 Core developers
 ...............
 
-The deep_folding core developers are:
+The core developers are:
 
-* Louise Guillon
 * Joël Chavas
 
 Other contributors
