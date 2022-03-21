@@ -32,7 +32,7 @@
 #
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license version 2 and that you accept its terms.
-""" Training SimCLR on skeleton images
+""" Training contrastive on skeleton images
 
 """
 ######################################################################
@@ -47,9 +47,9 @@ from pytorch_lightning.utilities.seed import seed_everything
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 
-from SimCLR.data.datamodule import DataModule
-from SimCLR.models.contrastive_learner import ContrastiveLearner
-from SimCLR.utils.config import process_config
+from contrastive.data.datamodule import DataModule
+from contrastive.models.contrastive_learner import ContrastiveLearner
+from contrastive.utils.config import process_config
 
 tb_logger = pl_loggers.TensorBoardLogger('logs')
 writer = SummaryWriter()

@@ -37,9 +37,9 @@ A test to just analyze randomly generated input images
 """
 import torch
 
-from SimCLR.losses import NTXenLoss
-from SimCLR.models.contrastive_learner import ContrastiveLearner
-from SimCLR.utils.plots.visualize_anatomist import Visu_Anatomist
+from contrastive.losses import NTXenLoss
+from contrastive.models.contrastive_learner import ContrastiveLearner
+from contrastive.utils.plots.visualize_anatomist import Visu_Anatomist
 
 
 class ContrastiveLearner_Visualization(ContrastiveLearner):

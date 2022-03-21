@@ -43,12 +43,12 @@ import pandas as pd
 import torch
 import torchvision.transforms as transforms
 
-from SimCLR.augmentations import BinarizeTensor
-from SimCLR.augmentations import EndTensor
-from SimCLR.augmentations import PaddingTensor
-from SimCLR.augmentations import PartialCutOutTensor_Roll
-from SimCLR.augmentations import RotateTensor
-from SimCLR.augmentations import SimplifyTensor
+from contrastive.augmentations import BinarizeTensor
+from contrastive.augmentations import EndTensor
+from contrastive.augmentations import PaddingTensor
+from contrastive.augmentations import PartialCutOutTensor_Roll
+from contrastive.augmentations import RotateTensor
+from contrastive.augmentations import SimplifyTensor
 
 _ALL_SUBJECTS = -1
 

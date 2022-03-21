@@ -42,8 +42,8 @@ import sys
 import argparse
 import six
 from os.path import abspath
-from SimCLR.evaluation.loop_validate_and_clusterize import loop_over_directory
-from SimCLR.evaluation.plot_loss_silhouette_score_vs_latent_dimension import plot_loss_silhouette_score
+from contrastive.evaluation.loop_validate_and_clusterize import loop_over_directory
+from contrastive.evaluation.plot_loss_silhouette_score_vs_latent_dimension import plot_loss_silhouette_score
 
 def parse_args(argv):
     """Parses command-line arguments

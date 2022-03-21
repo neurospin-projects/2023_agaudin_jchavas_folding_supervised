@@ -43,13 +43,13 @@ from sklearn.manifold import TSNE
 from toolz.itertoolz import first
 from toolz.itertoolz import last
 
-from SimCLR.backbones.densenet import DenseNet
-from SimCLR.losses import NTXenLoss
-from SimCLR.losses import CrossEntropyLoss
-from SimCLR.utils.plots.visualize_anatomist import Visu_Anatomist
-from SimCLR.utils.plots.visualize_images import plot_bucket
-from SimCLR.utils.plots.visualize_images import plot_histogram
-from SimCLR.utils.plots.visualize_tsne import plot_tsne
+from contrastive.backbones.densenet import DenseNet
+from contrastive.losses import NTXenLoss
+from contrastive.losses import CrossEntropyLoss
+from contrastive.utils.plots.visualize_anatomist import Visu_Anatomist
+from contrastive.utils.plots.visualize_images import plot_bucket
+from contrastive.utils.plots.visualize_images import plot_histogram
+from contrastive.utils.plots.visualize_tsne import plot_tsne
 
 
 class SaveOutput:
@@ -109,7 +109,7 @@ class ContrastiveLearner(DenseNet):
         return optimizer
 
     def nt_xen_loss(self, z_i, z_j):
-        """Loss function for SimCLR"""
+        """Loss function for contrastive"""
         loss = NTXenLoss(temperature=self.config.temperature,
                          return_logits=True)
         return loss.forward(z_i, z_j)

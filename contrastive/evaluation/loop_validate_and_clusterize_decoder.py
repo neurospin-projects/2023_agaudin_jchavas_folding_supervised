@@ -35,7 +35,7 @@ import sys
 import inspect
 import six
 
-from SimCLR import evaluation
+from contrastive import evaluation
 
 
 def parse_args(argv):

@@ -37,7 +37,7 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from torch.utils.data import RandomSampler
 
-from SimCLR.data.datasets import create_sets
+from contrastive.data.datasets import create_sets
 
 
 class DataModule(pl.LightningDataModule):

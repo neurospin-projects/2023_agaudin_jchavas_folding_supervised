@@ -25,7 +25,7 @@
 # that may mean  that it is complicated to manipulate,  and  that  also
 # requirements in conditions enabling the security of their systems and/or
 # data to be ensured and,  more generally, to use and operate it in the
-from deep_folding.anatomist_tools.utils import remove_hull
+from deep_folding.brainvisa.utils import remove_hull
 import anatomist.headless as anatomist
 from soma import aims
 import io

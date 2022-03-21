@@ -40,7 +40,6 @@
 ######################################################################
 import json
 import logging
-import os
 
 import hydra
 import matplotlib.pyplot as plt
@@ -50,20 +49,18 @@ import torch
 from omegaconf import DictConfig
 from omegaconf import OmegaConf
 from pytorch_lightning import loggers as pl_loggers
-from pytorch_lightning.utilities.seed import seed_everything
 from sklearn.cluster import AffinityPropagation
 from sklearn.cluster import DBSCAN
 from sklearn.cluster import KMeans
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 
-from SimCLR.data.datamodule import DataModule
-from SimCLR.data.datamodule import DataModule_Visualization
-from SimCLR.evaluation.clustering import Cluster
-from SimCLR.models.contrastive_learner_visualization \
+from contrastive.data.datamodule import DataModule_Visualization
+from contrastive.evaluation.clustering import Cluster
+from contrastive.models.contrastive_learner_visualization \
     import ContrastiveLearner_Visualization
-from SimCLR.utils.config import process_config
-from SimCLR.utils.plots.visualize_tsne import plot_tsne
+from contrastive.utils.config import process_config
+from contrastive.utils.plots.visualize_tsne import plot_tsne
 
 tb_logger = pl_loggers.TensorBoardLogger('logs')
 writer = SummaryWriter()
@@ -87,15 +84,15 @@ def postprocessing_results(config: DictConfig) -> None:
     # in: pytorch, numpy, python.random
     # seed_everything(config.seed)
 
-"""
-We call:
-- embedding, the space before the projection head.
-  The elements of the space are features
-- output, the space after the projection head.
-  The elements are called output vectors
-"""
-        plt.show()
-        plt.pause(0.001)
+    """
+    We call:
+    - embedding, the space before the projection head.
+    The elements of the space are features
+    - output, the space after the projection head.
+    The elements are called output vectors
+    """
+    plt.show()
+    plt.pause(0.001)
 
     data_module = DataModule_Visualization(config)
     data_module.setup(stage='validate')
