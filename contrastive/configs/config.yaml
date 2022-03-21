@@ -1,0 +1,10 @@
+# @package _group_
+defaults:
+  - hydra: vscode
+  - hydra/job_logging: custom
+  - dataset: cingulate
+  - model: SimCLR
+  - backbone: DenseNet
+  - preprocessing: default
+  - platform: cuda
+

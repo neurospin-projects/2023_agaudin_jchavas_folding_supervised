@@ -1,0 +1,3 @@
+# @package _global_
+crop_dir: ../../../Input/crops
+pickle_file: ../../../Input/crops/Lskeleton.pkl

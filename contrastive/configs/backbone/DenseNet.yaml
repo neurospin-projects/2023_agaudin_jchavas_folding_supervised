@@ -1,0 +1,8 @@
+# @package _global_
+# Characterization of the DenseNet model used
+growth_rate: 32
+block_config: [6, 16]
+num_init_features: 64
+num_representation_features: 4
+num_outputs: 4
+
