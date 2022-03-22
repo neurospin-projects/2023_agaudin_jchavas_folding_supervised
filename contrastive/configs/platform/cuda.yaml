@@ -1,3 +1,4 @@
 # @package _global_
 device: cuda
+num_cpu_workers: 48
 environment: not_brainvisa

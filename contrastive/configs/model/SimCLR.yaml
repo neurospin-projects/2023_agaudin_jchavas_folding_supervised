@@ -6,7 +6,6 @@ patch_size: [1, 12, 24, 24]
 max_angle: 10
 checkerboard_size: 4
 partition: [0.8, 0.2]
-num_cpu_workers: 48
 keep_bottom: True
 mode: encoder
 depth_decoder: 3
@@ -24,3 +23,5 @@ seed: 42
 start_epoch: 0
 checkpoint_path: 
 analysis_path: 
+fill_value: 0
+test: False
