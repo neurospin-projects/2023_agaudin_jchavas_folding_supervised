@@ -29,8 +29,7 @@ setup(
 		                  'ipykernel',
                       'pytorch_ssim',
                       ],
-    extras_require={
-      "anatomist": ['deep_folding @ \
+    extras_require={"anatomist": ['deep_folding @ \
                         git+https://git@github.com/neurospin/deep_folding',
                       ],
     },

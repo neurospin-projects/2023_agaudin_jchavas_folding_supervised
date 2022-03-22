@@ -1,2 +1,3 @@
 # @package _global_
 device: cpu
+environment: not_brainvisa
