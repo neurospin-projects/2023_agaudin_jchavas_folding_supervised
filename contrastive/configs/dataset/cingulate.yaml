@@ -1,5 +1,8 @@
 # @package _global_
-pickle_normal: /neurospin/dico/jchavas/Runs/35_cingulate_with_distance/Input/Processed_External/crops/2mm/CINGULATE/mask/Rskeleton.pkl
+pickle_normal: ../../../Input/Processed_External/crops/2mm/CINGULATE/mask/Rskeleton.pkl
+# pickle_normal: ../../../Input/crop_10subjects/Rskeleton.pkl
 pickle_benchmark: 
-train_val_csv_file: /neurospin/dico/jchavas/Runs/35_cingulate_with_distance/Input/HCP_half_1bis.csv
+train_val_csv_file: ../../../Input/HCP_half_1bis.csv
 nb_subjects: -1
+subject_labels_file: ../../../Input/participants.csv
+label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]

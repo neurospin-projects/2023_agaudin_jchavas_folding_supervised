@@ -4,6 +4,7 @@ defaults:
   - hydra/job_logging: custom
   - dataset: cingulate
   - model: SimCLR
+  - augmentations: default
   - backbone: DenseNet
-  - platform: cuda
+  - platform: cuda_not_brainvisa
 
