@@ -214,7 +214,7 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         correct_pairs = torch.arange(N, device=z_i.device).long()
 
         if self.return_logits:
-            return loss, sim_zij, correct_pairs
+            return loss, sim_zij, sim_zii, sim_zjj, correct_pairs
 
         return loss
 
