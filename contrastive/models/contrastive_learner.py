@@ -383,18 +383,6 @@ class ContrastiveLearner(DenseNet):
                     image_TSNE,
                     self.current_epoch)
 
-        # Plots one representation image
-        # image_output = plot_output(
-        #     first(self.save_output.outputs.values()), buffer=True)
-        # self.logger.experiment.add_image(
-        #     'representation val', image_output, self.current_epoch)
-
-        # Plots one output image
-        # image_output = plot_output(
-        #     last(self.save_output.outputs.values()), buffer=True)
-        # self.logger.experiment.add_image(
-        #     'output val', image_output, self.current_epoch)
-
         # calculates average loss
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
 

@@ -48,7 +48,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 
 from contrastive.data.datamodule import DataModule
-from contrastive.models.contrastive_learner import ContrastiveLearner
+from contrastive.models.contrastive_learner_with_labels import ContrastiveLearner_WithLabels
 from contrastive.utils.config import process_config
 
 tb_logger = pl_loggers.TensorBoardLogger('logs')
@@ -70,7 +70,7 @@ def train(config):
 
     data_module = DataModule(config)
 
-    model = ContrastiveLearner(config,
+    model = ContrastiveLearner_WithLabels(config,
                                sample_data=data_module)
 
     summary(model, tuple(config.input_size), device="cpu")

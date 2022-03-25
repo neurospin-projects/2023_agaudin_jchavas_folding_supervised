@@ -37,7 +37,8 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from torch.utils.data import RandomSampler
 
-from contrastive.data.datasets import create_sets
+from contrastive.data.datasets import create_sets_with_labels
+from contrastive.data.datasets import create_sets_pure_contrastive
 
 
 class DataModule(pl.LightningDataModule):
@@ -50,7 +51,7 @@ class DataModule(pl.LightningDataModule):
 
     def setup(self, stage=None, mode=None):
         self.dataset_train, self.dataset_val, self.dataset_test, _ = \
-            create_sets(self.config)
+            create_sets_with_labels(self.config)
 
     def train_dataloader(self):
         loader_train = DataLoader(self.dataset_train,
@@ -91,7 +92,7 @@ class DataModule_Visualization(pl.LightningDataModule):
     def setup(self, stage, mode=None):
         self.dataset_train, self.dataset_val, self.dataset_test,\
             self.dataset_train_val = \
-            create_sets(self.config, mode='visualization')
+            create_sets_pure_contrastive(self.config, mode='visualization')
 
     def train_val_dataloader(self):
         loader_train = DataLoader(self.dataset_train_val,
