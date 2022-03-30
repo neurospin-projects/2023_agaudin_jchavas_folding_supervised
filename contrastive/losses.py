@@ -208,13 +208,14 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
                            dim=0) # [2N, 2N]
         log_sim_Z = func.log_softmax(sim_Z, dim=1)
 
-        loss = -1./N * (torch.from_numpy(weights).to(z_i.device) \
+        weights = torch.from_numpy(weights)
+        loss = -1./N * (weights.to(z_i.device) \
                         * log_sim_Z).sum()
 
         correct_pairs = torch.arange(N, device=z_i.device).long()
 
         if self.return_logits:
-            return loss, sim_zij, sim_zii, sim_zjj, correct_pairs
+            return loss, sim_zij, sim_zii, sim_zjj, correct_pairs, weights
 
         return loss
 
