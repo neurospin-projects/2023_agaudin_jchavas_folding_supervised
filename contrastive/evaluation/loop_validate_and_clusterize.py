@@ -69,6 +69,7 @@ def loop_over_directory(src_dir, csv_file):
     """
     # Gets and creates all filenames
     dirnames = glob.glob(f"{src_dir}/*")
+    print(dirnames)
     for deep_dir in dirnames:
         deep_dir = os.path.abspath(deep_dir)
         analysis_path = f"{deep_dir}"
@@ -83,6 +84,7 @@ def loop_over_directory(src_dir, csv_file):
             f"checkpoint_path={checkpoint_path} " \
             f"train_val_csv_file={csv_file} "\
             f"--config-path={config_path}"
+        print(f"Done: {deep_dir}")
 
         print(cmd)
         os.system(cmd)

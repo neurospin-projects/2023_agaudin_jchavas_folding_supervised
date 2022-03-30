@@ -98,7 +98,6 @@ def postprocessing_results(config: DictConfig) -> None:
 
     # Show the views of the first skeleton after each epoch
     model = ContrastiveLearner_Visualization(config,
-                                             mode="encoder",
                                              sample_data=data_module)
     model = model.load_from_checkpoint(config.checkpoint_path,
                                        config=config,
@@ -169,8 +168,7 @@ def postprocessing_results(config: DictConfig) -> None:
         x_cluster_label = af.predict(embeddings)
         n_clusters_ = len(af.cluster_centers_indices_)
         print(n_clusters_)
-    plot_tsne(X_tsne=X_tsne[index,
-                            :],
+    plot_tsne(X_tsne=X_tsne[index,:],
               buffer=False,
               labels=x_cluster_label,
               savepath=config.analysis_path,
