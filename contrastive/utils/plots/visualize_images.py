@@ -119,3 +119,18 @@ def plot_histogram(tensor, buffer):
         return buffer_to_image(buffer=io.BytesIO())
     else:
         plt.show()
+
+def plot_histogram_weights(tensor, buffer):
+    """Plots histogram of the values of a tensor"""
+    arr = tensor.detach().cpu().numpy() * 100
+
+    plt.hist(arr.flatten(),
+             density=True,
+             cumulative=True,
+             bins=50,
+             range=[0, 20])
+
+    if buffer:
+        return buffer_to_image(buffer=io.BytesIO())
+    else:
+        plt.show()
