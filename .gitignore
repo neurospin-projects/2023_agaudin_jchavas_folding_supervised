@@ -119,15 +119,16 @@ venv.bak/
 
 # run folders
 runs
-SimCLR/runs
-SimCLR/outputs
-SimCLR/evaluation/runs
-SimCLR/evaluation/outputs
-SimCLR/notebooks/COPYING
-SimCLR/notebooks/mni_icbm152_nlin_asym_09c
-SimCLR/notebooks/temp
-SimCLR/notebooks/*.bck
-SimCLR/notebooks/*.bck.minf
+contrastive/runs
+contrastive/outputs
+contrastive/evaluation/runs
+contrastive/evaluation/outputs
+contrastive/notebooks/COPYING
+contrastive/notebooks/mni_icbm152_nlin_asym_09c
+contrastive/notebooks/temp
+contrastive/notebooks/*.bck
+contrastive/notebooks/*.bck.minf
+contrastive/multirun
 
 # Rope project settings
 .ropeproject
