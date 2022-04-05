@@ -199,7 +199,19 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
             labels.view(N, -1).repeat(2, 1).detach().cpu().numpy() # [2N, *]
         weights = self.kernel(all_labels, all_labels) # [2N, 2N]
         weights = weights * (1 - np.eye(2*N)) # puts 0 on the diagonal
-        weights /= weights.sum(axis=1)
+
+        # # We now apply a random mask
+        # random_mask = np.random.randint(0,2,weights.shape)
+        # random_mask = random_mask * (1 - np.eye(2*N))
+
+        # # We now assure that there is at least one 1 for each row
+        # for i in range(random_mask.shape[0]):
+        #     random_mask[i][(i+1)%random_mask.shape[0]] = 1
+
+        # weights = weights * random_mask # puts 0 randomly with 50% proba
+
+        # We normalize the weights
+        weights /= weights.sum(axis=1).reshape(2*N,1)
 
         # if 'rbf' kernel and sigma->0, 
         # we retrieve the classical NTXenLoss (without labels)
@@ -214,8 +226,13 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
 
         correct_pairs = torch.arange(N, device=z_i.device).long()
 
+        loss_i = func.cross_entropy(torch.cat([sim_zij, sim_zii], dim=1),
+                                    correct_pairs)
+        loss_j = func.cross_entropy(torch.cat([sim_zij.T, sim_zjj], dim=1),
+                                    correct_pairs)
+
         if self.return_logits:
-            return loss, sim_zij, sim_zii, sim_zjj, correct_pairs, weights
+            return (loss+0.5*(loss_i+loss_j))/1.5, sim_zij, sim_zii, sim_zjj, correct_pairs, weights
 
         return loss
 

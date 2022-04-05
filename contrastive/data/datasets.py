@@ -278,10 +278,11 @@ class ContrastiveDataset_Visualization():
             SimplifyTensor(),
             PaddingTensor(self.config.input_size,
                           fill_value=self.config.fill_value),
-            PartialCutOutTensor_Roll(from_skeleton=False,
-                                     patch_size=self.config.patch_size),
-            RotateTensor(max_angle=self.config.max_angle),
-            BinarizeTensor()
+            # PartialCutOutTensor_Roll(from_skeleton=False,
+            #                          patch_size=self.config.patch_size),
+            # RotateTensor(max_angle=self.config.max_angle),
+            BinarizeTensor(),
+            EndTensor()
         ])
 
         view1 = self.transform1(sample)
@@ -328,6 +329,7 @@ def create_sets_with_labels(config, mode='training'):
     desired_columns = ['Subject',]
     desired_columns.extend(config.label_names)
     subject_labels = subject_labels[desired_columns]
+    subject_labels = subject_labels.replace(['M', 'F'], [0, 1])
     subject_labels = subject_labels.astype({'Subject': str})
     subject_labels = subject_labels.set_index('Subject')
     subject_labels = subject_labels.dropna()
