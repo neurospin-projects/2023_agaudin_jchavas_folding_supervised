@@ -37,6 +37,7 @@ import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from mpl_toolkits.mplot3d import Axes3D
 
 from .visu_utils import buffer_to_image
@@ -127,8 +128,46 @@ def plot_histogram_weights(tensor, buffer):
     plt.hist(arr.flatten(),
              density=True,
              cumulative=True,
+             histtype='step',
              bins=50,
-             range=[0, 20])
+             range=[0, 100])
+    plt.hist(arr.flatten(),
+             density=True,
+             cumulative=False,
+             bins=50,
+             range=[0, 100])
+
+    if buffer:
+        return buffer_to_image(buffer=io.BytesIO())
+    else:
+        plt.show()
+
+def plot_scatter_matrix(tensor, buffer):
+    """Plots scatter matrix of the values of a tensor"""
+    arr = tensor.detach().cpu().numpy()
+    embeddings = pd.DataFrame(arr)
+
+    pd.plotting.scatter_matrix(embeddings,
+                               alpha=0.2,
+                               diagonal="hist")
+
+    if buffer:
+        return buffer_to_image(buffer=io.BytesIO())
+    else:
+        plt.show()
+
+def plot_scatter_matrix_with_labels(embeddings, labels, buffer):
+    """Plots scatter matrix of the values of a tensor"""
+    arr_embeddings = embeddings.detach().cpu().numpy()
+    arr_labels = labels.detach().cpu().numpy()
+    df_embeddings = pd.DataFrame(arr_embeddings)
+    df_labels = pd.DataFrame(arr_labels)
+    df_labels = df_labels.add_prefix("lab_")
+    df = pd.concat([df_embeddings, df_labels], axis=1)
+
+    pd.plotting.scatter_matrix(df,
+                               alpha=0.2,
+                               diagonal="hist")
 
     if buffer:
         return buffer_to_image(buffer=io.BytesIO())

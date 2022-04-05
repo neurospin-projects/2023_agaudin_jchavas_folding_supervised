@@ -25,7 +25,7 @@
 # that may mean  that it is complicated to manipulate,  and  that  also
 # requirements in conditions enabling the security of their systems and/or
 # data to be ensured and,  more generally, to use and operate it in the
-from deep_folding.brainvisa.utils import remove_hull
+import dico_toolbox as dtx
 import anatomist.headless as anatomist
 from soma import aims
 import io
@@ -64,7 +64,7 @@ class Visu_Anatomist:
         global win
         arr = img[0, 0, :, :, :]
         vol = aims.Volume(arr.numpy().astype(int16))
-        bucket_map, _ = remove_hull.convert_volume_to_bucket(vol)
+        bucket_map = dtx.convert.volume_to_bucketMap_aims(vol)
         bucket_a = a.toAObject(bucket_map)
         bucket_a.addInWindows(win)
         view_quaternion = [0.4, 0.4, 0.5, 0.5]
