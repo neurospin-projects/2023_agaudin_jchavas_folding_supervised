@@ -1,8 +1,10 @@
 # @package _global_
-pickle_normal: ../../../Input/Processed_External/crops/2mm/CINGULATE/mask/Rskeleton.pkl
+pickle_normal: /host/home/jc225751/Runs/35_cingulate_with_distance/Input/Processed_External/crops/2mm/CINGULATE/mask/Rskeleton.pkl
 # pickle_normal: ../../../Input/crop_10subjects/Rskeleton.pkl
 pickle_benchmark: 
-train_val_csv_file: ../../../Input/HCP_half_1bis.csv
+train_val_csv_file: /host/home/jc225751/Runs/35_cingulate_with_distance/Input/HCP_half_1bis.csv
 nb_subjects: -1
-subject_labels_file: ../../../Input/participants.csv
-label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
+subject_labels_file: /host/home/jc225751/Runs/35_cingulate_with_distance/Input/participants.csv
+#label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
+#label_names: ["NEOFAC_C"]
+label_names: ["Gender"]

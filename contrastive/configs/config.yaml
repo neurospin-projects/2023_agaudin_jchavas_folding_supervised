@@ -6,5 +6,5 @@ defaults:
   - model: SimCLR
   - augmentations: default
   - backbone: DenseNet
-  - platform: cuda_not_brainvisa
+  - platform: cuda_brainvisa
 

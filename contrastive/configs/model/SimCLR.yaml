@@ -7,18 +7,19 @@ patch_size: [1, 12, 24, 24]
 test: False
 mode: encoder
 depth_decoder: 3
+temperature_initial: 0.1
 temperature: 0.1
-sigma_labels: 1.5
+sigma_labels: 0.1
 sigma: 5
 lr: 2e-4
 weight_decay: 5e-5
 max_epochs: 300
-drop_rate: 0.0
+drop_rate: 0.
 nb_epochs_per_saving: 1
 nb_epochs_per_tSNE: 50
 nb_steps_per_flush_logs: 1
 log_every_n_steps: 2
 seed: 42
 start_epoch: 0
-checkpoint_path: 
+checkpoint_path:
 analysis_path: 
