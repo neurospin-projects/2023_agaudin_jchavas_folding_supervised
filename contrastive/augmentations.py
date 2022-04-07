@@ -169,6 +169,54 @@ class BinarizeTensor(object):
         arr[arr > 0] = 1
         return torch.from_numpy(arr)
 
+def remove_branch(arr_foldlabel, arr_skel, selected_branch):
+    """It masks the selected branch in arr_skel
+    """
+    # print((arr_foldlabel > 0).sum())
+    mask = ( (arr_foldlabel != 0) & (arr_foldlabel != selected_branch))  
+    mask = mask.astype(int)
+    # print(mask.sum())
+    return arr_skel * mask
+    
+def remove_branches_up_to_percent(arr_foldlabel, arr_skel, percentage):
+    """Removes from arr_skel random branches up percentage of pixels
+    """
+    branches = np.unique(arr_foldlabel)
+    # We take as index branches indexes that are not 0
+    indexes = np.arange(branches.size-1) + 1
+    # We take random branches
+    np.random.shuffle(indexes)
+    arr_skel_without_branches = arr_skel
+    total_pixels = (arr_skel !=0 ).sum()
+    total_pixels_after=total_pixels
+    for index in indexes:
+        if total_pixels_after <= total_pixels*(100-percentage)/100:
+            break
+        arr_skel_without_branches = \
+            remove_branch(arr_foldlabel,
+                          arr_skel_without_branches,
+                          branches[index])
+        total_pixels_after = (arr_skel_without_branches != 0).sum()
+    print(f"total_pixels_after = {total_pixels_after}")
+    print(f"% removed pixels = {(total_pixels-total_pixels_after)/total_pixels*100}")
+    return arr_skel_without_branches
+
+class RemoveRandomBranchTensor(object):
+    """Removes randomly branches up to percent
+    """
+
+    def __init__(self, percentage):
+        self.percentage = percentage
+
+    def __call__(self, tensor_skel, tensor_foldlabel):
+        arr_skel = tensor_skel.numpy()
+        arr_foldlabel = tensor_foldlabel.numpy()
+        arr_skel_without_branches = \
+            remove_branches_up_to_percent(arr_foldlabel,
+                                          arr_skel,
+                                          self.percentage)
+        return torch.from_numpy(arr_skel_without_branches)
+
 
 class RotateTensor(object):
     """Apply a random rotation on the images
