@@ -32,9 +32,6 @@
 #
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license version 2 and that you accept its terms.
-import logging
-import math
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -153,7 +150,8 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
     def __init__(self, kernel='rbf',
                  temperature=0.1,
                  return_logits=False,
-                 sigma=1.0):
+                 sigma=1.0,
+                 proportion_pure_contrastive=1.0):
         """
         :param kernel: a callable function f: [K, *] x [K, *] -> [K, K]
                                               y1, y2          -> f(y1, y2)
@@ -175,6 +173,7 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
             assert hasattr(self.kernel, '__call__'), \
                    'kernel must be a callable'
         self.temperature = temperature
+        self.proportion_pure_contrastive = proportion_pure_contrastive
         self.return_logits = return_logits
         self.INF = 1e8
 
@@ -221,7 +220,7 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         log_sim_Z = func.log_softmax(sim_Z, dim=1)
 
         weights = torch.from_numpy(weights)
-        loss = -1./N * (weights.to(z_i.device) \
+        loss_label = -1./N * (weights.to(z_i.device) \
                         * log_sim_Z).sum()
 
         correct_pairs = torch.arange(N, device=z_i.device).long()
@@ -231,10 +230,13 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         loss_j = func.cross_entropy(torch.cat([sim_zij.T, sim_zjj], dim=1),
                                     correct_pairs)
 
-        if self.return_logits:
-            return (loss+0.5*(loss_i+loss_j))/1.5, sim_zij, sim_zii, sim_zjj, correct_pairs, weights
+        loss_multi = self.proportion_pure_contrastive*(loss_i+loss_j) \
+                     + (1-self.proportion_pure_contrastive) * loss_label
 
-        return loss
+        if self.return_logits:
+            return loss_multi, sim_zij, sim_zii, sim_zjj, correct_pairs, weights
+
+        return loss_multi
 
     def __str__(self):
         return "{}(temp={}, kernel={}, sigma={})".format(type(self).__name__,

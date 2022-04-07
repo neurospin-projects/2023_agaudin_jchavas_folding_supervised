@@ -11,6 +11,7 @@ temperature_initial: 0.1
 temperature: 0.1
 sigma_labels: 0.1
 sigma: 5
+proportion_pure_contrastive: 0.8
 lr: 2e-4
 weight_decay: 5e-5
 max_epochs: 300

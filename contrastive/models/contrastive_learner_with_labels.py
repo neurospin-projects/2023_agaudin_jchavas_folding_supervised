@@ -126,6 +126,7 @@ class ContrastiveLearner_WithLabels(DenseNet):
         loss = GeneralizedSupervisedNTXenLoss(
             temperature=temperature,
             sigma=self.config.sigma_labels,
+            proportion_pure_contrastive=self.config.proportion_pure_contrastive,
             return_logits=True)
         return loss.forward(z_i, z_j, labels)
 
