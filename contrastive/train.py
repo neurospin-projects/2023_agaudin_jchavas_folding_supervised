@@ -47,7 +47,7 @@ from pytorch_lightning.utilities.seed import seed_everything
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 
-from contrastive.data.datamodule import DataModule
+from contrastive.data.datamodule import DataModule_WithFoldLabels
 from contrastive.models.contrastive_learner_with_labels import ContrastiveLearner_WithLabels
 from contrastive.utils.config import process_config
 
@@ -68,7 +68,7 @@ We use the following definitions:
 def train(config):
     config = process_config(config)
 
-    data_module = DataModule(config)
+    data_module = DataModule_WithFoldLabels(config)
 
     model = ContrastiveLearner_WithLabels(config,
                                sample_data=data_module)
