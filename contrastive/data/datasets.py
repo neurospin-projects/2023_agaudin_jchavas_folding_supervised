@@ -50,6 +50,7 @@ from contrastive.augmentations import PaddingTensor
 from contrastive.augmentations import PartialCutOutTensor_Roll
 from contrastive.augmentations import RotateTensor
 from contrastive.augmentations import SimplifyTensor
+from contrastive.augmentations import RemoveRandomBranchTensor
 
 _ALL_SUBJECTS = -1
 
@@ -228,6 +229,105 @@ class ContrastiveDataset_WithLabels():
         return tuple_with_path
 
 
+
+class ContrastiveDataset_WithLabels_WithFoldLabels():
+    """Custom dataset that includes images and labels
+
+    Applies different transformations to data depending on the type of input.
+    """
+
+    def __init__(self, data, foldlabel_data, labels, filenames, config):
+        """
+        Args:
+            data (dataframe): contains MRIs as numpy arrays
+            labels (dataframe): contains labels as columns
+            filenames (list of strings): list of subjects' IDs
+            config (Omegaconf dict): contains configuration information
+        """
+        self.data = data
+        self.foldlabel_data = foldlabel_data
+        self.labels = labels
+        self.transform = True
+        self.nb_train = len(filenames)
+        log.info(self.nb_train)
+        self.filenames = filenames
+        self.config = config
+
+    def __len__(self):
+        return (self.nb_train)
+
+    def __getitem__(self, idx):
+        """Returns the two views corresponding to index idx
+
+        The two views are generated on the fly.
+
+        Returns:
+            tuple of (views, subject ID)
+        """
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        sample = self.data.loc[0].values[idx].astype('float32')
+        sample_foldlabel = self.foldlabel_data.loc[0].values[idx].astype('int32')
+        labels = self.labels.values[idx]
+        sample = torch.from_numpy(sample)
+        labels = torch.from_numpy(labels)
+        filenames = self.filenames[idx]
+
+        # Padd foldlabel
+        sample_foldlabel = torch.from_numpy(sample_foldlabel)
+        transform_foldlabel = PaddingTensor(
+                                self.config.input_size,
+                                fill_value=0)
+        sample_foldlabel = transform_foldlabel(sample_foldlabel)
+
+        self.transform1 = transforms.Compose([
+            SimplifyTensor(),
+            PaddingTensor(self.config.input_size,
+                          fill_value=self.config.fill_value),
+            RemoveRandomBranchTensor(sample_foldlabel=sample_foldlabel,
+                                     percentage=self.config.percentage),
+            RotateTensor(max_angle=self.config.max_angle),
+            BinarizeTensor()
+        ])
+
+        # - padding
+        # - + random rotation
+        self.transform2 = transforms.Compose([
+            SimplifyTensor(),
+            PaddingTensor(self.config.input_size,
+                          fill_value=self.config.fill_value),
+            RemoveRandomBranchTensor(sample_foldlabel=sample_foldlabel,
+                                     percentage=self.config.percentage),
+            RotateTensor(max_angle=self.config.max_angle),
+            BinarizeTensor()
+        ])
+
+        # - padding
+        self.transform3 = transforms.Compose([
+            SimplifyTensor(),
+            PaddingTensor(self.config.input_size,
+                          fill_value=self.config.fill_value),
+            BinarizeTensor(),
+            EndTensor()
+        ])
+
+        view1 = self.transform1(sample)
+        view2 = self.transform2(sample)
+
+        print(f"view1 dtype = {view1.dtype}")
+        print(f"view2 dtype = {view2.dtype}")
+
+        if self.config.mode == "decoder":
+            view3 = self.transform3(sample)
+            views = torch.stack((view1, view2, view3), dim=0)
+        else:
+            views = torch.stack((view1, view2), dim=0)
+
+        tuple_with_path = (views, labels, filenames)
+        return tuple_with_path
+
+
 class ContrastiveDataset_Visualization():
     """Custom dataset that includes image file paths.
 
@@ -296,6 +396,132 @@ class ContrastiveDataset_Visualization():
 
         tuple_with_path = (views, filename)
         return tuple_with_path
+
+
+
+def create_sets_with_labels_with_foldlabels(config, mode='training'):
+    """Creates train, validation and test sets
+
+    Args:
+        config (Omegaconf dict): contains configuration parameters
+        mode (str): either 'training' or 'visualization'
+    Returns:
+        train_set, val_set, test_set (tuple)
+    """
+
+    # Loads crops from all subjects
+    pickle_file_path = config.pickle_normal
+    log.info("Current directory = " + os.getcwd())
+    normal_data = pd.read_pickle(pickle_file_path)
+    log.info(f"normal_data head = {normal_data.head()}")
+
+    # Loads foldlabel crops for all subjects
+    pickle_foldlabel_file_path = config.pickle_foldlabel
+    log.info("Current directory = " + os.getcwd())
+    foldlabel_data = pd.read_pickle(pickle_foldlabel_file_path)
+    log.info(f"normal_data head = {normal_data.head()}")
+
+    # Gets subjects as list
+    normal_subjects = normal_data.columns.tolist()
+
+    # Gets labels for all subjects
+    subject_labels_file = config.subject_labels_file
+    subject_labels = pd.read_csv(subject_labels_file)
+    log.debug(f"Subject_labels head = {subject_labels.head()}")
+    log.info(f"Labels to keep = {config.label_names} of type {type(config.label_names)}")
+    
+    # subject_labels must have a column named 'Subject'
+    # We here extract from subject_labels the column 'Subject'
+    # and all columns identified by config.label_names
+    desired_columns = ['Subject',]
+    desired_columns.extend(config.label_names)
+    subject_labels = subject_labels[desired_columns]
+    subject_labels = subject_labels.replace(['M', 'F'], [0, 1])
+    subject_labels = subject_labels.astype({'Subject': str})
+    subject_labels = subject_labels.set_index('Subject')
+    subject_labels = subject_labels.dropna()
+    log.info(f"Head of subject_labels:\n{subject_labels.head()}")
+
+    # Gets only normal_subjects that have numeric values for desired properties
+    subject_labels_list = subject_labels.index.tolist()
+    normal_subjects = list(set(normal_subjects).intersection(subject_labels_list))
+    
+    # Gets train_val subjects from csv file
+    # It is a CSV file without column name
+    # We add here a column name 'ID'
+    train_val_subjects = pd.read_csv(config.train_val_csv_file, names=['ID']).T
+    train_val_subjects = train_val_subjects.values[0].tolist()
+    train_val_subjects = list(map(str, train_val_subjects))
+    train_val_subjects = list(set(normal_subjects).intersection(train_val_subjects))
+    log.info(f"train_val_subjects[:5] = {train_val_subjects[:5]}")
+    log.debug(f"train_val_subjects = {train_val_subjects}")
+
+    # Determines test dataframe
+    test_subjects = list(set(normal_subjects).difference(train_val_subjects))
+    len_test = len(test_subjects)
+    log.info(f"test_subjects[:5] = {test_subjects[:5]}")
+    log.debug(f"test_subjects = {test_subjects}")
+    log.info(f"Number of test subjects = {len_test}")
+
+    test_data = normal_data[normal_data.columns.intersection(test_subjects)]
+    test_foldlabel_data = foldlabel_data[foldlabel_data.columns.intersection(test_subjects)]
+    test_labels = subject_labels.loc[test_subjects]
+
+    # Cuts train_val set to requested number
+    if config.nb_subjects == _ALL_SUBJECTS:
+        len_train_val = len(train_val_subjects)
+    else:
+        len_train_val = min(config.nb_subjects,
+                            len(train_val_subjects))
+        train_val_subjects = train_val_subjects[:len_train_val]
+
+    log.info(f"length of train/val dataframe: {len_train_val}")
+
+    # Determines train/val dataframe
+    train_val_data = normal_data[normal_data.columns.intersection(
+                                 train_val_subjects)]
+    train_val_foldlabel_data = foldlabel_data[foldlabel_data.columns.intersection(
+                                train_val_subjects)]
+    train_val_labels = subject_labels.loc[train_val_subjects]
+
+    # Creates the dataset from these tensors by doing some preprocessing
+    if mode == 'visualization':
+        test_dataset = ContrastiveDataset_Visualization(
+            filenames=test_subjects,
+            dataframe=test_data,
+            config=config)
+        train_val_dataset = ContrastiveDataset_Visualization(
+            filenames=train_val_subjects,
+            dataframe=train_val_data,
+            config=config)
+    else:
+        test_dataset = ContrastiveDataset_WithLabels_WithFoldLabels(
+            filenames=test_subjects,
+            data=test_data,
+            foldlabel_data=test_foldlabel_data,
+            labels=test_labels,
+            config=config)
+        train_val_dataset = ContrastiveDataset_WithLabels_WithFoldLabels(
+            filenames=train_val_subjects,
+            data=train_val_data,
+            foldlabel_data=train_val_foldlabel_data,
+            labels=train_val_labels,
+            config=config)
+
+    log.info(f"Length of test data set: {len(test_dataset)}")
+    log.info(
+        f"Length of complete train/val data set: {len(train_val_dataset)}")
+
+    # Split training/val set into train, val set
+    partition = config.partition
+
+    log.info([round(i * (len(train_val_dataset))) for i in partition])
+    np.random.seed(config.seed)
+    train_set, val_set = torch.utils.data.random_split(
+        train_val_dataset,
+        [round(i * (len(train_val_dataset))) for i in partition])
+
+    return train_set, val_set, test_dataset, train_val_dataset
 
 
 def create_sets_with_labels(config, mode='training'):
@@ -404,7 +630,7 @@ def create_sets_with_labels(config, mode='training'):
     partition = config.partition
 
     log.info([round(i * (len(train_val_dataset))) for i in partition])
-    np.random.seed(1)
+    np.random.seed(config.seed)
     train_set, val_set = torch.utils.data.random_split(
         train_val_dataset,
         [round(i * (len(train_val_dataset))) for i in partition])
@@ -515,7 +741,7 @@ def create_sets_pure_contrastive(config, mode='training'):
     partition = config.partition
 
     log.info([round(i * (len(train_val_dataset))) for i in partition])
-    np.random.seed(1)
+    np.random.seed(config.seed)
     train_set, val_set = torch.utils.data.random_split(
         train_val_dataset,
         [round(i * (len(train_val_dataset))) for i in partition])

@@ -425,7 +425,7 @@ class ContrastiveLearner_WithLabels(DenseNet):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
 
         # logs histograms
-        self.custom_histogram_adder()
+        # self.custom_histogram_adder()
 
         # logging using tensorboard logger
         self.logger.experiment.add_scalar(
@@ -439,6 +439,11 @@ class ContrastiveLearner_WithLabels(DenseNet):
         (inputs, labels, filenames) = val_batch
         input_i = inputs[:, 0, :]
         input_j = inputs[:, 1, :]
+
+        print(f"input_i shape = {input_i.shape}")
+        print(f"input_j shape = {input_j.shape}")
+        print(f"input_i dtype = {input_i.dtype}")
+        print(f"input_j dtype = {input_j.dtype}")
 
         z_i = self.forward(input_i)
         z_j = self.forward(input_j)
@@ -456,7 +461,7 @@ class ContrastiveLearner_WithLabels(DenseNet):
         logs = {"val_loss": float(batch_loss)}
 
         batch_dictionary = {
-            # REQUIRED: It ie required for us to return "loss"
+            # REQUIRED: It is required for us to return "loss"
             "loss": batch_loss,
 
             # optional for batch logging purposes

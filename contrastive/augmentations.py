@@ -179,10 +179,14 @@ def remove_branch(arr_foldlabel, arr_skel, selected_branch):
     return arr_skel * mask
     
 def remove_branches_up_to_percent(arr_foldlabel, arr_skel, percentage):
-    """Removes from arr_skel random branches up percentage of pixels
+    """Removes from arr_skel random branches up to percentage of pixels
+
+    If percentage==0, no pixel is deleted
+    If percentage==100, all pixels are deleted
     """
     branches = np.unique(arr_foldlabel)
     # We take as index branches indexes that are not 0
+    print(f"Number of branches = {branches.size}")
     indexes = np.arange(branches.size-1) + 1
     # We take random branches
     np.random.shuffle(indexes)
@@ -198,23 +202,35 @@ def remove_branches_up_to_percent(arr_foldlabel, arr_skel, percentage):
                           branches[index])
         total_pixels_after = (arr_skel_without_branches != 0).sum()
     print(f"total_pixels_after = {total_pixels_after}")
-    print(f"% removed pixels = {(total_pixels-total_pixels_after)/total_pixels*100}")
+    percent_pixels_removed = (total_pixels-total_pixels_after)/total_pixels*100
+
+    assert(percent_pixels_removed >= percentage)
+    print(f"% removed pixels = {percent_pixels_removed}")
     return arr_skel_without_branches
+
 
 class RemoveRandomBranchTensor(object):
     """Removes randomly branches up to percent
     """
 
-    def __init__(self, percentage):
+    def __init__(self, sample_foldlabel, percentage):
+        self.sample_foldlabel = sample_foldlabel
         self.percentage = percentage
 
-    def __call__(self, tensor_skel, tensor_foldlabel):
+    def __call__(self, tensor_skel):
         arr_skel = tensor_skel.numpy()
-        arr_foldlabel = tensor_foldlabel.numpy()
+        arr_foldlabel = self.sample_foldlabel.numpy()
+
+        print(f"arr_skel.shape = {arr_skel.shape}")
+        print(f"arr_foldlabel.shape = {arr_foldlabel.shape}")
+        assert(arr_skel.shape==arr_foldlabel.shape)
+
         arr_skel_without_branches = \
             remove_branches_up_to_percent(arr_foldlabel,
                                           arr_skel,
                                           self.percentage)
+        arr_skel_without_branches = arr_skel_without_branches.astype('float32')
+
         return torch.from_numpy(arr_skel_without_branches)
 
 
@@ -266,8 +282,9 @@ class PartialCutOutTensor_Roll(object):
     We assume that the rectangle to be cut is inside the image.
     """
 
-    def __init__(self, from_skeleton=True, keep_bottom=True, patch_size=None, random_size=False,
-                 localization=None):
+    def __init__(self, from_skeleton=True, 
+                 keep_bottom=True, patch_size=None,
+                 random_size=False, localization=None):
         """[summary]
 
         If from_skeleton==True,
