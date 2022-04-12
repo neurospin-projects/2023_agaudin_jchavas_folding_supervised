@@ -49,6 +49,7 @@ from torchsummary import summary
 from contrastive.data.datamodule import DataModule_WithFoldLabels
 from contrastive.models.contrastive_learner_with_labels import ContrastiveLearner_WithLabels
 from contrastive.utils.config import process_config
+from contrastive.utils.logs import set_root_logger_level
 
 tb_logger = pl_loggers.TensorBoardLogger('logs')
 writer = SummaryWriter()
@@ -66,6 +67,8 @@ We use the following definitions:
 @hydra.main(config_name='config', config_path="configs")
 def train(config):
     config = process_config(config)
+
+    set_root_logger_level(config.verbose)
 
     data_module = DataModule_WithFoldLabels(config)
 

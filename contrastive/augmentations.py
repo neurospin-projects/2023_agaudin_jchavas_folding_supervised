@@ -176,10 +176,8 @@ class BinarizeTensor(object):
 def remove_branch(arr_foldlabel, arr_skel, selected_branch):
     """It masks the selected branch in arr_skel
     """
-    log.debug(f"Number of pixels in arr_foldlabel = {(arr_foldlabel > 0).sum()}")
     mask = ( (arr_foldlabel != 0) & (arr_foldlabel != selected_branch))  
     mask = mask.astype(int)
-    log.debug(f"Number of pixels in mask = {mask.sum()}")
     return arr_skel * mask
     
 def remove_branches_up_to_percent(arr_foldlabel, arr_skel, percentage):

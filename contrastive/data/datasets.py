@@ -51,10 +51,11 @@ from contrastive.augmentations import PartialCutOutTensor_Roll
 from contrastive.augmentations import RotateTensor
 from contrastive.augmentations import SimplifyTensor
 from contrastive.augmentations import RemoveRandomBranchTensor
+from contrastive.utils.logs import set_file_logger
 
 _ALL_SUBJECTS = -1
 
-log = logging.getLogger(__name__)
+log = set_file_logger(__file__)
 
 
 class ContrastiveDataset():
@@ -267,6 +268,7 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
+        log.debug(f"index = {idx}")
         sample = self.data.loc[0].values[idx].astype('float32')
         sample_foldlabel = self.foldlabel_data.loc[0].values[idx].astype('int32')
         labels = self.labels.values[idx]
