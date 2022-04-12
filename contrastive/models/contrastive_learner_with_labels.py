@@ -242,7 +242,6 @@ class ContrastiveLearner_WithLabels(DenseNet):
                 inputs = inputs.cuda()
                 model = self.cuda()
                 X_i = model.forward(inputs[:, 0, :])
-                print(f"shape X and X_i: {X.shape}, {X_i.shape}")
                 # First views re put side by side
                 X = torch.cat((X, X_i.cpu()), dim=0)
                 filenames_duplicate = [item
@@ -272,7 +271,7 @@ class ContrastiveLearner_WithLabels(DenseNet):
                 model.forward(inputs[:, 0, :])
                 X_i = first(self.save_output.outputs.values())
 
-                # We thencompute the embeddings for the second views
+                # We then compute the embeddings for the second views
                 # of the whole batch
                 model.forward(inputs[:, 1, :])
                 X_j = first(self.save_output.outputs.values())
@@ -439,11 +438,6 @@ class ContrastiveLearner_WithLabels(DenseNet):
         (inputs, labels, filenames) = val_batch
         input_i = inputs[:, 0, :]
         input_j = inputs[:, 1, :]
-
-        print(f"input_i shape = {input_i.shape}")
-        print(f"input_j shape = {input_j.shape}")
-        print(f"input_i dtype = {input_i.dtype}")
-        print(f"input_j dtype = {input_j.dtype}")
 
         z_i = self.forward(input_i)
         z_j = self.forward(input_j)

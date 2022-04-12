@@ -286,7 +286,8 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
             PaddingTensor(self.config.input_size,
                           fill_value=self.config.fill_value),
             RemoveRandomBranchTensor(sample_foldlabel=sample_foldlabel,
-                                     percentage=self.config.percentage),
+                                     percentage=self.config.percentage_1,
+                                     input_size=self.config.input_size),
             RotateTensor(max_angle=self.config.max_angle),
             BinarizeTensor()
         ])
@@ -298,7 +299,8 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
             PaddingTensor(self.config.input_size,
                           fill_value=self.config.fill_value),
             RemoveRandomBranchTensor(sample_foldlabel=sample_foldlabel,
-                                     percentage=self.config.percentage),
+                                     percentage=self.config.percentage_2,
+                                     input_size=self.config.input_size),
             RotateTensor(max_angle=self.config.max_angle),
             BinarizeTensor()
         ])
@@ -314,9 +316,6 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
 
         view1 = self.transform1(sample)
         view2 = self.transform2(sample)
-
-        print(f"view1 dtype = {view1.dtype}")
-        print(f"view2 dtype = {view2.dtype}")
 
         if self.config.mode == "decoder":
             view3 = self.transform3(sample)

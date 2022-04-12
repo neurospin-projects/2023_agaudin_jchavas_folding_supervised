@@ -40,6 +40,10 @@ import torch
 from scipy.ndimage import rotate
 from sklearn.preprocessing import OneHotEncoder
 
+from utils import logs
+
+log = logs.set_file_logger(__file__)
+
 
 def rotate_list(l_list):
     "Rotates list by -1"
@@ -172,10 +176,10 @@ class BinarizeTensor(object):
 def remove_branch(arr_foldlabel, arr_skel, selected_branch):
     """It masks the selected branch in arr_skel
     """
-    # print((arr_foldlabel > 0).sum())
+    log.debug(f"Number of pixels in arr_foldlabel = {(arr_foldlabel > 0).sum()}")
     mask = ( (arr_foldlabel != 0) & (arr_foldlabel != selected_branch))  
     mask = mask.astype(int)
-    # print(mask.sum())
+    log.debug(f"Number of pixels in mask = {mask.sum()}")
     return arr_skel * mask
     
 def remove_branches_up_to_percent(arr_foldlabel, arr_skel, percentage):
@@ -186,13 +190,16 @@ def remove_branches_up_to_percent(arr_foldlabel, arr_skel, percentage):
     """
     branches = np.unique(arr_foldlabel)
     # We take as index branches indexes that are not 0
-    print(f"Number of branches = {branches.size}")
+    log.debug(f"Number of branches = {branches.size}")
     indexes = np.arange(branches.size-1) + 1
     # We take random branches
     np.random.shuffle(indexes)
     arr_skel_without_branches = arr_skel
     total_pixels = (arr_skel !=0 ).sum()
     total_pixels_after=total_pixels
+    log.debug(f"total_pixels = {total_pixels}")
+    log.debug(f"skel shape = {arr_skel.shape}")
+    log.debug(f"foldlabel shape = {arr_foldlabel.shape}")
     for index in indexes:
         if total_pixels_after <= total_pixels*(100-percentage)/100:
             break
@@ -201,11 +208,11 @@ def remove_branches_up_to_percent(arr_foldlabel, arr_skel, percentage):
                           arr_skel_without_branches,
                           branches[index])
         total_pixels_after = (arr_skel_without_branches != 0).sum()
-    print(f"total_pixels_after = {total_pixels_after}")
+    log.debug(f"total_pixels_after = {total_pixels_after}")
     percent_pixels_removed = (total_pixels-total_pixels_after)/total_pixels*100
-
+    log.debug(f"% removed pixels = {percent_pixels_removed}")
     assert(percent_pixels_removed >= percentage)
-    print(f"% removed pixels = {percent_pixels_removed}")
+
     return arr_skel_without_branches
 
 
@@ -213,22 +220,40 @@ class RemoveRandomBranchTensor(object):
     """Removes randomly branches up to percent
     """
 
-    def __init__(self, sample_foldlabel, percentage):
+    def __init__(self, sample_foldlabel, percentage, input_size):
         self.sample_foldlabel = sample_foldlabel
         self.percentage = percentage
+        self.input_size = input_size
 
     def __call__(self, tensor_skel):
+        log.debug(f"Shape of tensor_skel = {tensor_skel.shape}")
         arr_skel = tensor_skel.numpy()
         arr_foldlabel = self.sample_foldlabel.numpy()
 
-        print(f"arr_skel.shape = {arr_skel.shape}")
-        print(f"arr_foldlabel.shape = {arr_foldlabel.shape}")
+        # log.debug(f"arr_skel.shape = {arr_skel.shape}")
+        # log.debug(f"arr_foldlabel.shape = {arr_foldlabel.shape}")
         assert(arr_skel.shape==arr_foldlabel.shape)
 
-        arr_skel_without_branches = \
-            remove_branches_up_to_percent(arr_foldlabel,
-                                          arr_skel,
-                                          self.percentage)
+        arr_skel_without_branches = np.zeros(arr_skel.shape)
+        log.debug(f"Shape of arr_skel before calling transform: {arr_skel_without_branches.shape}")
+
+        # Checks if it is only one image or a batch of images
+        if len(arr_skel.shape) == len(self.input_size)+1:
+            for num_img in np.arange(arr_skel.shape[0]):
+                arr_skel_without_branches[num_img,...] = \
+                    remove_branches_up_to_percent(arr_foldlabel[num_img,...],
+                                                  arr_skel[num_img,...],
+                                                self.percentage)
+        elif len(arr_skel.shape) == len(self.input_size):
+            arr_skel_without_branches = \
+                remove_branches_up_to_percent(arr_foldlabel,
+                                              arr_skel,
+                                              self.percentage)
+        else:
+            raise RuntimeError(f"Unexpected skeleton shape."
+                f"Compare arr_skel shape {arr_skel.shape} "
+                f"with input_size shape {self.input_size.shape}")
+
         arr_skel_without_branches = arr_skel_without_branches.astype('float32')
 
         return torch.from_numpy(arr_skel_without_branches)

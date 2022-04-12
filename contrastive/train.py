@@ -43,7 +43,6 @@ import logging
 import hydra
 import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
-from pytorch_lightning.utilities.seed import seed_everything
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 

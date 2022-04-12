@@ -3,4 +3,5 @@ fill_value: 0
 max_angle: 10
 checkerboard_size: 4
 keep_bottom: True
-percentage: 50
+percentage_1: 10
+percentage_2: 30
