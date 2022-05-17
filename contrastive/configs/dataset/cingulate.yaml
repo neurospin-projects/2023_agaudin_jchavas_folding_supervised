@@ -1,19 +1,12 @@
 # @package _global_
-<<<<<<< HEAD
-pickle_normal: /host/home/jc225751/Runs/38_cingulate_with_foldlabels/Input/Processed_External/crops/2mm/CINGULATE/mask/Rskeleton.pkl
-pickle_foldlabel: /host/home/jc225751/Runs/38_cingulate_with_foldlabels/Input/Processed_External/crops/2mm/CINGULATE/mask/Rlabel.pkl
+# pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton.npy
+numpy_all: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton.npy
+subjects_all: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton_subject.csv
+#pickle_foldlabel: /host/home/jc225751/Runs/38_cingulate_with_foldlabels/Input/Processed_External/crops/2mm/CINGULATE/mask/Rlabel.pkl
 pickle_benchmark: 
-train_val_csv_file: /host/home/jc225751/Runs/38_cingulate_with_foldlabels/Input/HCP_half_1bis.csv
+train_val_csv_file: /neurospin/dico/data/deep_folding/papers/midl2022/HCP_half_1bis.csv
 nb_subjects: -1
-subject_labels_file: /host/home/jc225751/Runs/38_cingulate_with_foldlabels/Input/participants.csv
-=======
-pickle_normal: /host/home/jc225751/Runs/37_cingulate_with_labels_local/Input/Processed_External/crops/2mm/CINGULATE/mask/Rskeleton.pkl
-# pickle_normal: ../../../Input/crop_10subjects/Rskeleton.pkl
-pickle_benchmark: 
-train_val_csv_file: /host/home/jc225751/Runs/37_cingulate_with_labels_local/Input/HCP_half_1bis.csv
-nb_subjects: -1
-subject_labels_file: /host/home/jc225751/Runs/37_cingulate_with_labels_local/Input/participants.csv
->>>>>>> c71300bd42ea333fb080aab6ab562c2291ebc6f3
+# subject_labels_file: /host/home/jc225751/Runs/38_cingulate_with_foldlabels/Input/participants.csv
 #label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
 #label_names: ["NEOFAC_C"]
-label_names: ["Gender"]
+#label_names: ["Gender"]

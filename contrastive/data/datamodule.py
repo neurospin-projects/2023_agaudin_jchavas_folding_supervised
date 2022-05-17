@@ -82,6 +82,45 @@ class DataModule(pl.LightningDataModule):
         return loader_test
 
 
+class DataModule_PureContrastive(pl.LightningDataModule):
+    """Data module class
+    """
+
+    def __init__(self, config):
+        super(DataModule_PureContrastive, self).__init__()
+        self.config = config
+
+    def setup(self, stage=None, mode=None):
+        self.dataset_train, self.dataset_val, self.dataset_test, _ = \
+            create_sets_pure_contrastive(self.config)
+
+    def train_dataloader(self):
+        loader_train = DataLoader(self.dataset_train,
+                                  batch_size=self.config.batch_size,
+                                  sampler=RandomSampler(self.dataset_train),
+                                  pin_memory=self.config.pin_mem,
+                                  num_workers=self.config.num_cpu_workers
+                                  )
+        return loader_train
+
+    def val_dataloader(self):
+        loader_val = DataLoader(self.dataset_val,
+                                batch_size=self.config.batch_size,
+                                pin_memory=self.config.pin_mem,
+                                num_workers=self.config.num_cpu_workers,
+                                shuffle=False
+                                )
+        return loader_val
+
+    def test_dataloader(self):
+        loader_test = DataLoader(self.dataset_test,
+                                 batch_size=self.config.batch_size,
+                                 pin_memory=self.config.pin_mem,
+                                 num_workers=self.config.num_cpu_workers,
+                                 shuffle=False
+                                 )
+        return loader_test
+
 class DataModule_WithFoldLabels(pl.LightningDataModule):
     """Data module class
     """

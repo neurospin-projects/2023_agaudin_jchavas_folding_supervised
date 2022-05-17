@@ -64,14 +64,14 @@ class ContrastiveDataset():
     Applies different transformations to data depending on the type of input.
     """
 
-    def __init__(self, dataframe, filenames, config):
+    def __init__(self, array, filenames, config):
         """
         Args:
             data_tensor (tensor): contains MRIs as numpy arrays
             filenames (list of strings): list of subjects' IDs
             config (Omegaconf dict): contains configuration information
         """
-        self.df = dataframe
+        self.arr = array
         self.transform = True
         self.nb_train = len(filenames)
         log.info(self.nb_train)
@@ -92,9 +92,12 @@ class ContrastiveDataset():
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        sample = self.df.loc[0].values[idx].astype('float32')
-        sample = torch.from_numpy(sample)
-        filename = self.filenames[idx]
+        sample = self.arr[idx].astype('float32')
+        # print(f"filenames[:5] = {self.filenames[:5]}")
+        # print(f"len(filenames) = {len(self.filenames)}")
+        # print(f"idx = {idx}")
+        # print(f"{idx} in filename = {idx in self.filenames.index}")
+        filename = self.filenames.ID[idx]
 
         self.transform1 = transforms.Compose([
             SimplifyTensor(),
@@ -129,8 +132,8 @@ class ContrastiveDataset():
             EndTensor()
         ])
 
-        view1 = self.transform1(sample)
-        view2 = self.transform2(sample)
+        view1 = self.transform1(torch.from_numpy(sample))
+        view2 = self.transform2(torch.from_numpy(sample))
 
         if self.config.mode == "decoder":
             view3 = self.transform3(sample)
@@ -650,42 +653,26 @@ def create_sets_pure_contrastive(config, mode='training'):
     """
 
     # Loads crops from all subjects
-    pickle_file_path = config.pickle_normal
+    numpy_all_path = config.numpy_all
     log.info("Current directory = " + os.getcwd())
-    normal_data = pd.read_pickle(pickle_file_path)
-    print(normal_data.head())
-    normal_subjects = normal_data.columns.tolist()
-
-    # Loads benchmarks (crops from another region) from all subjects
-    if config.pickle_benchmark:
-        pickle_benchmark_path = config.pickle_benchmark
-        benchmark_data = pd.read_pickle(pickle_benchmark_path)
+    normal_data = np.load(numpy_all_path, mmap_mode='r')
+    print(f"shape of loaded numpy array = {normal_data.shape}")
+    normal_subjects = pd.read_csv(config.subjects_all)
 
     # Gets train_val subjects from csv file
-    train_val_subjects = pd.read_csv(config.train_val_csv_file, names=['ID']).T
-    train_val_subjects = train_val_subjects.values[0].tolist()
-    train_val_subjects = list(map(str, train_val_subjects))
+    train_val_subjects = pd.read_csv(config.train_val_csv_file, names=['ID'])
     print(f"train_val_subjects = {train_val_subjects}")
 
     # Determines test dataframe
-    test_subjects = list(set(normal_subjects).difference(train_val_subjects))
+    test_subjects = normal_subjects[~normal_subjects.Subject.isin(
+        train_val_subjects.ID)].index
     len_test = len(test_subjects)
-    print(f"test_subjects = {test_subjects}")
+    print(f"length of test = {len_test}")
+    print(f"test_subjects = {test_subjects[:5]}")
 
-    if config.pickle_benchmark:
-        normal_test_subjects = test_subjects[:round(len_test / 2)]
-        normal_test_data = \
-            normal_data[normal_data.columns.intersection(normal_test_subjects)]
-        benchmark_test_subjects = test_subjects[round(len_test / 2):]
-        benchmark_test_data = \
-            benchmark_data[
-                benchmark_data.columns.intersection(benchmark_test_subjects)]
-
-        test_data = pd.concat(
-            [normal_test_data, benchmark_test_data], axis=1, ignore_index=True)
-    else:
-        test_data = normal_data[normal_data.columns.intersection(
-            test_subjects)]
+    # /!\ copy the data to construct test_data
+    test_data = normal_data[test_subjects]
+    print(f'test set size: {test_data.shape}')
 
     # Cuts train_val set to requested number
     if config.nb_subjects == _ALL_SUBJECTS:
@@ -698,22 +685,10 @@ def create_sets_pure_contrastive(config, mode='training'):
     log.info(f"length of train/val dataframe: {len_train_val}")
 
     # Determines train/val dataframe
-    if config.pickle_benchmark:
-        normal_train_val_subjects = train_val_subjects[:round(
-            len(train_val_subjects) / 2)]
-        normal_train_val_data = normal_data[
-            normal_data.columns.intersection(normal_train_val_subjects)]
-        benchmark_train_val_subjects = train_val_subjects[
-            round(len(train_val_subjects) / 2):]
-        benchmark_train_val_data = benchmark_data[
-            benchmark_data.columns.intersection(benchmark_train_val_subjects)]
-        train_val_data = pd.concat(
-            [normal_train_val_data, benchmark_train_val_data],
-            axis=1,
-            ignore_index=True)
-    else:
-        train_val_data = normal_data[normal_data.columns.intersection(
-            train_val_subjects)]
+    train_val_subjects_index = normal_subjects[normal_subjects.Subject.isin(
+                                train_val_subjects.ID)].index
+    # /!\ copy the data to construct train_val_data
+    train_val_data = normal_data[train_val_subjects_index]
 
     # Creates the dataset from these tensors by doing some preprocessing
     if mode == 'visualization':
@@ -728,12 +703,13 @@ def create_sets_pure_contrastive(config, mode='training'):
     else:
         test_dataset = ContrastiveDataset(
             filenames=test_subjects,
-            dataframe=test_data,
+            array=test_data,
             config=config)
         train_val_dataset = ContrastiveDataset(
             filenames=train_val_subjects,
-            dataframe=train_val_data,
+            array=train_val_data,
             config=config)
+
     log.info(f"Length of test data set: {len(test_dataset)}")
     log.info(
         f"Length of complete train/val data set: {len(train_val_dataset)}")
@@ -742,6 +718,8 @@ def create_sets_pure_contrastive(config, mode='training'):
     partition = config.partition
 
     log.info([round(i * (len(train_val_dataset))) for i in partition])
+
+    # à vérifier comment le rendre random
     np.random.seed(config.seed)
     train_set, val_set = torch.utils.data.random_split(
         train_val_dataset,

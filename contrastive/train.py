@@ -46,8 +46,8 @@ from pytorch_lightning import loggers as pl_loggers
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 
-from contrastive.data.datamodule import DataModule_WithFoldLabels
-from contrastive.models.contrastive_learner_with_labels import ContrastiveLearner_WithLabels
+from contrastive.data.datamodule import DataModule_PureContrastive
+from contrastive.models.contrastive_learner import ContrastiveLearner
 from contrastive.utils.config import process_config
 from contrastive.utils.logs import set_root_logger_level
 
@@ -70,9 +70,9 @@ def train(config):
 
     set_root_logger_level(config.verbose)
 
-    data_module = DataModule_WithFoldLabels(config)
+    data_module = DataModule_PureContrastive(config)
 
-    model = ContrastiveLearner_WithLabels(config,
+    model = ContrastiveLearner(config,
                                sample_data=data_module)
 
     summary(model, tuple(config.input_size), device="cpu")
