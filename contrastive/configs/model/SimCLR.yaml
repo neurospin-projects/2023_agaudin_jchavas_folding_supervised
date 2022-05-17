@@ -24,4 +24,4 @@ seed: 0
 start_epoch: 0
 checkpoint_path:
 analysis_path: 
-verbose: 2
+verbose: 1
