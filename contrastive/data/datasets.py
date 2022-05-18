@@ -642,6 +642,126 @@ def create_sets_with_labels(config, mode='training'):
     return train_set, val_set, test_dataset, train_val_dataset
 
 
+def read_npy_file(npy_file_path: str) -> np.ndarray:
+    """Reads npy file containing all subjects and returns the numpy array."""
+    # Loads crops from all subjects
+    log.info("Current directory = " + os.getcwd())
+    arr = np.load(npy_file_path, mmap_mode='r')
+    log.debug(f"shape of loaded numpy array = {arr.shape}")
+    return arr
+
+def read_subject_csv(csv_file_path: str) -> pd.DataFrame:
+    """Reads csv subject file.
+    It contains on a column named \'Subject\' all subject names"""
+    subjects = pd.read_csv(csv_file_path)
+    if 'Subject' in subjects.columns:
+        return subjects
+    else:
+        raise ValueError(f"Column name of csv file {csv_file_path} must be "
+                        f"\'Subject\'. Instead it is {subjects.columns}")
+
+def length_object(object):
+    """Returns object.shape[0] if numpy array else len(object)"""
+    return object.shape[0] if type(object) == np.ndarray else len(object)
+
+def is_equal_length(object_1, object_2):
+    """Checks of the two objects have equal length"""
+    len_1 = length_object(object_1)
+    len_2 = length_object(object_2)
+    return (len_1==len_2)
+
+def read_numpy_data_and_subject_csv(npy_file_path, csv_file_path):
+    npy_data = read_npy_file(npy_file_path)
+    subjects = read_subject_csv(csv_file_path)
+    if not is_equal_length(npy_data, subjects):
+        raise ValueError(
+            f"numpy array {npy_file_path} "
+            f"and csv subject file {csv_file_path}" 
+             "don't have the same length.")
+    return npy_data, subjects
+
+def read_train_val_csv(csv_file_path: str) -> pd.DataFrame:
+    """Reads train_val csv.
+    
+    This csv has a unisque column.
+    The resulting dataframe gives the name 'ID' to this column
+    """
+    train_val_subjects = pd.read_csv(csv_file_path, names=['ID'])
+    log.debug(f"train_val_subjects = {train_val_subjects}")
+    return train_val_subjects
+
+def extract_test(normal_subjects, train_val_subjects, normal_data):
+    """Extracts test subjects and test data from normal_data.
+    
+    Test subjects are all subjects from normal_subjects that are not listed
+    in train_val_subjects.
+    normal_data is a numpy array corresponding to normal_subjects."""
+    test_subjects_index = normal_subjects[~normal_subjects.Subject.isin(
+        train_val_subjects.ID)].index
+    test_subjects = normal_subjects.loc[test_subjects_index]
+    len_test = len(test_subjects_index)
+    log.debug(f"length of test = {len_test}")
+    log.info(f"test_subjects = {test_subjects[:5]}")
+
+    # /!\ copy the data to construct test_data
+    test_data = normal_data[test_subjects_index]
+    log.info(f"test set size: {test_data.shape}")
+
+    return test_subjects, test_data
+
+def restrict_length(subjects:pd.DataFrame, nb_subjects: int) -> pd.DataFrame:
+    """Restrict length by nb_subjects if requested"""
+    if nb_subjects == _ALL_SUBJECTS:
+        length = len(subjects)
+    else:
+        length = min(nb_subjects,
+                  len(subjects))
+        subjects = subjects[:length]
+
+    return subjects
+
+def extract_train_val(normal_subjects, train_val_subjects, normal_data):
+    """Returns data corresponding to subjects listed in train_val_subjects"""
+
+    log.info(f"Length of train/val dataframe = {len(train_val_subjects)}")
+    # Determines train/val dataframe
+    train_val_subjects_index = normal_subjects[normal_subjects.Subject.isin(
+                                train_val_subjects.ID)].index
+    # /!\ copy the data to construct train_val_data
+    train_val_data = normal_data[train_val_subjects_index]
+    return train_val_data
+
+
+def extract_data(config):
+    """Extracts train_val and test data and subjects from npy and csv file
+
+    Args:
+        config (Omegaconf dict): contains configuration parameters
+    Returns (subjects as dataframe, data as numpy array):
+        train_val_subjects, train_val_data, test_subjects, test_data (tuple)
+    """
+
+    # Reads numpy data and subject list
+    normal_data, normal_subjects = \
+        read_numpy_data_and_subject_csv(config.numpy_all, config.subjects_all)
+
+    # Gets train_val subjects as dataframe from csv file
+    train_val_subjects = read_train_val_csv(config.train_val_csv_file)
+
+    # Extracts test subject names and corresponding data
+    test_subjects, test_data = \
+        extract_test(normal_subjects, train_val_subjects, normal_data)
+
+    # Restricts train_val length
+    train_val_subjects = restrict_length(train_val_subjects, config.nb_subjects)
+
+    # Extracts train_val from normal_data
+    train_val_data = \
+        extract_train_val(normal_subjects, train_val_subjects, normal_data)
+
+    return train_val_subjects, train_val_data, test_subjects, test_data
+
+
 def create_sets_pure_contrastive(config, mode='training'):
     """Creates train, validation and test sets
 
@@ -652,46 +772,11 @@ def create_sets_pure_contrastive(config, mode='training'):
         train_set, val_set, test_set (tuple)
     """
 
-    # Loads crops from all subjects
-    numpy_all_path = config.numpy_all
-    log.info("Current directory = " + os.getcwd())
-    normal_data = np.load(numpy_all_path, mmap_mode='r')
-    log.debug(f"shape of loaded numpy array = {normal_data.shape}")
-    normal_subjects = pd.read_csv(config.subjects_all)
-
-    # Gets train_val subjects from csv file
-    train_val_subjects = pd.read_csv(config.train_val_csv_file, names=['ID'])
-    log.debug(f"train_val_subjects = {train_val_subjects}")
-
-    # Determines test dataframe
-    test_subjects = normal_subjects[~normal_subjects.Subject.isin(
-        train_val_subjects.ID)].index
-    len_test = len(test_subjects)
-    log.debug(f"length of test = {len_test}")
-    log.debug(f"test_subjects = {test_subjects[:5]}")
-
-    # /!\ copy the data to construct test_data
-    test_data = normal_data[test_subjects]
-    log.debug(f'test set size: {test_data.shape}')
-
-    # Cuts train_val set to requested number
-    if config.nb_subjects == _ALL_SUBJECTS:
-        len_train_val = len(train_val_subjects)
-    else:
-        len_train_val = min(config.nb_subjects,
-                            len(train_val_subjects))
-        train_val_subjects = train_val_subjects[:len_train_val]
-
-    log.info(f"length of train/val dataframe: {len_train_val}")
-
-    # Determines train/val dataframe
-    train_val_subjects_index = normal_subjects[normal_subjects.Subject.isin(
-                                train_val_subjects.ID)].index
-    # /!\ copy the data to construct train_val_data
-    train_val_data = normal_data[train_val_subjects_index]
+    train_val_subjects, train_val_data, test_subjects, test_data = \
+        extract_data(config)
 
     # Creates the dataset from these tensors by doing some preprocessing
-    if mode == 'visualization':
+    if mode == 'evaluation':
         test_dataset = ContrastiveDataset_Visualization(
             filenames=test_subjects,
             array=test_data,
@@ -709,10 +794,6 @@ def create_sets_pure_contrastive(config, mode='training'):
             filenames=train_val_subjects,
             array=train_val_data,
             config=config)
-
-    log.info(f"Length of test data set: {len(test_dataset)}")
-    log.info(
-        f"Length of complete train/val data set: {len(train_val_dataset)}")
 
     # Split training/val set into train, val set
     partition = config.partition
