@@ -717,12 +717,19 @@ def create_sets_pure_contrastive(config, mode='training'):
     # Split training/val set into train, val set
     partition = config.partition
 
-    log.info([round(i * (len(train_val_dataset))) for i in partition])
+    size_partitions = [round(i * (len(train_val_dataset))) for i in partition]
+
+    log.info(f"size partitions = {size_partitions}")
 
     # à vérifier comment le rendre random
-    np.random.seed(config.seed)
+    if config.seed:
+        torch.manual_seed(config.seed)
+        log.info(f"Seed for train/val split is {config.seed}")
+    else:
+        log.info("Train/val split has not fixed seed")
+
     train_set, val_set = torch.utils.data.random_split(
         train_val_dataset,
-        [round(i * (len(train_val_dataset))) for i in partition])
+        size_partitions)
 
     return train_set, val_set, test_dataset, train_val_dataset
