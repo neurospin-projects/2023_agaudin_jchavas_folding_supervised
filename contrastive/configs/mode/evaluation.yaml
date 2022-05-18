@@ -1,4 +1,4 @@
 # @package _global_
 test: False
-mode: visualization
+mode: evaluation
 verbose: 1

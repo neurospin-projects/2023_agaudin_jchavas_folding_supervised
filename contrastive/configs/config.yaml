@@ -4,7 +4,8 @@ defaults:
   - hydra/job_logging: custom
   - dataset: cingulate_ACCpatterns
   - model: SimCLR
-  - augmentations: default
+  - mode: encoder
+  - augmentations: no_foldlabel
   - backbone: DenseNet
   - platform: cuda_brainvisa
-
+  - trainer: default

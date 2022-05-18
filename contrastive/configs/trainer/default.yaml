@@ -1,0 +1,22 @@
+# @package _global_
+batch_size: 16
+pin_mem: True
+partition: [0.9, 0.1]
+depth_decoder: 3
+temperature_initial: 0.1
+temperature: 0.1
+sigma_labels: 0.1
+sigma: 5
+proportion_pure_contrastive: 1.0
+lr: 4e-4
+weight_decay: 5e-5
+max_epochs: 300
+drop_rate: 0.
+nb_epochs_per_saving: 1
+nb_epochs_per_tSNE: 50
+nb_steps_per_flush_logs: 1
+log_every_n_steps: 2
+seed: 0
+start_epoch: 0
+checkpoint_path:
+analysis_path: 

@@ -46,7 +46,8 @@ from pytorch_lightning import loggers as pl_loggers
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 
-from contrastive.data.datamodule import DataModule_PureContrastive
+from contrastive.data.datamodule import DataModule_Learning
+from contrastive.data.datamodule import DataModule_Evaluation
 from contrastive.models.contrastive_learner import ContrastiveLearner
 from contrastive.utils.config import process_config
 from contrastive.utils.logs import set_root_logger_level
@@ -63,14 +64,16 @@ We use the following definitions:
   The elements are called output vectors
 """
 
-
 @hydra.main(config_name='config', config_path="configs")
 def train(config):
     config = process_config(config)
 
     set_root_logger_level(config.verbose)
 
-    data_module = DataModule_PureContrastive(config)
+    if config.mode == 'evaluation':
+      data_module = DataModule_Evaluation(config)
+    else:
+      data_module = DataModule_Learning(config)
 
     model = ContrastiveLearner(config,
                                sample_data=data_module)

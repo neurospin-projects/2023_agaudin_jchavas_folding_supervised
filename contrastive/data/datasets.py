@@ -694,11 +694,11 @@ def create_sets_pure_contrastive(config, mode='training'):
     if mode == 'visualization':
         test_dataset = ContrastiveDataset_Visualization(
             filenames=test_subjects,
-            dataframe=test_data,
+            array=test_data,
             config=config)
         train_val_dataset = ContrastiveDataset_Visualization(
             filenames=train_val_subjects,
-            dataframe=train_val_data,
+            array=train_val_data,
             config=config)
     else:
         test_dataset = ContrastiveDataset(

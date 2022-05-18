@@ -42,17 +42,21 @@ from contrastive.data.datasets import create_sets_with_labels_with_foldlabels
 from contrastive.data.datasets import create_sets_pure_contrastive
 
 
-class DataModule(pl.LightningDataModule):
+class DataModule_Learning(pl.LightningDataModule):
     """Data module class
     """
 
     def __init__(self, config):
-        super(DataModule, self).__init__()
+        super(DataModule_Learning, self).__init__()
         self.config = config
 
     def setup(self, stage=None, mode=None):
-        self.dataset_train, self.dataset_val, self.dataset_test, _ = \
-            create_sets_with_labels(self.config)
+        if self.config.model == 'SimCLR':
+            self.dataset_train, self.dataset_val, self.dataset_test, _ = \
+                create_sets_pure_contrastive(self.config)
+        elif self.config.model == 'SimCLR_supervised':
+            self.dataset_train, self.dataset_val, self.dataset_test, _ = \
+                create_sets_with_labels(self.config)
 
     def train_dataloader(self):
         loader_train = DataLoader(self.dataset_train,
@@ -60,6 +64,57 @@ class DataModule(pl.LightningDataModule):
                                   sampler=RandomSampler(self.dataset_train),
                                   pin_memory=self.config.pin_mem,
                                   num_workers=self.config.num_cpu_workers
+                                  )
+        return loader_train
+
+    def val_dataloader(self):
+        loader_val = DataLoader(self.dataset_val,
+                                batch_size=self.config.batch_size,
+                                pin_memory=self.config.pin_mem,
+                                num_workers=self.config.num_cpu_workers,
+                                shuffle=False
+                                )
+        return loader_val
+
+    def test_dataloader(self):
+        loader_test = DataLoader(self.dataset_test,
+                                 batch_size=self.config.batch_size,
+                                 pin_memory=self.config.pin_mem,
+                                 num_workers=self.config.num_cpu_workers,
+                                 shuffle=False
+                                 )
+        return loader_test
+
+
+
+class DataModule_Evaluation(pl.LightningDataModule):
+    """Data module class for evaluation/visualization
+    """
+
+    def __init__(self, config):
+        super(DataModule_Evaluation, self).__init__()
+        self.config = config
+
+    def setup(self, stage, mode=None):
+        self.dataset_train, self.dataset_val, self.dataset_test,\
+            self.dataset_train_val = \
+            create_sets_pure_contrastive(self.config, mode='visualization')
+
+    def train_val_dataloader(self):
+        loader_train = DataLoader(self.dataset_train_val,
+                                  batch_size=self.config.batch_size,
+                                  pin_memory=self.config.pin_mem,
+                                  num_workers=self.config.num_cpu_workers,
+                                  shuffle=False
+                                  )
+        return loader_train
+
+    def train_dataloader(self):
+        loader_train = DataLoader(self.dataset_train,
+                                  batch_size=self.config.batch_size,
+                                  pin_memory=self.config.pin_mem,
+                                  num_workers=self.config.num_cpu_workers,
+                                  shuffle=False
                                   )
         return loader_train
 
