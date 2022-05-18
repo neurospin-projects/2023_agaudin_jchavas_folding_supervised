@@ -93,10 +93,10 @@ class ContrastiveDataset():
             idx = idx.tolist()
 
         sample = self.arr[idx].astype('float32')
-        # print(f"filenames[:5] = {self.filenames[:5]}")
-        # print(f"len(filenames) = {len(self.filenames)}")
-        # print(f"idx = {idx}")
-        # print(f"{idx} in filename = {idx in self.filenames.index}")
+        log.debug(f"filenames[:5] = {self.filenames[:5]}")
+        log.debug(f"len(filenames) = {len(self.filenames)}")
+        log.debug(f"idx = {idx}")
+        log.debug(f"{idx} in filename = {idx in self.filenames.index}")
         filename = self.filenames.ID[idx]
 
         self.transform1 = transforms.Compose([
@@ -656,23 +656,23 @@ def create_sets_pure_contrastive(config, mode='training'):
     numpy_all_path = config.numpy_all
     log.info("Current directory = " + os.getcwd())
     normal_data = np.load(numpy_all_path, mmap_mode='r')
-    print(f"shape of loaded numpy array = {normal_data.shape}")
+    log.debug(f"shape of loaded numpy array = {normal_data.shape}")
     normal_subjects = pd.read_csv(config.subjects_all)
 
     # Gets train_val subjects from csv file
     train_val_subjects = pd.read_csv(config.train_val_csv_file, names=['ID'])
-    print(f"train_val_subjects = {train_val_subjects}")
+    log.debug(f"train_val_subjects = {train_val_subjects}")
 
     # Determines test dataframe
     test_subjects = normal_subjects[~normal_subjects.Subject.isin(
         train_val_subjects.ID)].index
     len_test = len(test_subjects)
-    print(f"length of test = {len_test}")
-    print(f"test_subjects = {test_subjects[:5]}")
+    log.debug(f"length of test = {len_test}")
+    log.debug(f"test_subjects = {test_subjects[:5]}")
 
     # /!\ copy the data to construct test_data
     test_data = normal_data[test_subjects]
-    print(f'test set size: {test_data.shape}')
+    log.debug(f'test set size: {test_data.shape}')
 
     # Cuts train_val set to requested number
     if config.nb_subjects == _ALL_SUBJECTS:

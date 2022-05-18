@@ -1,0 +1,4 @@
+# @package _global_
+test: False
+mode: encoder
+verbose: 1

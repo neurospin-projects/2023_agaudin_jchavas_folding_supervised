@@ -2,7 +2,7 @@
 defaults:
   - hydra: local
   - hydra/job_logging: custom
-  - dataset: cingulate
+  - dataset: cingulate_ACCpatterns
   - model: SimCLR
   - augmentations: default
   - backbone: DenseNet
