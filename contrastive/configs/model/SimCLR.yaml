@@ -15,6 +15,7 @@ proportion_pure_contrastive: 1.0
 lr: 2e-4
 weight_decay: 5e-5
 max_epochs: 300
+early_stopping_patience: 10
 drop_rate: 0.
 nb_epochs_per_saving: 1
 nb_epochs_per_tSNE: 50
@@ -24,4 +25,4 @@ seed: 0
 start_epoch: 0
 checkpoint_path:
 analysis_path: 
-verbose: 2
+verbose: 1
