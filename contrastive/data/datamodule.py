@@ -42,12 +42,12 @@ from contrastive.data.datasets import create_sets_with_labels_with_foldlabels
 from contrastive.data.datasets import create_sets_pure_contrastive
 
 
-class DataModule_Learning(pl.LightningDataModule):
-    """Data module class
+class DataModule(pl.LightningDataModule):
+    """Parent data module class
     """
 
     def __init__(self, config):
-        super(DataModule_Learning, self).__init__()
+        super(DataModule, self).__init__()
         self.config = config
 
     def setup(self, stage=None, mode=None):
@@ -57,6 +57,14 @@ class DataModule_Learning(pl.LightningDataModule):
         elif self.config.model == 'SimCLR_supervised':
             self.dataset_train, self.dataset_val, self.dataset_test, _ = \
                 create_sets_with_labels(self.config)
+
+
+class DataModule_Learning(DataModule):
+    """Data module class for Learning
+    """
+
+    def __init__(self, config):
+        super(DataModule_Learning, self).__init__(config)
 
     def train_dataloader(self):
         loader_train = DataLoader(self.dataset_train,
@@ -87,18 +95,12 @@ class DataModule_Learning(pl.LightningDataModule):
 
 
 
-class DataModule_Evaluation(pl.LightningDataModule):
+class DataModule_Evaluation(DataModule):
     """Data module class for evaluation/visualization
     """
 
     def __init__(self, config):
-        super(DataModule_Evaluation, self).__init__()
-        self.config = config
-
-    def setup(self, stage, mode=None):
-        self.dataset_train, self.dataset_val, self.dataset_test,\
-            self.dataset_train_val = \
-            create_sets_pure_contrastive(self.config)
+        super(DataModule_Evaluation, self).__init__(config)
 
     def train_val_dataloader(self):
         loader_train = DataLoader(self.dataset_train_val,
