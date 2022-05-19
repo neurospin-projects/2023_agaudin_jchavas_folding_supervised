@@ -44,10 +44,9 @@ import torch
 
 from contrastive.utils.logs import set_file_logger
 
-from contrastive.data.utils import *
 from contrastive.data.transforms import *
 
-_ALL_SUBJECTS = -1
+from contrastive.augmentations import PaddingTensor
 
 log = set_file_logger(__file__)
 
@@ -87,6 +86,15 @@ def get_label(labels, idx):
     log.debug(f"{idx} in labels = {idx in labels.index}")
 
     return label
+
+def padd_foldlabel(sample_foldlabel, input_size):
+    """Padds foldlabel according to input_size"""
+    transform_foldlabel = PaddingTensor(
+                            input_size,
+                            fill_value=0)
+    sample_foldlabel = transform_foldlabel(sample_foldlabel)
+    return sample_foldlabel
+
 
 class ContrastiveDataset():
     """Custom dataset that includes image file paths.
@@ -156,24 +164,6 @@ class ContrastiveDataset():
 
         tuple_with_path = (views, filename)
         return tuple_with_path
-
-
-def get_labels(labels, idx):
-    """Returns labels indexed by idx.
-    
-    labels is a dataframe
-    """
-    labels = labels.values[idx]
-    return torch.from_numpy(labels)
-
-def padd_foldlabel(sample_foldlabel, input_size):
-    """Padds foldlabel according to input_size"""
-    transform_foldlabel = PaddingTensor(
-                            input_size,
-                            fill_value=0)
-    sample_foldlabel = transform_foldlabel(sample_foldlabel)
-    return sample_foldlabel
-
 
 class ContrastiveDataset_WithLabels():
     """Custom dataset that includes images and labels
@@ -350,7 +340,7 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
         log.debug(f"index = {idx}")
         sample = get_sample(self.arr, idx, 'float32')
         sample_foldlabel = get_sample(self.foldlabel_arr, idx, 'int32')
-        labels = get_labels(self.labels, idx)
+        labels = get_label(self.labels, idx)
         filename = get_filename(self.filenames, idx)
 
         # Padd foldlabel
@@ -442,157 +432,3 @@ class ContrastiveDataset_Visualization():
 
         tuple_with_path = (views, filename)
         return tuple_with_path
-
-
-def create_sets_without_labels(config):
-    """Creates train, validation and test sets
-
-    Args:
-        config (Omegaconf dict): contains configuration parameters
-    Returns:
-        train_dataset, val_dataset, test_datasetset, train_val_dataset (tuple)
-    """
-
-    # Loads and separates in train_val/test skeleton crops
-    train_val_subjects, train_val_data, test_subjects, test_data = \
-        extract_data(config.numpy_all, config)
-
-    # Loads and separates in train_val/test set foldlabels if requested
-    if config.foldlabel == True:
-        train_val_foldlabel_subjects, train_val_foldlabel_data, \
-        test_foldlabel_subjects, test_foldlabel_data = \
-            extract_data(config.foldlabel_all, config)
-        log.info("foldlabel data loaded")
-
-        # Makes some sanity checks
-        check_if_same_subjects(train_val_subjects, 
-                               train_val_foldlabel_subjects, "train_val")
-        check_if_same_subjects(test_subjects,
-                               test_foldlabel_subjects, "test")
-        check_if_same_shape(train_val_data,
-                            train_val_foldlabel_data, "train_val")
-        check_if_same_shape(test_data,
-                            test_foldlabel_data, "test")
-    else:
-        log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
-
-
-
-    # Creates the dataset from these data by doing some preprocessing
-    if config.mode == 'evaluation':
-        test_dataset = ContrastiveDataset_Visualization(
-            filenames=test_subjects,
-            array=test_data,
-            config=config)
-        train_val_dataset = ContrastiveDataset_Visualization(
-            filenames=train_val_subjects,
-            array=train_val_data,
-            config=config)
-    else:
-        if config.foldlabel == True:
-            test_dataset = ContrastiveDataset_WithFoldLabels(
-                filenames=test_subjects,
-                array=test_data,
-                foldlabel_array=test_foldlabel_data,
-                config=config)
-            train_val_dataset = ContrastiveDataset_WithFoldLabels(
-                filenames=train_val_subjects,
-                array=train_val_data,
-                foldlabel_array=train_val_foldlabel_data,
-                config=config)   
-        else:
-            test_dataset = ContrastiveDataset(
-                filenames=test_subjects,
-                array=test_data,
-                config=config)
-            train_val_dataset = ContrastiveDataset(
-                filenames=train_val_subjects,
-                array=train_val_data,
-                config=config)  
-
-
-    train_dataset, val_dataset = \
-        extract_train_val_dataset(train_val_dataset,
-                                  config.partition,
-                                  config.seed)
-
-    return train_dataset, val_dataset, test_dataset, train_val_dataset
-
-
-def create_sets_with_labels(config):
-    """Creates train, validation and test sets when there are labels
-
-    Args:
-        config (Omegaconf dict): contains configuration parameters
-    Returns:
-        train_dataset, val_dataset, test_datasetset, train_val_dataset (tuple)
-    """
-
-    # Gets labels for all subjects
-    # Column subject_column_name is renamed 'Subject'
-    subject_labels = extract_labels(config.subject_labels_file,
-                                    config.subject_column_name,
-                                    config.label_names)
-
-    # Loads and separates in train_val/test skeleton crops
-    train_val_subjects, train_val_data, test_subjects, test_data = \
-        extract_data_with_labels(config.numpy_all, subject_labels, config)
-
-    # Loads and separates in train_val/test set foldlabels if requested
-    if config.foldlabel == True:
-        train_val_foldlabel_subjects, train_val_foldlabel_data, \
-        test_foldlabel_subjects, test_foldlabel_data = \
-            extract_data_with_labels(config.foldlabel_all, subject_labels,
-                                     config)
-        log.info("foldlabel data loaded")
-
-        # Makes some sanity checks
-        check_if_same_subjects(train_val_subjects, 
-                               train_val_foldlabel_subjects, "train_val")
-        check_if_same_subjects(test_subjects,
-                               test_foldlabel_subjects, "test")
-        check_if_same_shape(train_val_data,
-                            train_val_foldlabel_data, "train_val")
-        check_if_same_shape(test_data,
-                            test_foldlabel_data, "test")
-    else:
-        log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
-
-    # Creates the dataset from these data by doing some preprocessing
-    if config.mode == 'evaluation':
-        test_dataset = ContrastiveDataset_Visualization(
-            filenames=test_subjects,
-            array=test_data,
-            config=config)
-        train_val_dataset = ContrastiveDataset_Visualization(
-            filenames=train_val_subjects,
-            array=train_val_data,
-            config=config)
-    else:
-        if config.foldlabel == True:
-            test_dataset = ContrastiveDataset_WithFoldLabels(
-                filenames=test_subjects,
-                array=test_data,
-                foldlabel_array=test_foldlabel_data,
-                config=config)
-            train_val_dataset = ContrastiveDataset_WithFoldLabels(
-                filenames=train_val_subjects,
-                array=train_val_data,
-                foldlabel_array=train_val_foldlabel_data,
-                config=config)   
-        else:
-            test_dataset = ContrastiveDataset(
-                filenames=test_subjects,
-                array=test_data,
-                config=config)
-            train_val_dataset = ContrastiveDataset(
-                filenames=train_val_subjects,
-                array=train_val_data,
-                config=config)  
-
-    train_dataset, val_dataset = \
-        extract_train_val_dataset(train_val_dataset,
-                                  config.partition,
-                                  config.seed)
-
-    return train_dataset, val_dataset, test_dataset, train_val_dataset

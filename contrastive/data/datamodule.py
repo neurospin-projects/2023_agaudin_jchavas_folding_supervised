@@ -37,8 +37,9 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from torch.utils.data import RandomSampler
 
-from contrastive.data.datasets import create_sets_with_labels
-from contrastive.data.datasets import create_sets_without_labels
+from contrastive.data.create_datasets import create_sets_with_labels
+
+from contrastive.data.create_datasets import create_sets_without_labels
 
 
 class DataModule(pl.LightningDataModule):
