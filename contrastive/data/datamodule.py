@@ -98,7 +98,7 @@ class DataModule_Evaluation(pl.LightningDataModule):
     def setup(self, stage, mode=None):
         self.dataset_train, self.dataset_val, self.dataset_test,\
             self.dataset_train_val = \
-            create_sets_pure_contrastive(self.config, mode='visualization')
+            create_sets_pure_contrastive(self.config)
 
     def train_val_dataloader(self):
         loader_train = DataLoader(self.dataset_train_val,

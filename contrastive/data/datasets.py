@@ -234,6 +234,101 @@ class ContrastiveDataset_WithLabels():
 
 
 
+class ContrastiveDataset_WithFoldLabels():
+    """Custom dataset that includes images and foldlabels
+
+    Applies different transformations to data depending on the type of input.
+    """
+
+    def __init__(self, array, foldlabel_array, filenames, config):
+        """
+        Args:
+            data (numpy array): contains skeletonss as numpy arrays
+            foldlabel_data (dataframe): contains foldlabels as numpy array
+            filenames (list of strings): list of subjects' IDs
+            config (Omegaconf dict): contains configuration information
+        """
+        self.arr = array
+        self.foldlabel_arr = foldlabel_array
+        self.transform = True
+        self.nb_train = len(filenames)
+        log.info(self.nb_train)
+        self.filenames = filenames
+        self.config = config
+
+    def __len__(self):
+        return (self.nb_train)
+
+    def __getitem__(self, idx):
+        """Returns the two views corresponding to index idx
+
+        The two views are generated on the fly.
+
+        Returns:
+            tuple of (views, subject ID)
+        """
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        log.debug(f"index = {idx}")
+        sample = self.arr[idx].astype('float32')
+        sample_foldlabel = self.arr[idx].astype('int32')
+        sample = torch.from_numpy(sample)
+        filenames = self.filenames.ID[idx]
+
+        # Padd foldlabel
+        sample_foldlabel = torch.from_numpy(sample_foldlabel)
+        transform_foldlabel = PaddingTensor(
+                                self.config.input_size,
+                                fill_value=0)
+        sample_foldlabel = transform_foldlabel(sample_foldlabel)
+
+        self.transform1 = transforms.Compose([
+            SimplifyTensor(),
+            PaddingTensor(self.config.input_size,
+                          fill_value=self.config.fill_value),
+            RemoveRandomBranchTensor(sample_foldlabel=sample_foldlabel,
+                                     percentage=self.config.percentage_1,
+                                     input_size=self.config.input_size),
+            RotateTensor(max_angle=self.config.max_angle),
+            BinarizeTensor()
+        ])
+
+        # - padding
+        # - + random rotation
+        self.transform2 = transforms.Compose([
+            SimplifyTensor(),
+            PaddingTensor(self.config.input_size,
+                          fill_value=self.config.fill_value),
+            RemoveRandomBranchTensor(sample_foldlabel=sample_foldlabel,
+                                     percentage=self.config.percentage_2,
+                                     input_size=self.config.input_size),
+            RotateTensor(max_angle=self.config.max_angle),
+            BinarizeTensor()
+        ])
+
+        # - padding
+        self.transform3 = transforms.Compose([
+            SimplifyTensor(),
+            PaddingTensor(self.config.input_size,
+                          fill_value=self.config.fill_value),
+            BinarizeTensor(),
+            EndTensor()
+        ])
+
+        view1 = self.transform1(sample)
+        view2 = self.transform2(sample)
+
+        if self.config.mode == "decoder":
+            view3 = self.transform3(sample)
+            views = torch.stack((view1, view2, view3), dim=0)
+        else:
+            views = torch.stack((view1, view2), dim=0)
+
+        tuple_with_path = (views, filenames)
+        return tuple_with_path
+
+
 class ContrastiveDataset_WithLabels_WithFoldLabels():
     """Custom dataset that includes images and labels
 
@@ -732,7 +827,7 @@ def extract_train_val(normal_subjects, train_val_subjects, normal_data):
     return train_val_data
 
 
-def extract_data(config):
+def extract_data(npy_file_path, config):
     """Extracts train_val and test data and subjects from npy and csv file
 
     Args:
@@ -742,8 +837,9 @@ def extract_data(config):
     """
 
     # Reads numpy data and subject list
+    # normal_data corresponds to all data ('normal' != 'benchmark')
     normal_data, normal_subjects = \
-        read_numpy_data_and_subject_csv(config.numpy_all, config.subjects_all)
+        read_numpy_data_and_subject_csv(npy_file_path, config.subjects_all)
 
     # Gets train_val subjects as dataframe from csv file
     train_val_subjects = read_train_val_csv(config.train_val_csv_file)
@@ -762,6 +858,27 @@ def extract_data(config):
     return train_val_subjects, train_val_data, test_subjects, test_data
 
 
+def extract_train_val_dataset(train_val_dataset, partition, seed):
+    """Extracts traing and validation dataset from a train_val dataset"""
+    # Split training/val set into train and validation set
+    size_partitions = [round(i * (len(train_val_dataset))) for i in partition]
+
+    log.info(f"size partitions = {size_partitions}")
+
+    # Fixates seed if it is defined
+    if seed:
+        torch.manual_seed(seed)
+        log.info(f"Seed for train/val split is {seed}")
+    else:
+        log.info("Train/val split has not fixed seed")
+
+    train_dataset, val_dataset = torch.utils.data.random_split(
+        train_val_dataset,
+        size_partitions)
+
+    return train_dataset, val_dataset
+
+
 def create_sets_pure_contrastive(config, mode='training'):
     """Creates train, validation and test sets
 
@@ -773,9 +890,16 @@ def create_sets_pure_contrastive(config, mode='training'):
     """
 
     train_val_subjects, train_val_data, test_subjects, test_data = \
-        extract_data(config)
+        extract_data(config.numpy_all, config)
 
-    # Creates the dataset from these tensors by doing some preprocessing
+    if config.foldlabel == True:
+        _, train_val_foldlabel_data, _, test_foldlabel_data = \
+            extract_data(config.foldlabel_all, config)
+        log.info("foldlabel data loaded")
+    else:
+        log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
+
+    # Creates the dataset from these data by doing some preprocessing
     if mode == 'evaluation':
         test_dataset = ContrastiveDataset_Visualization(
             filenames=test_subjects,
@@ -786,31 +910,31 @@ def create_sets_pure_contrastive(config, mode='training'):
             array=train_val_data,
             config=config)
     else:
-        test_dataset = ContrastiveDataset(
-            filenames=test_subjects,
-            array=test_data,
-            config=config)
-        train_val_dataset = ContrastiveDataset(
-            filenames=train_val_subjects,
-            array=train_val_data,
-            config=config)
+        if config.foldlabel == True:
+            test_dataset = ContrastiveDataset_WithFoldLabels(
+                filenames=test_subjects,
+                array=test_data,
+                foldlabel_array=test_foldlabel_data,
+                config=config)
+            train_val_dataset = ContrastiveDataset_WithFoldLabels(
+                filenames=train_val_subjects,
+                array=train_val_data,
+                foldlabel_array=train_val_foldlabel_data,
+                config=config)   
+        else:
+            test_dataset = ContrastiveDataset(
+                filenames=test_subjects,
+                array=test_data,
+                config=config)
+            train_val_dataset = ContrastiveDataset(
+                filenames=train_val_subjects,
+                array=train_val_data,
+                config=config)  
 
-    # Split training/val set into train, val set
-    partition = config.partition
 
-    size_partitions = [round(i * (len(train_val_dataset))) for i in partition]
+    train_dataset, val_dataset = \
+        extract_train_val_dataset(train_val_dataset,
+                                  config.partition,
+                                  config.seed)
 
-    log.info(f"size partitions = {size_partitions}")
-
-    # à vérifier comment le rendre random
-    if config.seed:
-        torch.manual_seed(config.seed)
-        log.info(f"Seed for train/val split is {config.seed}")
-    else:
-        log.info("Train/val split has not fixed seed")
-
-    train_set, val_set = torch.utils.data.random_split(
-        train_val_dataset,
-        size_partitions)
-
-    return train_set, val_set, test_dataset, train_val_dataset
+    return train_dataset, val_dataset, test_dataset, train_val_dataset
