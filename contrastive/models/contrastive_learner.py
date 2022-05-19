@@ -107,9 +107,10 @@ class ContrastiveLearner(DenseNet):
 
     def configure_optimizers(self):
         """Adam optimizer"""
-        optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()),
-                                     lr=self.config.lr,
-                                     weight_decay=self.config.weight_decay)
+        optimizer = torch.optim.Adam(\
+                        filter(lambda p: p.requires_grad, self.parameters()),
+                        lr=self.config.lr,
+                        weight_decay=self.config.weight_decay)
         return optimizer
 
     def nt_xen_loss(self, z_i, z_j):

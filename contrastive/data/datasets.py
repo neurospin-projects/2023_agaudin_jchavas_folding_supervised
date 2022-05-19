@@ -878,8 +878,18 @@ def extract_train_val_dataset(train_val_dataset, partition, seed):
 
     return train_dataset, val_dataset
 
+def check_if_same_subjects(subjects_1, subjects_2, keyword):
+    """Checks if the dataframes subjects_1 and subjects_2 are equal"""
+    if not subjects_1.equals(subjects_2):
+        raise ValueError(f"Both {keyword} subject dataframes are not equal")
 
-def create_sets_pure_contrastive(config, mode='training'):
+def check_if_same_shape(arr1, arr2, keyword):
+    """Checks if the two numpy arrays have the same shape"""
+    if not (arr1.shape == arr2.shape):
+        raise ValueError(f"Both {keyword} numpy arrays "
+                          "don't have the same shape")
+
+def create_sets_pure_contrastive(config):
     """Creates train, validation and test sets
 
     Args:
@@ -889,18 +899,31 @@ def create_sets_pure_contrastive(config, mode='training'):
         train_set, val_set, test_set (tuple)
     """
 
+    # Loads and separates in train_val/test skeleton crops
     train_val_subjects, train_val_data, test_subjects, test_data = \
         extract_data(config.numpy_all, config)
 
+    # Loads and separates in train_val/test set foldlabels if requested
     if config.foldlabel == True:
-        _, train_val_foldlabel_data, _, test_foldlabel_data = \
+        train_val_foldlabel_subjects, train_val_foldlabel_data, \
+        test_foldlabel_subjects, test_foldlabel_data = \
             extract_data(config.foldlabel_all, config)
         log.info("foldlabel data loaded")
+        check_if_same_subjects(train_val_subjects, 
+                               train_val_foldlabel_subjects, "train_val")
+        check_if_same_subjects(test_subjects,
+                               test_foldlabel_subjects, "test")
+        check_if_same_shape(train_val_data,
+                            train_val_foldlabel_data, "train_val")
+        check_if_same_shape(test_data,
+                            test_foldlabel_data, "test")
     else:
         log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
 
+
+
     # Creates the dataset from these data by doing some preprocessing
-    if mode == 'evaluation':
+    if config.mode == 'evaluation':
         test_dataset = ContrastiveDataset_Visualization(
             filenames=test_subjects,
             array=test_data,
