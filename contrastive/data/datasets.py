@@ -203,7 +203,7 @@ class ContrastiveDataset_WithLabels():
 
         sample = get_sample(self.arr, idx, 'float32')
         filename = get_filename(self.filenames, idx)
-        labels = get_labels(self.labels, idx)
+        labels = get_label(self.labels, idx)
 
         self.transform1 = transform_only_padding(self.config.input_size,
                                                  self.config.fill_value)

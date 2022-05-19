@@ -38,6 +38,7 @@ Tools to create datasets
 from contrastive.utils.logs import set_file_logger
 
 from contrastive.data.datasets import ContrastiveDataset
+from contrastive.data.datasets import ContrastiveDataset_Visualization
 from contrastive.data.datasets import ContrastiveDataset_WithLabels
 from contrastive.data.datasets import ContrastiveDataset_WithFoldLabels
 from contrastive.data.datasets import \
@@ -188,6 +189,7 @@ def create_sets_with_labels(config):
             test_dataset = ContrastiveDataset_WithLabels(
                 filenames=test_subjects,
                 array=test_data,
+                labels=subject_labels,
                 config=config)
             train_val_dataset = ContrastiveDataset_WithLabels(
                 filenames=train_val_subjects,
