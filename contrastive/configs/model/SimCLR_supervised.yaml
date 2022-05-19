@@ -1,5 +1,6 @@
 # @package _global_
 model: SimCLR_supervised
+with_labels: True
 input_size: (1, 20, 48, 48)
 patch_size: [1, 10, 24, 24]
 depth_decoder: 3

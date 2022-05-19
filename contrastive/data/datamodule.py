@@ -38,8 +38,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data import RandomSampler
 
 from contrastive.data.datasets import create_sets_with_labels
-from contrastive.data.datasets import create_sets_with_labels_with_foldlabels
-from contrastive.data.datasets import create_sets_pure_contrastive
+from contrastive.data.datasets import create_sets_without_labels
 
 
 class DataModule(pl.LightningDataModule):
@@ -51,12 +50,12 @@ class DataModule(pl.LightningDataModule):
         self.config = config
 
     def setup(self, stage=None, mode=None):
-        if self.config.model == 'SimCLR':
-            self.dataset_train, self.dataset_val, self.dataset_test, _ = \
-                create_sets_pure_contrastive(self.config)
-        elif self.config.model == 'SimCLR_supervised':
+        if self.config.with_labels == True:
             self.dataset_train, self.dataset_val, self.dataset_test, _ = \
                 create_sets_with_labels(self.config)
+        else:
+            self.dataset_train, self.dataset_val, self.dataset_test, _ = \
+                create_sets_without_labels(self.config)
 
 
 class DataModule_Learning(DataModule):
