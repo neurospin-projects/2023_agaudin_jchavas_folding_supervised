@@ -58,8 +58,9 @@ from torchsummary import summary
 from contrastive.data.datamodule import DataModule
 from contrastive.data.datamodule import DataModule_Visualization
 from contrastive.evaluation.clustering import Cluster
-from contrastive.models.contrastive_learner_visualization \
-    import ContrastiveLearner_Visualization
+from contrastive.models.contrastive_learner import ContrastiveLearner
+#from contrastive.models.contrastive_learner_visualization \
+#    import ContrastiveLearner_Visualization
 from contrastive.utils.config import process_config
 from contrastive.utils.plots.visualize_tsne import plot_tsne
 
@@ -80,6 +81,7 @@ We call:
 def postprocessing_results(config: DictConfig) -> None:
     print(OmegaConf.to_yaml(config))
     config = process_config(config)
+    print("Entrée validate and clusterize")
 
     # Sets seed for pseudo-random number generators
     # in: pytorch, numpy, python.random
@@ -93,11 +95,11 @@ def postprocessing_results(config: DictConfig) -> None:
         plt.show()
         plt.pause(0.001)
 
-    data_module = DataModule_Visualization(config)
+    data_module = DataModule(config)
     data_module.setup(stage='validate')
 
     # Show the views of the first skeleton after each epoch
-    model = ContrastiveLearner_Visualization(config,
+    model = ContrastiveLearner(config,
                                              sample_data=data_module)
     model = model.load_from_checkpoint(config.checkpoint_path,
                                        config=config,
@@ -137,6 +139,7 @@ def postprocessing_results(config: DictConfig) -> None:
 
     # log.info("knn examples done")
 
+    print("Start tSNE")
     # Makes Kmeans and represents it on a t-SNE plot
     X_tsne = model.compute_tsne(
         data_module.train_val_dataloader(),
@@ -182,6 +185,8 @@ def postprocessing_results(config: DictConfig) -> None:
         "temperature": config.temperature})
 
     # Saves results in files
+    print("json position")
+    print(f"{config.analysis_path}/result.json")
     with open(f"{config.analysis_path}/result.json", 'w') as fp:
         json.dump(result_dict, fp)
     torch.save(embeddings, f"{config.analysis_path}/train_val_embeddings.pt")

@@ -12,7 +12,7 @@ temperature: 0.1
 sigma_labels: 0.1
 sigma: 5
 proportion_pure_contrastive: 1.0
-lr: 2e-4
+lr: 4e-4
 weight_decay: 5e-5
 max_epochs: 300
 early_stopping_patience: 10

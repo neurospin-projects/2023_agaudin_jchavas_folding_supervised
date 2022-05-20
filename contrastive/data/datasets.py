@@ -538,56 +538,65 @@ def create_sets_with_labels(config, mode='training'):
         train_set, val_set, test_set (tuple)
     """
 
+    print("CREATE SET WITH LABELS")
     # Loads crops from all subjects
-    pickle_file_path = config.pickle_normal
+    numpy_all_path = config.numpy_all
     log.info("Current directory = " + os.getcwd())
-    normal_data = pd.read_pickle(pickle_file_path)
-    log.info(f"normal_data head = {normal_data.head()}")
+    normal_data = np.load(numpy_all_path, mmap_mode='r')
+    #log.info(f"normal_data head = {normal_data.[:5]}") # too long to print
 
-    # Gets subjects as list
-    normal_subjects = normal_data.columns.tolist()
+    # Gets subjects as list (/!\ not as a list anymore)
+    normal_subjects = pd.read_csv(config.subjects_all)
+    print(normal_subjects.head())
 
     # Gets labels for all subjects
-    subject_labels_file = config.subject_labels_file
+    subject_labels_file = config.subjects_all
     subject_labels = pd.read_csv(subject_labels_file)
     log.debug(f"Subject_labels head = {subject_labels.head()}")
-    log.info(f"Labels to keep = {config.label_names} of type {type(config.label_names)}")
-    
+    #log.info(f"Labels to keep = {config.label_names} of type {type(config.label_names)}")
+
     # subject_labels must have a column named 'Subject'
     # We here extract from subject_labels the column 'Subject'
     # and all columns identified by config.label_names
     desired_columns = ['Subject',]
-    desired_columns.extend(config.label_names)
-    subject_labels = subject_labels[desired_columns]
-    subject_labels = subject_labels.replace(['M', 'F'], [0, 1])
-    subject_labels = subject_labels.astype({'Subject': str})
-    subject_labels = subject_labels.set_index('Subject')
-    subject_labels = subject_labels.dropna()
-    log.info(f"Head of subject_labels:\n{subject_labels.head()}")
+    if "label_names" in config.keys():
+        desired_columns.extend(config.label_names)
+        subject_labels = subject_labels[desired_columns]
+        subject_labels = subject_labels.replace(['M', 'F'], [0, 1])
+        subject_labels = subject_labels.astype({'Subject': str})
+        subject_labels = subject_labels.set_index('Subject')
+        subject_labels = subject_labels.dropna()
+        log.info(f"Head of subject_labels:\n{subject_labels.head()}")
 
     # Gets only normal_subjects that have numeric values for desired properties
-    subject_labels_list = subject_labels.index.tolist()
-    normal_subjects = list(set(normal_subjects).intersection(subject_labels_list))
+    #subject_labels_list = subject_labels.index.tolist()
+    #normal_subjects = list(set(normal_subjects).intersection(subject_labels_list))
     
     # Gets train_val subjects from csv file
     # It is a CSV file without column name
     # We add here a column name 'ID'
-    train_val_subjects = pd.read_csv(config.train_val_csv_file, names=['ID']).T
-    train_val_subjects = train_val_subjects.values[0].tolist()
-    train_val_subjects = list(map(str, train_val_subjects))
-    train_val_subjects = list(set(normal_subjects).intersection(train_val_subjects))
-    log.info(f"train_val_subjects[:5] = {train_val_subjects[:5]}")
-    log.debug(f"train_val_subjects = {train_val_subjects}")
+    train_val_subjects = pd.read_csv(config.train_val_csv_file, names=['ID'])
+    print("train_val_subjects stuff")
+    print(train_val_subjects.head())
+    print(train_val_subjects.columns)
+    #train_val_subjects = train_val_subjects.values[0].tolist()
+    #train_val_subjects = list(map(str, train_val_subjects))
+    #train_val_subjects = list(set(normal_subjects).intersection(train_val_subjects))
+    #log.info(f"train_val_subjects[:5] = {train_val_subjects[:5]}")
+    #log.debug(f"train_val_subjects = {train_val_subjects}")
 
     # Determines test dataframe
-    test_subjects = list(set(normal_subjects).difference(train_val_subjects))
+    test_subjects = normal_subjects[~normal_subjects.Subject.isin(
+        train_val_subjects.ID)].index
     len_test = len(test_subjects)
     log.info(f"test_subjects[:5] = {test_subjects[:5]}")
     log.debug(f"test_subjects = {test_subjects}")
     log.info(f"Number of test subjects = {len_test}")
 
-    test_data = normal_data[normal_data.columns.intersection(test_subjects)]
+    test_data = normal_data[test_subjects]
     test_labels = subject_labels.loc[test_subjects]
+    print("head test_labels", test_labels[:5])
+    print("test_subjects is the indices of test_labels")
 
     # Cuts train_val set to requested number
     if config.nb_subjects == _ALL_SUBJECTS:
@@ -600,9 +609,10 @@ def create_sets_with_labels(config, mode='training'):
     log.info(f"length of train/val dataframe: {len_train_val}")
 
     # Determines train/val dataframe
-    train_val_data = normal_data[normal_data.columns.intersection(
-                                 train_val_subjects)]
-    train_val_labels = subject_labels.loc[train_val_subjects]
+    train_val_subjects_index = normal_subjects[normal_subjects.Subject.isin(
+                                train_val_subjects.ID)].index
+    train_val_data = normal_data[train_val_subjects_index]
+    train_val_labels = subject_labels.loc[train_val_subjects_index]
 
     # Creates the dataset from these tensors by doing some preprocessing
     if mode == 'visualization':
@@ -651,6 +661,7 @@ def create_sets_pure_contrastive(config, mode='training'):
     Returns:
         train_set, val_set, test_set (tuple)
     """
+    # coded with numpy (not pickle anymore)
 
     # Loads crops from all subjects
     numpy_all_path = config.numpy_all
@@ -720,7 +731,7 @@ def create_sets_pure_contrastive(config, mode='training'):
     log.info([round(i * (len(train_val_dataset))) for i in partition])
 
     # à vérifier comment le rendre random
-    np.random.seed(config.seed)
+    np.random.seed(config.seed) # numpy seeds have no effect on torch randomness. Use torch.manual_seed(0) instead
     train_set, val_set = torch.utils.data.random_split(
         train_val_dataset,
         [round(i * (len(train_val_dataset))) for i in partition])

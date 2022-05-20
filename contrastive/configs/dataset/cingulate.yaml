@@ -1,5 +1,5 @@
 # @package _global_
-# pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton.pkl
+pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton.pkl
 numpy_all: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton.npy
 subjects_all: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton_subject.csv
 #pickle_foldlabel: /host/home/jc225751/Runs/38_cingulate_with_foldlabels/Input/Processed_External/crops/2mm/CINGULATE/mask/Rlabel.pkl
