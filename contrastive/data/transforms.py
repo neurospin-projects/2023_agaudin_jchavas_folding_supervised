@@ -46,41 +46,40 @@ from contrastive.augmentations import RotateTensor
 from contrastive.augmentations import SimplifyTensor
 from contrastive.augmentations import RemoveRandomBranchTensor
 
-def transform_only_padding(input_size, fill_value):
+def transform_only_padding(config):
     return \
         transforms.Compose([
             SimplifyTensor(),
-            PaddingTensor(shape=input_size,
-                          fill_value=fill_value),
+            PaddingTensor(shape=config.input_size,
+                          fill_value=config.fill_value),
             BinarizeTensor(),
             EndTensor()
         ])
 
 
-def transform_foldlabel(sample_foldlabel,
-                        input_size, fill_value,
-                        max_angle, percentage):
+def transform_foldlabel(sample_foldlabel, percentage, config):
     return \
         transforms.Compose([
             SimplifyTensor(),
-            PaddingTensor(shape=input_size, fill_value=fill_value),
+            PaddingTensor(shape=config.input_size,
+                          fill_value=config.fill_value),
             RemoveRandomBranchTensor(sample_foldlabel=sample_foldlabel,
                                      percentage=percentage,
-                                     input_size=input_size),
-            RotateTensor(max_angle=max_angle),
+                                     input_size=config.input_size),
+            RotateTensor(max_angle=config.max_angle),
             BinarizeTensor()
         ])
 
 
-def transform_no_foldlabel(input_size, fill_value, max_angle,
-                           from_skeleton, keep_bottom, patch_size):
+def transform_no_foldlabel(from_skeleton, config):
     return \
         transforms.Compose([
             SimplifyTensor(),
-            PaddingTensor(shape=input_size, fill_value=fill_value),
+            PaddingTensor(shape=config.input_size,
+                          fill_value=config.fill_value),
             PartialCutOutTensor_Roll(from_skeleton=from_skeleton,
-                                     keep_bottom=keep_bottom,
-                                     patch_size=patch_size),
-            RotateTensor(max_angle=max_angle),
+                                     keep_bottom=config.keep_bottom,
+                                     patch_size=config.patch_size),
+            RotateTensor(max_angle=config.max_angle),
             BinarizeTensor()
         ])

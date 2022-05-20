@@ -76,6 +76,7 @@ def get_filename(filenames, idx):
 
     return filename
 
+
 def get_label(labels, idx):
     """"Returns labels corresponding to indices idx
     
@@ -86,6 +87,7 @@ def get_label(labels, idx):
     log.debug(f"{idx} in labels = {idx in labels.index}")
 
     return label
+
 
 def padd_foldlabel(sample_foldlabel, input_size):
     """Padds foldlabel according to input_size"""
@@ -130,29 +132,18 @@ class ContrastiveDataset():
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        sample = get_sample(self.arr, idx, 'float32')
+        # Gets data corresponding to idx
+        sample   = get_sample(self.arr, idx, 'float32')
         filename = get_filename(self.filenames, idx)
 
-        self.transform1 = transform_no_foldlabel(self.config.input_size,
-                                                 self.config.fill_value,
-                                                 self.config.max_angle, 
-                                                 True,
-                                                 self.config.keep_bottom, 
-                                                 self.config.patch_size)
+        # Computes the transforms
+        self.transform1 = transform_no_foldlabel(from_skeleton=True,
+                                                 config=self.config)
+        self.transform2 = transform_no_foldlabel(from_skeleton=False,
+                                                 config=self.config)
+        self.transform3 = transform_only_padding(self.config)
 
-        # - padding
-        # - + random rotation
-        self.transform2 = transform_no_foldlabel(self.config.input_size,
-                                                 self.config.fill_value,
-                                                 self.config.max_angle, 
-                                                 False,
-                                                 self.config.keep_bottom, 
-                                                 self.config.patch_size)
-
-        # - padding
-        self.transform3 = transform_only_padding(self.config.input_size,
-                                                 self.config.fill_value)
-
+        # Computes the views
         view1 = self.transform1(sample)
         view2 = self.transform2(sample)
 
@@ -164,6 +155,7 @@ class ContrastiveDataset():
 
         tuple_with_path = (views, filename)
         return tuple_with_path
+
 
 class ContrastiveDataset_WithLabels():
     """Custom dataset that includes images and labels
@@ -201,17 +193,19 @@ class ContrastiveDataset_WithLabels():
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        sample = get_sample(self.arr, idx, 'float32')
+        # Gets data corresponding to idx
+        sample   = get_sample(self.arr, idx, 'float32')
         filename = get_filename(self.filenames, idx)
-        labels = get_label(self.labels, idx)
+        labels   = get_label(self.labels, idx)
 
-        self.transform1 = transform_only_padding(self.config.input_size,
-                                                 self.config.fill_value)
-        self.transform2 = transform_only_padding(self.config.input_size,
-                                                 self.config.fill_value)
-        self.transform3 = transform_only_padding(self.config.input_size,
-                                                 self.config.fill_value)
+        # Computes the transforms
+        self.transform1 = transform_no_foldlabel(from_skeleton=True,
+                                                 config=self.config)
+        self.transform2 = transform_no_foldlabel(from_skeleton=False,
+                                                 config=self.config)
+        self.transform3 = transform_only_padding(self.config)
 
+        # Computes the views
         view1 = self.transform1(sample)
         view2 = self.transform2(sample)
 
@@ -261,32 +255,25 @@ class ContrastiveDataset_WithFoldLabels():
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        log.debug(f"index = {idx}")
+        # Gets data corresponding to idx
         sample = get_sample(self.arr, idx, 'float32')
         sample_foldlabel = get_sample(self.foldlabel_arr, idx, 'int32')
         filename = get_filename(self.filenames, idx)
 
         # Padds foldlabel
         sample_foldlabel = padd_foldlabel(sample_foldlabel,
-                                          self.config.input_size)
+                                          self.config)
 
+        # Computes the transforms
         self.transform1 = transform_foldlabel(sample_foldlabel,
-                                              self.config.input_size,
-                                              self.config.fill_value,
-                                              self.config.max_angle,
-                                              self.config.percentage_1)
-
-        # - padding
-        # - + random rotation
+                                              self.config.percentage_1,
+                                              self.config)
         self.transform2 = transform_foldlabel(sample_foldlabel,
-                                              self.config.input_size,
-                                              self.config.fill_value,
-                                              self.config.max_angle,
-                                              self.config.percentage_2)
-        # - padding
-        self.transform3 = transform_only_padding(self.config.input_size,
-                                                 self.config.fill_value)
+                                              self.config.percentage_2,
+                                              self.config)
+        self.transform3 = transform_only_padding(self.config)
 
+        # Computes the views
         view1 = self.transform1(sample)
         view2 = self.transform2(sample)
 
@@ -337,33 +324,27 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        log.debug(f"index = {idx}")
+        # Gets the data corresponding to idx
         sample = get_sample(self.arr, idx, 'float32')
         sample_foldlabel = get_sample(self.foldlabel_arr, idx, 'int32')
         labels = get_label(self.labels, idx)
         filename = get_filename(self.filenames, idx)
 
-        # Padd foldlabel
+        # Padds foldlabel
         sample_foldlabel = padd_foldlabel(sample_foldlabel,
                                           self.config.input_size)
 
+        # Computes the transforms
         self.transform1 = transform_foldlabel(sample_foldlabel,
-                                              self.config.input_size,
-                                              self.config.fill_value,
-                                              self.config.max_angle,
-                                              self.config.percentage_1)
-
-        # - padding
-        # - + random rotation
+                                              self.config.percentage_1,
+                                              self.config)
         self.transform2 = transform_foldlabel(sample_foldlabel,
-                                              self.config.input_size,
-                                              self.config.fill_value,
-                                              self.config.max_angle,
-                                              self.config.percentage_2)
-        # - padding
+                                              self.config.percentage_1,
+                                              self.config)
         self.transform3 = transform_only_padding(self.config.input_size,
                                                  self.config.fill_value)
 
+        # Computes the views
         view1 = self.transform1(sample)
         view2 = self.transform2(sample)
 
@@ -411,9 +392,12 @@ class ContrastiveDataset_Visualization():
         """
         if torch.is_tensor(idx):
             idx = idx.tolist()
+
+        # Gets the data corresponding to idx
         sample = get_sample(self.arr, idx, 'float32')
         filename = self.filenames[idx]
 
+        # Computes the transforms
         self.transform1 = transform_only_padding(self.config.input_size,
                                                  self.config.fill_value)
         self.transform2 = transform_only_padding(self.config.input_size,
@@ -421,6 +405,7 @@ class ContrastiveDataset_Visualization():
         self.transform3 = transform_only_padding(self.config.input_size,
                                                  self.config.fill_value)
 
+        # Computes the views
         view1 = self.transform1(sample)
         view2 = self.transform2(sample)
 
