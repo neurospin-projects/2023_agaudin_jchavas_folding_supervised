@@ -178,11 +178,13 @@ def create_sets_with_labels(config):
             test_dataset = ContrastiveDataset_WithLabels_WithFoldLabels(
                 filenames=test_subjects,
                 array=test_data,
+                labels=subject_labels,
                 foldlabel_array=test_foldlabel_data,
                 config=config)
             train_val_dataset = ContrastiveDataset_WithLabels_WithFoldLabels(
                 filenames=train_val_subjects,
                 array=train_val_data,
+                labels=subject_labels,
                 foldlabel_array=train_val_foldlabel_data,
                 config=config)   
         else:
@@ -194,6 +196,7 @@ def create_sets_with_labels(config):
             train_val_dataset = ContrastiveDataset_WithLabels(
                 filenames=train_val_subjects,
                 array=train_val_data,
+                labels=subject_labels,
                 config=config)  
 
     train_dataset, val_dataset = \
