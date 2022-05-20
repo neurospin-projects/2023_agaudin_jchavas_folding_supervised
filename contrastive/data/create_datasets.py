@@ -65,12 +65,12 @@ def create_sets_without_labels(config):
     # Loads and separates in train_val/test set foldlabels if requested
     if config.foldlabel == True:
         train_val_foldlabel_subjects, train_val_foldlabel_data, \
-        test_foldlabel_subjects, test_foldlabel_data = \
+            test_foldlabel_subjects, test_foldlabel_data = \
             extract_data(config.foldlabel_all, config)
         log.info("foldlabel data loaded")
 
         # Makes some sanity checks
-        check_if_same_subjects(train_val_subjects, 
+        check_if_same_subjects(train_val_subjects,
                                train_val_foldlabel_subjects, "train_val")
         check_if_same_subjects(test_subjects,
                                test_foldlabel_subjects, "test")
@@ -80,8 +80,6 @@ def create_sets_without_labels(config):
                             test_foldlabel_data, "test")
     else:
         log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
-
-
 
     # Creates the dataset from these data by doing some preprocessing
     if config.mode == 'evaluation':
@@ -104,7 +102,7 @@ def create_sets_without_labels(config):
                 filenames=train_val_subjects,
                 array=train_val_data,
                 foldlabel_array=train_val_foldlabel_data,
-                config=config)   
+                config=config)
         else:
             test_dataset = ContrastiveDataset(
                 filenames=test_subjects,
@@ -113,8 +111,7 @@ def create_sets_without_labels(config):
             train_val_dataset = ContrastiveDataset(
                 filenames=train_val_subjects,
                 array=train_val_data,
-                config=config)  
-
+                config=config)
 
     train_dataset, val_dataset = \
         extract_train_val_dataset(train_val_dataset,
@@ -135,24 +132,32 @@ def create_sets_with_labels(config):
 
     # Gets labels for all subjects
     # Column subject_column_name is renamed 'Subject'
-    subject_labels = extract_labels(config.subject_labels_file,
-                                    config.subject_column_name,
-                                    config.label_names)
+    subject_labels = read_labels(config.subject_labels_file,
+                                 config.subject_column_name,
+                                 config.label_names)
 
     # Loads and separates in train_val/test skeleton crops
-    train_val_subjects, train_val_data, test_subjects, test_data = \
+    train_val_subjects, train_val_data, train_val_labels,\
+    test_subjects, test_data, test_labels = \
         extract_data_with_labels(config.numpy_all, subject_labels, config)
+
+    # Makes some sanity checks on ordering of label subjects
+    check_if_same_subjects(train_val_subjects,
+                           train_val_labels[['Subject']], "train_val labels")
+    check_if_same_subjects(test_subjects,
+                           test_labels[['Subject']], "test labels")
 
     # Loads and separates in train_val/test set foldlabels if requested
     if config.foldlabel == True:
         train_val_foldlabel_subjects, train_val_foldlabel_data, \
-        test_foldlabel_subjects, test_foldlabel_data = \
+        train_val_labels, test_foldlabel_subjects, \
+        test_foldlabel_data, test_labels = \
             extract_data_with_labels(config.foldlabel_all, subject_labels,
                                      config)
         log.info("foldlabel data loaded")
 
         # Makes some sanity checks
-        check_if_same_subjects(train_val_subjects, 
+        check_if_same_subjects(train_val_subjects,
                                train_val_foldlabel_subjects, "train_val")
         check_if_same_subjects(test_subjects,
                                test_foldlabel_subjects, "test")
@@ -178,26 +183,26 @@ def create_sets_with_labels(config):
             test_dataset = ContrastiveDataset_WithLabels_WithFoldLabels(
                 filenames=test_subjects,
                 array=test_data,
-                labels=subject_labels,
+                labels=test_labels,
                 foldlabel_array=test_foldlabel_data,
                 config=config)
             train_val_dataset = ContrastiveDataset_WithLabels_WithFoldLabels(
                 filenames=train_val_subjects,
                 array=train_val_data,
-                labels=subject_labels,
+                labels=train_val_labels,
                 foldlabel_array=train_val_foldlabel_data,
-                config=config)   
+                config=config)
         else:
             test_dataset = ContrastiveDataset_WithLabels(
                 filenames=test_subjects,
                 array=test_data,
-                labels=subject_labels,
+                labels=test_labels,
                 config=config)
             train_val_dataset = ContrastiveDataset_WithLabels(
                 filenames=train_val_subjects,
                 array=train_val_data,
-                labels=subject_labels,
-                config=config)  
+                labels=train_val_labels,
+                config=config)
 
     train_dataset, val_dataset = \
         extract_train_val_dataset(train_val_dataset,

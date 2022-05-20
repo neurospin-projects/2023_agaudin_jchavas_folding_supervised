@@ -68,7 +68,7 @@ def get_filename(filenames, idx):
     
     filenames: dataframe with column name 'ID'
     """
-    filename = filenames.ID[idx]
+    filename = filenames.Subject[idx]
     log.debug(f"filenames[:5] = {filenames[:5]}")
     log.debug(f"len(filenames) = {len(filenames)}")
     log.debug(f"idx = {idx}, filename[idx] = {filename}")
@@ -82,11 +82,20 @@ def get_label(labels, idx):
     
     labels: dataframe with column name 'Subject'
     """
-    label = labels.values[idx]
+    label = labels.drop(columns='Subject').values[idx]
     log.debug(f"idx = {idx}, labels[idx] = {label}")
     log.debug(f"{idx} in labels = {idx in labels.index}")
 
     return label
+
+
+def check_consistency(filename, labels, idx):
+    """Checks if filenames are identical"""
+    filename_label = labels.Subject[idx]
+    if filename_label != filename:
+        raise ValueError("Filenames are not consitent between data and labels"
+                         f"For idx = {idx}, filename = {filename}"
+                         f"and filename_label = {filename_label}")
 
 
 def padd_foldlabel(sample_foldlabel, input_size):
@@ -196,6 +205,7 @@ class ContrastiveDataset_WithLabels():
         # Gets data corresponding to idx
         sample   = get_sample(self.arr, idx, 'float32')
         filename = get_filename(self.filenames, idx)
+        check_consistency(filename, self.labels, idx)
         labels   = get_label(self.labels, idx)
 
         # Computes the transforms
@@ -262,7 +272,7 @@ class ContrastiveDataset_WithFoldLabels():
 
         # Padds foldlabel
         sample_foldlabel = padd_foldlabel(sample_foldlabel,
-                                          self.config)
+                                          self.config.input_size)
 
         # Computes the transforms
         self.transform1 = transform_foldlabel(sample_foldlabel,
@@ -341,8 +351,7 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
         self.transform2 = transform_foldlabel(sample_foldlabel,
                                               self.config.percentage_1,
                                               self.config)
-        self.transform3 = transform_only_padding(self.config.input_size,
-                                                 self.config.fill_value)
+        self.transform3 = transform_only_padding(self.config)
 
         # Computes the views
         view1 = self.transform1(sample)
@@ -398,12 +407,9 @@ class ContrastiveDataset_Visualization():
         filename = self.filenames[idx]
 
         # Computes the transforms
-        self.transform1 = transform_only_padding(self.config.input_size,
-                                                 self.config.fill_value)
-        self.transform2 = transform_only_padding(self.config.input_size,
-                                                 self.config.fill_value)
-        self.transform3 = transform_only_padding(self.config.input_size,
-                                                 self.config.fill_value)
+        self.transform1 = transform_only_padding(self.config)
+        self.transform2 = transform_only_padding(self.config)
+        self.transform3 = transform_only_padding(self.config)
 
         # Computes the views
         view1 = self.transform1(sample)

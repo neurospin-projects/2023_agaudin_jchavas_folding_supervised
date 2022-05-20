@@ -95,9 +95,9 @@ def read_train_val_csv(csv_file_path: str) -> pd.DataFrame:
     """Reads train_val csv.
     
     This csv has a unisque column.
-    The resulting dataframe gives the name 'ID' to this column
+    The resulting dataframe gives the name 'Subject' to this column
     """
-    train_val_subjects = pd.read_csv(csv_file_path, names=['ID'])
+    train_val_subjects = pd.read_csv(csv_file_path, names=['Subject'])
     log.debug(f"train_val_subjects = {train_val_subjects}")
     return train_val_subjects
 
@@ -109,7 +109,7 @@ def extract_test(normal_subjects, train_val_subjects, normal_data):
     in train_val_subjects.
     normal_data is a numpy array corresponding to normal_subjects."""
     test_subjects_index = normal_subjects[~normal_subjects.Subject.isin(
-        train_val_subjects.ID)].index
+        train_val_subjects.Subject)].index
     test_subjects = normal_subjects.loc[test_subjects_index]
     len_test = len(test_subjects_index)
     log.debug(f"length of test = {len_test}")
@@ -140,10 +140,22 @@ def extract_train_val(normal_subjects, train_val_subjects, normal_data):
     log.info(f"Length of train/val dataframe = {len(train_val_subjects)}")
     # Determines train/val dataframe
     train_val_subjects_index = normal_subjects[normal_subjects.Subject.isin(
-                                train_val_subjects.ID)].index
+                                train_val_subjects.Subject)].index
     # /!\ copy the data to construct train_val_data
     train_val_data = normal_data[train_val_subjects_index]
     return train_val_data
+
+
+def extract_labels(subject_labels, subjects):
+    """Extracts subject_labels corresponding to test_subject
+    
+    For this, we compare the subjects listed in column 'Subject'
+    """
+    selected_subject_labels = subject_labels[subject_labels.Subject.isin(
+                                subjects.Subject)]
+    selected_subject_labels = \
+        sort_labels_according_to_normal(selected_subject_labels, subjects)
+    return selected_subject_labels
 
 
 def extract_data(npy_file_path, config):
@@ -164,7 +176,7 @@ def extract_data(npy_file_path, config):
     train_val_subjects = read_train_val_csv(config.train_val_csv_file)
 
     # Extracts test subject names and corresponding data
-    test_subjects, test_data = \
+    test_subjects, test_data, test_subjects_index = \
         extract_test(normal_subjects, train_val_subjects, normal_data)
 
     # Restricts train_val length
@@ -200,19 +212,21 @@ def extract_train_val_dataset(train_val_dataset, partition, seed):
 
 def check_if_same_subjects(subjects_1, subjects_2, keyword):
     """Checks if the dataframes subjects_1 and subjects_2 are equal"""
-    if not subjects_1.equals(subjects_2):
+    if not subjects_1.reset_index(drop=True).equals(subjects_2):
+        log.error(f"subjects_1 head = {subjects_1.head()}")
+        log.error(f"subjects_2 head = {subjects_2.head()}")
         raise ValueError(f"Both {keyword} subject dataframes are not equal")
 
 
 def check_if_same_shape(arr1, arr2, keyword):
     """Checks if the two numpy arrays have the same shape"""
     if not (arr1.shape == arr2.shape):
+        log.error(f"Shapes are {arr1.shape} and {arr2.shape}")
         raise ValueError(f"Both {keyword} numpy arrays "
                           "don't have the same shape")
 
 
-
-def extract_labels(subject_labels_file, subject_column_name, label_names):
+def read_labels(subject_labels_file, subject_column_name, label_names):
     """Extracts labels from label file. Returns a dataframe with labels"""
     
     # Loads labels file
@@ -232,7 +246,7 @@ def extract_labels(subject_labels_file, subject_column_name, label_names):
 
     # Factorizes the column if they are categories (strings for example)
     for col in label_names:
-        if subject_labels[col].dtype.type == np.object:
+        if subject_labels[col].dtype.type == np.object_:
             subject_labels[col], uniques = \
                 pd.factorize(subject_labels[col], sort=True)
             log.info(f"Column {col} sorted as categories. "
@@ -246,7 +260,7 @@ def extract_labels(subject_labels_file, subject_column_name, label_names):
     return subject_labels
 
 
-def sort_labels_accroding_to_normal(subject_labels, normal_subjects):
+def sort_labels_according_to_normal(subject_labels, normal_subjects):
     """Sort subject labels according to normal_subjects order
     
     Returns reordered subject_labels
@@ -258,10 +272,13 @@ def sort_labels_accroding_to_normal(subject_labels, normal_subjects):
     # Checks if label subject names and subjects names are the same
     log.info(f"Head of normal_subjects = \n{normal_subjects.head()}")
     log.info(f"Head of subject_labels = \n{subject_labels.head()}")
-    if not normal_subjects.Subject.equals(subject_labels.Subject):
+    if not normal_subjects.Subject.reset_index(drop=True).\
+        equals(subject_labels.Subject):
         raise ValueError(\
             "Names of subject in subject labels are not included "
             "or are not in the same order as the csv file of the subjects")
+
+    return subject_labels
 
 
 def extract_data_with_labels(npy_file_path, subject_labels, config):
@@ -288,14 +305,15 @@ def extract_data_with_labels(npy_file_path, subject_labels, config):
 
     # Sort subject_labels according to normal_subjects
     subject_labels = \
-        sort_labels_accroding_to_normal(subject_labels, normal_subjects)
+        sort_labels_according_to_normal(subject_labels, normal_subjects)
 
     # Gets train_val subjects as dataframe from csv file
     train_val_subjects = read_train_val_csv(config.train_val_csv_file)
 
-    # Extracts test subject names and corresponding data
+    # Extracts test subject names, corresponding data and labels
     test_subjects, test_data = \
         extract_test(normal_subjects, train_val_subjects, normal_data)
+    test_labels = extract_labels(subject_labels, test_subjects)
 
     # Restricts train_val length
     train_val_subjects = restrict_length(train_val_subjects, config.nb_subjects)
@@ -303,8 +321,11 @@ def extract_data_with_labels(npy_file_path, subject_labels, config):
     # Extracts train_val from normal_data
     train_val_data = \
         extract_train_val(normal_subjects, train_val_subjects, normal_data)
+    train_val_labels = extract_labels(subject_labels, train_val_subjects)
 
-    return train_val_subjects, train_val_data, test_subjects, test_data
+
+    return train_val_subjects, train_val_data, train_val_labels,\
+           test_subjects, test_data, test_labels
 
 
 

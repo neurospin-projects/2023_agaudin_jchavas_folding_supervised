@@ -103,13 +103,13 @@ class DataModule_Evaluation(DataModule):
         super(DataModule_Evaluation, self).__init__(config)
 
     def train_val_dataloader(self):
-        loader_train = DataLoader(self.dataset_train_val,
-                                  batch_size=self.config.batch_size,
-                                  pin_memory=self.config.pin_mem,
-                                  num_workers=self.config.num_cpu_workers,
-                                  shuffle=False
-                                  )
-        return loader_train
+        loader_train_val = DataLoader(self.dataset_train_val,
+                                      batch_size=self.config.batch_size,
+                                      pin_memory=self.config.pin_mem,
+                                      num_workers=self.config.num_cpu_workers,
+                                      shuffle=False
+                                      )
+        return loader_train_val
 
     def train_dataloader(self):
         loader_train = DataLoader(self.dataset_train,
