@@ -42,22 +42,11 @@ import torch
 from sklearn.manifold import TSNE
 from toolz.itertoolz import first
 
-from contrastive.backbones.densenet import DenseNet
+from contrastive.models.contrastive_learner import ContrastiveLearner
 from contrastive.losses import GeneralizedSupervisedNTXenLoss
-from contrastive.losses import CrossEntropyLoss
-from contrastive.utils.plots.visualize_images import plot_bucket
-from contrastive.utils.plots.visualize_images import plot_histogram
-from contrastive.utils.plots.visualize_images import plot_histogram_weights
-from contrastive.utils.plots.visualize_images import plot_scatter_matrix
 from contrastive.utils.plots.visualize_images \
     import plot_scatter_matrix_with_labels
 from contrastive.utils.plots.visualize_tsne import plot_tsne
-
-try:
-    from contrastive.utils.plots.visualize_anatomist import Visu_Anatomist
-except ImportError:
-    print("INFO: you are probably not in a brainvisa environment. Probably OK.")
-
 
 class SaveOutput:
     def __init__(self):
@@ -70,51 +59,38 @@ class SaveOutput:
         self.outputs = {}
 
 
-class ContrastiveLearner_WithLabels(DenseNet):
+class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
     def __init__(self, config, sample_data):
         super(ContrastiveLearner_WithLabels, self).__init__(
-            growth_rate=config.growth_rate,
-            block_config=config.block_config,
-            num_init_features=config.num_init_features,
-            num_representation_features=config.num_representation_features,
-            num_outputs=config.num_outputs,
-            mode=config.mode,
-            drop_rate=config.drop_rate,
-            in_shape=config.input_size,
-            depth=config.depth_decoder)
-        self.config = config
-        self.sample_data = sample_data
-        self.sample_i = np.array([])
-        self.sample_j = np.array([])
-        self.save_output = SaveOutput()
-        self.hook_handles = []
-        self.get_layers()
-        if self.config.environment == "brainvisa":
-            self.visu_anatomist = Visu_Anatomist()
+            config=config, sample_data=sample_data)
 
-    def get_layers(self):
-        for layer in self.modules():
-            if isinstance(layer, torch.nn.Linear):
-                handle = layer.register_forward_hook(self.save_output)
-                self.hook_handles.append(handle)
+    def plot_scatter_matrices_with_labels(self):
+        """Plots scatter matrices with label values."""
+        # Makes scatter matrix of output space
+        r = self.compute_outputs_skeletons(
+            self.sample_data.train_dataloader())
+        X = r[0] # First element of tuple
+        labels = r[1] # Second element of tuple
+        # Makes scatter matrix of output space with label values
+        scatter_matrix_outputs_with_labels = \
+            plot_scatter_matrix_with_labels(X, labels, buffer=True)
+        self.logger.experiment.add_image(
+            'scatter_matrix_outputs_with_labels',
+            scatter_matrix_outputs_with_labels,
+            self.current_epoch)
 
-    def custom_histogram_adder(self):
-        """Builds histogram for each model parameter.
-        """
-        # iterating through all parameters
-        for name, params in self.named_parameters():
-            self.logger.experiment.add_histogram(
-                name,
-                params,
-                self.current_epoch)
-
-    def configure_optimizers(self):
-        """Adam optimizer"""
-        optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()),
-                                     lr=self.config.lr,
-                                     weight_decay=self.config.weight_decay)
-        return optimizer
+        # Makes scatter matrix of representation space with label values
+        r = self.compute_representations(
+            self.sample_data.train_dataloader())
+        X = r[0] # First element of tuple
+        labels = r[1] # Second element of tuple
+        scatter_matrix_representations_with_labels = \
+            plot_scatter_matrix_with_labels(X, labels, buffer=True)
+        self.logger.experiment.add_image(
+            'scatter_matrix_representations_with_labels',
+            scatter_matrix_representations_with_labels,
+            self.current_epoch)
 
     def generalized_supervised_nt_xen_loss(self, z_i, z_j, labels):
         """Loss function for contrastive"""
@@ -129,11 +105,6 @@ class ContrastiveLearner_WithLabels(DenseNet):
             proportion_pure_contrastive=self.config.proportion_pure_contrastive,
             return_logits=True)
         return loss.forward(z_i, z_j, labels)
-
-    def cross_entropy_loss(self, sample, output_i, output_j):
-        """Loss function for decoder"""
-        loss = CrossEntropyLoss(device=self.device)
-        return loss.forward(sample, output_i, output_j)
 
     def training_step(self, train_batch, batch_idx):
         """Training step.
@@ -211,7 +182,6 @@ class ContrastiveLearner_WithLabels(DenseNet):
                 X = torch.cat((X, X_reordered.cpu()), dim=0)
 
                 # We now concatenate the labels
-
                 labels_reordered = torch.cat([labels, labels], dim=-1)
                 labels_reordered = labels_reordered.view(-1, labels.shape[-1])
                 # At the end, labels are concatenated
@@ -345,80 +315,17 @@ class ContrastiveLearner_WithLabels(DenseNet):
                 self.logger.experiment.add_image(
                     'TSNE representation image', image_TSNE, self.current_epoch)
 
-            # Makes scatter matrix of output space
-            X, labels, _ = self.compute_outputs_skeletons(
-                self.sample_data.train_dataloader())
-            scatter_matrix_outputs = plot_scatter_matrix(X, buffer=True)
-            self.logger.experiment.add_image(
-                'scatter_matrix_outputs',
-                scatter_matrix_outputs,
-                self.current_epoch)
+            # Plots zxx and weights histograms
+            self.plot_histograms()
 
-            # Makes scatter matrix of output space with label values
-            scatter_matrix_outputs_with_labels = \
-                plot_scatter_matrix_with_labels(X, labels, buffer=True)
-            self.logger.experiment.add_image(
-                'scatter_matrix_outputs_with_labels',
-                scatter_matrix_outputs_with_labels,
-                self.current_epoch)
+            # Plots scatter matrices
+            self.plot_scatter_matrices()
 
-            # Makes scatter matrix of representation space
-            X, labels, _ = self.compute_representations(
-                self.sample_data.train_dataloader())
-            scatter_matrix_representations = plot_scatter_matrix(
-                X, buffer=True)
-            self.logger.experiment.add_image(
-                'scatter_matrix_representations',
-                scatter_matrix_representations,
-                self.current_epoch)
-
-            # Makes scatter matrix of representation space with label values
-            scatter_matrix_representations_with_labels = \
-                plot_scatter_matrix_with_labels(X, labels, buffer=True)
-            self.logger.experiment.add_image(
-                'scatter_matrix_representations_with_labels',
-                scatter_matrix_representations_with_labels,
-                self.current_epoch)
-
-            # Computes histogram of sim_zii
-            histogram_sim_zii = plot_histogram(self.sim_zii, buffer=True)
-            self.logger.experiment.add_image(
-                'histo_sim_zii', histogram_sim_zii, self.current_epoch)
-
-            # Computes histogram of sim_zjj
-            histogram_sim_zjj = plot_histogram(self.sim_zjj, buffer=True)
-            self.logger.experiment.add_image(
-                'histo_sim_zjj', histogram_sim_zjj, self.current_epoch)
-
-            # Computes histogram of sim_zij
-            histogram_sim_zij = plot_histogram(self.sim_zij, buffer=True)
-            self.logger.experiment.add_image(
-                'histo_sim_zij', histogram_sim_zij, self.current_epoch)
-
-            # Computes histogram of weights
-            histogram_weights = plot_histogram_weights(self.weights,
-                                                       buffer=True)
-            self.logger.experiment.add_image(
-                'histo_weights', histogram_weights, self.current_epoch)
+            # Plots scatter matrices with label values
+            self.plot_scatter_matrices_with_labels()
 
         # Plots views
-        image_input_i = plot_bucket(self.sample_i, buffer=True)
-        self.logger.experiment.add_image(
-            'input_i', image_input_i, self.current_epoch)
-        image_input_j = plot_bucket(self.sample_j, buffer=True)
-        self.logger.experiment.add_image(
-            'input_j', image_input_j, self.current_epoch)
-
-        # Plots view using anatomist
-        if self.config.environment == "brainvisa":
-            image_input_i = self.visu_anatomist.plot_bucket(
-                self.sample_i, buffer=True)
-            self.logger.experiment.add_image(
-                'input_ana_i', image_input_i, self.current_epoch)
-            image_input_j = self.visu_anatomist.plot_bucket(
-                self.sample_j, buffer=True)
-            self.logger.experiment.add_image(
-                'input_ana_j', image_input_j, self.current_epoch)
+        self.plot_views()
 
         # calculates average loss
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
