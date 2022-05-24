@@ -110,6 +110,7 @@ ENV/
 env.bak/
 venv.bak/
 venv_local/
+venv_kraken/
 
 # Spyder project settings
 .spyderproject
