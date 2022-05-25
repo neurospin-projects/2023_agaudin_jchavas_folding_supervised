@@ -47,14 +47,20 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 
-from contrastive.data.datamodule import DataModule_PureContrastive
+from contrastive.data.datamodule import DataModule_Learning
+from contrastive.data.datamodule import DataModule_Evaluation
 from contrastive.models.contrastive_learner import ContrastiveLearner
+from contrastive.models.contrastive_learner_with_labels import \
+    ContrastiveLearner_WithLabels
+from contrastive.models.contrastive_learner_visualization import \
+    ContrastiveLearner_Visualization
 from contrastive.utils.config import process_config
 from contrastive.utils.logs import set_root_logger_level
+from contrastive.utils.logs import set_file_logger
 
 tb_logger = pl_loggers.TensorBoardLogger('logs')
 writer = SummaryWriter()
-log = logging.getLogger(__name__)
+log = set_file_logger(__file__)
 
 """
 We use the following definitions:
@@ -64,17 +70,28 @@ We use the following definitions:
   The elements are called output vectors
 """
 
-
 @hydra.main(config_name='config', config_path="configs")
 def train(config):
     config = process_config(config)
 
     set_root_logger_level(config.verbose)
 
-    data_module = DataModule_PureContrastive(config)
+    if config.mode == 'evaluation':
+        data_module = DataModule_Evaluation(config)
+    else:
+        data_module = DataModule_Learning(config)
 
-    model = ContrastiveLearner(config,
+    if config.mode == 'evaluation':
+        model = ContrastiveLearner_Visualization(config,
+                               sample_data=data_module)   
+    elif config.model == "SimCLR_supervised":
+        model = ContrastiveLearner_WithLabels(config,
                                sample_data=data_module)
+    elif config.model == 'SimCLR':
+        model = ContrastiveLearner(config,
+                               sample_data=data_module) 
+    else:
+        raise ValueError("Wrong combination of 'mode' and 'model'")
 
     summary(model, tuple(config.input_size), device="cpu")
 
@@ -91,7 +108,7 @@ def train(config):
 
     trainer.fit(model, data_module, ckpt_path=config.checkpoint_path)
 
-    print("Number of hooks: ", len(model.save_output.outputs))
+    log.info(f"Number of hooks: {len(model.save_output.outputs)}")
 
 
 if __name__ == "__main__":

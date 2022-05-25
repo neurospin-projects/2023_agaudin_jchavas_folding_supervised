@@ -26,7 +26,7 @@ setup(
                       'pytorch-lightning',
                       'lightly',
                       'toolz',
-		                  'ipykernel',
+		              'ipykernel',
                       'pytorch_ssim',
                       'seaborn',
                       'statsmodels'

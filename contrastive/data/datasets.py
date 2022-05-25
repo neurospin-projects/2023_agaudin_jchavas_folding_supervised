@@ -35,27 +35,76 @@
 """
 Tools to create pytorch dataloaders
 """
-import logging
 import os
 from re import sub
 
 import numpy as np
 import pandas as pd
 import torch
-import torchvision.transforms as transforms
 
-from contrastive.augmentations import BinarizeTensor
-from contrastive.augmentations import EndTensor
-from contrastive.augmentations import PaddingTensor
-from contrastive.augmentations import PartialCutOutTensor_Roll
-from contrastive.augmentations import RotateTensor
-from contrastive.augmentations import SimplifyTensor
-from contrastive.augmentations import RemoveRandomBranchTensor
 from contrastive.utils.logs import set_file_logger
 
-_ALL_SUBJECTS = -1
+from contrastive.data.transforms import *
+
+from contrastive.augmentations import PaddingTensor
 
 log = set_file_logger(__file__)
+
+
+def get_sample(arr, idx, type_el):
+    """Returns sub-numpy torch tensors corresponding to array of indices idx.
+    
+    First axis of arr (numpy array) corresponds to subject numbers from 0 to N-1
+    type_el is 'float32' for input, 'int32' for foldlabel
+    """
+    sample = arr[idx].astype(type_el)
+    log.debug(f"idx (in get_sample) = {idx}")
+
+    return torch.from_numpy(sample)
+
+
+def get_filename(filenames, idx):
+    """"Returns filenames corresponding to indices idx
+    
+    filenames: dataframe with column name 'ID'
+    """
+    filename = filenames.Subject[idx]
+    log.debug(f"filenames[:5] = {filenames[:5]}")
+    log.debug(f"len(filenames) = {len(filenames)}")
+    log.debug(f"idx = {idx}, filename[idx] = {filename}")
+    log.debug(f"{idx} in filename = {idx in filenames.index}")
+
+    return filename
+
+
+def get_label(labels, idx):
+    """"Returns labels corresponding to indices idx
+    
+    labels: dataframe with column name 'Subject'
+    """
+    label = labels.drop(columns='Subject').values[idx]
+    log.debug(f"idx = {idx}, labels[idx] = {label}")
+    log.debug(f"{idx} in labels = {idx in labels.index}")
+
+    return label
+
+
+def check_consistency(filename, labels, idx):
+    """Checks if filenames are identical"""
+    filename_label = labels.Subject[idx]
+    if filename_label != filename:
+        raise ValueError("Filenames are not consitent between data and labels"
+                         f"For idx = {idx}, filename = {filename}"
+                         f"and filename_label = {filename_label}")
+
+
+def padd_foldlabel(sample_foldlabel, input_size):
+    """Padds foldlabel according to input_size"""
+    transform_foldlabel = PaddingTensor(
+                            input_size,
+                            fill_value=0)
+    sample_foldlabel = transform_foldlabel(sample_foldlabel)
+    return sample_foldlabel
 
 
 class ContrastiveDataset():
@@ -92,48 +141,20 @@ class ContrastiveDataset():
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        sample = self.arr[idx].astype('float32')
-        # print(f"filenames[:5] = {self.filenames[:5]}")
-        # print(f"len(filenames) = {len(self.filenames)}")
-        # print(f"idx = {idx}")
-        # print(f"{idx} in filename = {idx in self.filenames.index}")
-        filename = self.filenames.ID[idx]
+        # Gets data corresponding to idx
+        sample   = get_sample(self.arr, idx, 'float32')
+        filename = get_filename(self.filenames, idx)
 
-        self.transform1 = transforms.Compose([
-            SimplifyTensor(),
-            PaddingTensor(self.config.input_size,
-                          fill_value=self.config.fill_value),
-            PartialCutOutTensor_Roll(from_skeleton=True,
-                                     keep_bottom=self.config.keep_bottom,
-                                     patch_size=self.config.patch_size),
-            RotateTensor(max_angle=self.config.max_angle),
-            BinarizeTensor()
-        ])
+        # Computes the transforms
+        self.transform1 = transform_no_foldlabel(from_skeleton=True,
+                                                 config=self.config)
+        self.transform2 = transform_no_foldlabel(from_skeleton=False,
+                                                 config=self.config)
+        self.transform3 = transform_only_padding(self.config)
 
-        # - padding
-        # - + random rotation
-        self.transform2 = transforms.Compose([
-            SimplifyTensor(),
-            PaddingTensor(self.config.input_size,
-                          fill_value=self.config.fill_value),
-            PartialCutOutTensor_Roll(from_skeleton=False,
-                                     keep_bottom=self.config.keep_bottom,
-                                     patch_size=self.config.patch_size),
-            RotateTensor(max_angle=self.config.max_angle),
-            BinarizeTensor()
-        ])
-
-        # - padding
-        self.transform3 = transforms.Compose([
-            SimplifyTensor(),
-            PaddingTensor(self.config.input_size,
-                          fill_value=self.config.fill_value),
-            BinarizeTensor(),
-            EndTensor()
-        ])
-
-        view1 = self.transform1(torch.from_numpy(sample))
-        view2 = self.transform2(torch.from_numpy(sample))
+        # Computes the views
+        view1 = self.transform1(sample)
+        view2 = self.transform2(sample)
 
         if self.config.mode == "decoder":
             view3 = self.transform3(sample)
@@ -151,15 +172,15 @@ class ContrastiveDataset_WithLabels():
     Applies different transformations to data depending on the type of input.
     """
 
-    def __init__(self, data, labels, filenames, config):
+    def __init__(self, array, labels, filenames, config):
         """
         Args:
-            data (dataframe): contains MRIs as numpy arrays
+            array (np array): contains MRIs as numpy arrays
             labels (dataframe): contains labels as columns
             filenames (list of strings): list of subjects' IDs
             config (Omegaconf dict): contains configuration information
         """
-        self.data = data
+        self.arr = array
         self.labels = labels
         self.transform = True
         self.nb_train = len(filenames)
@@ -181,45 +202,20 @@ class ContrastiveDataset_WithLabels():
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        sample = self.data.loc[0].values[idx].astype('float32')
-        labels = self.labels.values[idx]
-        sample = torch.from_numpy(sample)
-        labels = torch.from_numpy(labels)
-        filenames = self.filenames[idx]
+        # Gets data corresponding to idx
+        sample   = get_sample(self.arr, idx, 'float32')
+        filename = get_filename(self.filenames, idx)
+        check_consistency(filename, self.labels, idx)
+        labels   = get_label(self.labels, idx)
 
-        self.transform1 = transforms.Compose([
-            SimplifyTensor(),
-            PaddingTensor(self.config.input_size,
-                          fill_value=self.config.fill_value),
-            PartialCutOutTensor_Roll(from_skeleton=True,
-                                     keep_bottom=self.config.keep_bottom,
-                                     patch_size=self.config.patch_size),
-            RotateTensor(max_angle=self.config.max_angle),
-            BinarizeTensor()
-        ])
+        # Computes the transforms
+        self.transform1 = transform_no_foldlabel(from_skeleton=True,
+                                                 config=self.config)
+        self.transform2 = transform_no_foldlabel(from_skeleton=False,
+                                                 config=self.config)
+        self.transform3 = transform_only_padding(self.config)
 
-        # - padding
-        # - + random rotation
-        self.transform2 = transforms.Compose([
-            SimplifyTensor(),
-            PaddingTensor(self.config.input_size,
-                          fill_value=self.config.fill_value),
-            PartialCutOutTensor_Roll(from_skeleton=False,
-                                     keep_bottom=self.config.keep_bottom,
-                                     patch_size=self.config.patch_size),
-            RotateTensor(max_angle=self.config.max_angle),
-            BinarizeTensor()
-        ])
-
-        # - padding
-        self.transform3 = transforms.Compose([
-            SimplifyTensor(),
-            PaddingTensor(self.config.input_size,
-                          fill_value=self.config.fill_value),
-            BinarizeTensor(),
-            EndTensor()
-        ])
-
+        # Computes the views
         view1 = self.transform1(sample)
         view2 = self.transform2(sample)
 
@@ -229,9 +225,76 @@ class ContrastiveDataset_WithLabels():
         else:
             views = torch.stack((view1, view2), dim=0)
 
-        tuple_with_path = (views, labels, filenames)
+        tuple_with_path = (views, labels, filename)
         return tuple_with_path
 
+
+class ContrastiveDataset_WithFoldLabels():
+    """Custom dataset that includes images and foldlabels
+
+    Applies different transformations to data depending on the type of input.
+    """
+
+    def __init__(self, array, foldlabel_array, filenames, config):
+        """
+        Args:
+            data (numpy array): contains skeletonss as numpy arrays
+            foldlabel_data (numpy array): contains foldlabels as numpy array
+            filenames (list of strings): list of subjects' IDs
+            config (Omegaconf dict): contains configuration information
+        """
+        self.arr = array
+        self.foldlabel_arr = foldlabel_array
+        self.transform = True
+        self.nb_train = len(filenames)
+        log.info(self.nb_train)
+        self.filenames = filenames
+        self.config = config
+
+    def __len__(self):
+        return (self.nb_train)
+
+    def __getitem__(self, idx):
+        """Returns the two views corresponding to index idx
+
+        The two views are generated on the fly.
+
+        Returns:
+            tuple of (views, subject ID)
+        """
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        # Gets data corresponding to idx
+        sample = get_sample(self.arr, idx, 'float32')
+        sample_foldlabel = get_sample(self.foldlabel_arr, idx, 'int32')
+        filename = get_filename(self.filenames, idx)
+
+        # Padds foldlabel
+        sample_foldlabel = padd_foldlabel(sample_foldlabel,
+                                          self.config.input_size)
+
+        # Computes the transforms
+        self.transform1 = transform_foldlabel(sample_foldlabel,
+                                              self.config.percentage_1,
+                                              self.config)
+        self.transform2 = transform_foldlabel(sample_foldlabel,
+                                              self.config.percentage_2,
+                                              self.config)
+        self.transform3 = transform_only_padding(self.config)
+
+        # Computes the views
+        view1 = self.transform1(sample)
+        view2 = self.transform2(sample)
+
+        if self.config.mode == "decoder":
+            view3 = self.transform3(sample)
+            views = torch.stack((view1, view2, view3), dim=0)
+        else:
+            views = torch.stack((view1, view2), dim=0)
+
+        tuple_with_path = (views, filename)
+        return tuple_with_path
 
 
 class ContrastiveDataset_WithLabels_WithFoldLabels():
@@ -240,16 +303,16 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
     Applies different transformations to data depending on the type of input.
     """
 
-    def __init__(self, data, foldlabel_data, labels, filenames, config):
+    def __init__(self, array, foldlabel_array, labels, filenames, config):
         """
         Args:
-            data (dataframe): contains MRIs as numpy arrays
+            array (np array): contains MRIs as numpy arrays
             labels (dataframe): contains labels as columns
             filenames (list of strings): list of subjects' IDs
             config (Omegaconf dict): contains configuration information
         """
-        self.data = data
-        self.foldlabel_data = foldlabel_data
+        self.arr = array
+        self.foldlabel_arr = foldlabel_array
         self.labels = labels
         self.transform = True
         self.nb_train = len(filenames)
@@ -271,54 +334,26 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        log.debug(f"index = {idx}")
-        sample = self.data.loc[0].values[idx].astype('float32')
-        sample_foldlabel = self.foldlabel_data.loc[0].values[idx].astype('int32')
-        labels = self.labels.values[idx]
-        sample = torch.from_numpy(sample)
-        labels = torch.from_numpy(labels)
-        filenames = self.filenames[idx]
+        # Gets the data corresponding to idx
+        sample = get_sample(self.arr, idx, 'float32')
+        sample_foldlabel = get_sample(self.foldlabel_arr, idx, 'int32')
+        labels = get_label(self.labels, idx)
+        filename = get_filename(self.filenames, idx)
 
-        # Padd foldlabel
-        sample_foldlabel = torch.from_numpy(sample_foldlabel)
-        transform_foldlabel = PaddingTensor(
-                                self.config.input_size,
-                                fill_value=0)
-        sample_foldlabel = transform_foldlabel(sample_foldlabel)
+        # Padds foldlabel
+        sample_foldlabel = padd_foldlabel(sample_foldlabel,
+                                          self.config.input_size)
 
-        self.transform1 = transforms.Compose([
-            SimplifyTensor(),
-            PaddingTensor(self.config.input_size,
-                          fill_value=self.config.fill_value),
-            RemoveRandomBranchTensor(sample_foldlabel=sample_foldlabel,
-                                     percentage=self.config.percentage_1,
-                                     input_size=self.config.input_size),
-            RotateTensor(max_angle=self.config.max_angle),
-            BinarizeTensor()
-        ])
+        # Computes the transforms
+        self.transform1 = transform_foldlabel(sample_foldlabel,
+                                              self.config.percentage_1,
+                                              self.config)
+        self.transform2 = transform_foldlabel(sample_foldlabel,
+                                              self.config.percentage_1,
+                                              self.config)
+        self.transform3 = transform_only_padding(self.config)
 
-        # - padding
-        # - + random rotation
-        self.transform2 = transforms.Compose([
-            SimplifyTensor(),
-            PaddingTensor(self.config.input_size,
-                          fill_value=self.config.fill_value),
-            RemoveRandomBranchTensor(sample_foldlabel=sample_foldlabel,
-                                     percentage=self.config.percentage_2,
-                                     input_size=self.config.input_size),
-            RotateTensor(max_angle=self.config.max_angle),
-            BinarizeTensor()
-        ])
-
-        # - padding
-        self.transform3 = transforms.Compose([
-            SimplifyTensor(),
-            PaddingTensor(self.config.input_size,
-                          fill_value=self.config.fill_value),
-            BinarizeTensor(),
-            EndTensor()
-        ])
-
+        # Computes the views
         view1 = self.transform1(sample)
         view2 = self.transform2(sample)
 
@@ -328,7 +363,7 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
         else:
             views = torch.stack((view1, view2), dim=0)
 
-        tuple_with_path = (views, labels, filenames)
+        tuple_with_path = (views, labels, filename)
         return tuple_with_path
 
 
@@ -338,14 +373,14 @@ class ContrastiveDataset_Visualization():
     Applies different transformations to data depending on the type of input.
     """
 
-    def __init__(self, dataframe, filenames, config):
+    def __init__(self, array, filenames, config):
         """
         Args:
-            data_tensor (tensor): contains MRIs as numpy arrays
+            data (np array): contains MRIs as numpy arrays
             filenames (list of strings): list of subjects' IDs
             config (Omegaconf dict): contains configuration information
         """
-        self.df = dataframe
+        self.arr = array
         self.transform = True
         self.nb_train = len(filenames)
         log.info(self.nb_train)
@@ -366,374 +401,25 @@ class ContrastiveDataset_Visualization():
         """
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        sample = self.df.loc[0].values[idx].astype('float32')
-        sample = torch.from_numpy(sample)
-        filename = self.filenames[idx]
 
-        self.transform1 = transforms.Compose([
-            SimplifyTensor(),
-            PaddingTensor(self.config.input_size,
-                          fill_value=self.config.fill_value),
-            BinarizeTensor(),
-            EndTensor()
-        ])
+        # Gets the data corresponding to idx
+        sample = get_sample(self.arr, idx, 'float32')
+        filename = get_filename(self.filenames, idx)
 
-        self.transform2 = transforms.Compose([
-            SimplifyTensor(),
-            PaddingTensor(self.config.input_size,
-                          fill_value=self.config.fill_value),
-            # PartialCutOutTensor_Roll(from_skeleton=False,
-            #                          patch_size=self.config.patch_size),
-            # RotateTensor(max_angle=self.config.max_angle),
-            BinarizeTensor(),
-            EndTensor()
-        ])
+        # Computes the transforms
+        self.transform1 = transform_only_padding(self.config)
+        self.transform2 = transform_only_padding(self.config)
+        self.transform3 = transform_only_padding(self.config)
 
+        # Computes the views
         view1 = self.transform1(sample)
         view2 = self.transform2(sample)
 
         if self.config.mode == "decoder":
-            view3 = self.transform1(sample)
+            view3 = self.transform3(sample)
             views = torch.stack((view1, view2, view3), dim=0)
         else:
             views = torch.stack((view1, view2), dim=0)
 
         tuple_with_path = (views, filename)
         return tuple_with_path
-
-
-
-def create_sets_with_labels_with_foldlabels(config, mode='training'):
-    """Creates train, validation and test sets
-
-    Args:
-        config (Omegaconf dict): contains configuration parameters
-        mode (str): either 'training' or 'visualization'
-    Returns:
-        train_set, val_set, test_set (tuple)
-    """
-
-    # Loads crops from all subjects
-    pickle_file_path = config.pickle_normal
-    log.info("Current directory = " + os.getcwd())
-    normal_data = pd.read_pickle(pickle_file_path)
-    log.info(f"normal_data head = {normal_data.head()}")
-
-    # Loads foldlabel crops for all subjects
-    pickle_foldlabel_file_path = config.pickle_foldlabel
-    log.info("Current directory = " + os.getcwd())
-    foldlabel_data = pd.read_pickle(pickle_foldlabel_file_path)
-    log.info(f"normal_data head = {normal_data.head()}")
-
-    # Gets subjects as list
-    normal_subjects = normal_data.columns.tolist()
-
-    # Gets labels for all subjects
-    subject_labels_file = config.subject_labels_file
-    subject_labels = pd.read_csv(subject_labels_file)
-    log.debug(f"Subject_labels head = {subject_labels.head()}")
-    log.info(f"Labels to keep = {config.label_names} of type {type(config.label_names)}")
-    
-    # subject_labels must have a column named 'Subject'
-    # We here extract from subject_labels the column 'Subject'
-    # and all columns identified by config.label_names
-    desired_columns = ['Subject',]
-    desired_columns.extend(config.label_names)
-    subject_labels = subject_labels[desired_columns]
-    subject_labels = subject_labels.replace(['M', 'F'], [0, 1])
-    subject_labels = subject_labels.astype({'Subject': str})
-    subject_labels = subject_labels.set_index('Subject')
-    subject_labels = subject_labels.dropna()
-    log.info(f"Head of subject_labels:\n{subject_labels.head()}")
-
-    # Gets only normal_subjects that have numeric values for desired properties
-    subject_labels_list = subject_labels.index.tolist()
-    normal_subjects = list(set(normal_subjects).intersection(subject_labels_list))
-    
-    # Gets train_val subjects from csv file
-    # It is a CSV file without column name
-    # We add here a column name 'ID'
-    train_val_subjects = pd.read_csv(config.train_val_csv_file, names=['ID']).T
-    train_val_subjects = train_val_subjects.values[0].tolist()
-    train_val_subjects = list(map(str, train_val_subjects))
-    train_val_subjects = list(set(normal_subjects).intersection(train_val_subjects))
-    log.info(f"train_val_subjects[:5] = {train_val_subjects[:5]}")
-    log.debug(f"train_val_subjects = {train_val_subjects}")
-
-    # Determines test dataframe
-    test_subjects = list(set(normal_subjects).difference(train_val_subjects))
-    len_test = len(test_subjects)
-    log.info(f"test_subjects[:5] = {test_subjects[:5]}")
-    log.debug(f"test_subjects = {test_subjects}")
-    log.info(f"Number of test subjects = {len_test}")
-
-    test_data = normal_data[normal_data.columns.intersection(test_subjects)]
-    test_foldlabel_data = foldlabel_data[foldlabel_data.columns.intersection(test_subjects)]
-    test_labels = subject_labels.loc[test_subjects]
-
-    # Cuts train_val set to requested number
-    if config.nb_subjects == _ALL_SUBJECTS:
-        len_train_val = len(train_val_subjects)
-    else:
-        len_train_val = min(config.nb_subjects,
-                            len(train_val_subjects))
-        train_val_subjects = train_val_subjects[:len_train_val]
-
-    log.info(f"length of train/val dataframe: {len_train_val}")
-
-    # Determines train/val dataframe
-    train_val_data = normal_data[normal_data.columns.intersection(
-                                 train_val_subjects)]
-    train_val_foldlabel_data = foldlabel_data[foldlabel_data.columns.intersection(
-                                train_val_subjects)]
-    train_val_labels = subject_labels.loc[train_val_subjects]
-
-    # Creates the dataset from these tensors by doing some preprocessing
-    if mode == 'visualization':
-        test_dataset = ContrastiveDataset_Visualization(
-            filenames=test_subjects,
-            dataframe=test_data,
-            config=config)
-        train_val_dataset = ContrastiveDataset_Visualization(
-            filenames=train_val_subjects,
-            dataframe=train_val_data,
-            config=config)
-    else:
-        test_dataset = ContrastiveDataset_WithLabels_WithFoldLabels(
-            filenames=test_subjects,
-            data=test_data,
-            foldlabel_data=test_foldlabel_data,
-            labels=test_labels,
-            config=config)
-        train_val_dataset = ContrastiveDataset_WithLabels_WithFoldLabels(
-            filenames=train_val_subjects,
-            data=train_val_data,
-            foldlabel_data=train_val_foldlabel_data,
-            labels=train_val_labels,
-            config=config)
-
-    log.info(f"Length of test data set: {len(test_dataset)}")
-    log.info(
-        f"Length of complete train/val data set: {len(train_val_dataset)}")
-
-    # Split training/val set into train, val set
-    partition = config.partition
-
-    log.info([round(i * (len(train_val_dataset))) for i in partition])
-    np.random.seed(config.seed)
-    train_set, val_set = torch.utils.data.random_split(
-        train_val_dataset,
-        [round(i * (len(train_val_dataset))) for i in partition])
-
-    return train_set, val_set, test_dataset, train_val_dataset
-
-
-def create_sets_with_labels(config, mode='training'):
-    """Creates train, validation and test sets
-
-    Args:
-        config (Omegaconf dict): contains configuration parameters
-        mode (str): either 'training' or 'visualization'
-    Returns:
-        train_set, val_set, test_set (tuple)
-    """
-
-    print("CREATE SET WITH LABELS")
-    # Loads crops from all subjects
-    numpy_all_path = config.numpy_all
-    log.info("Current directory = " + os.getcwd())
-    normal_data = np.load(numpy_all_path, mmap_mode='r')
-    #log.info(f"normal_data head = {normal_data.[:5]}") # too long to print
-
-    # Gets subjects as list (/!\ not as a list anymore)
-    normal_subjects = pd.read_csv(config.subjects_all)
-    print(normal_subjects.head())
-
-    # Gets labels for all subjects
-    subject_labels_file = config.subjects_all
-    subject_labels = pd.read_csv(subject_labels_file)
-    log.debug(f"Subject_labels head = {subject_labels.head()}")
-    #log.info(f"Labels to keep = {config.label_names} of type {type(config.label_names)}")
-
-    # subject_labels must have a column named 'Subject'
-    # We here extract from subject_labels the column 'Subject'
-    # and all columns identified by config.label_names
-    desired_columns = ['Subject',]
-    if "label_names" in config.keys():
-        desired_columns.extend(config.label_names)
-        subject_labels = subject_labels[desired_columns]
-        subject_labels = subject_labels.replace(['M', 'F'], [0, 1])
-        subject_labels = subject_labels.astype({'Subject': str})
-        subject_labels = subject_labels.set_index('Subject')
-        subject_labels = subject_labels.dropna()
-        log.info(f"Head of subject_labels:\n{subject_labels.head()}")
-
-    # Gets only normal_subjects that have numeric values for desired properties
-    #subject_labels_list = subject_labels.index.tolist()
-    #normal_subjects = list(set(normal_subjects).intersection(subject_labels_list))
-    
-    # Gets train_val subjects from csv file
-    # It is a CSV file without column name
-    # We add here a column name 'ID'
-    train_val_subjects = pd.read_csv(config.train_val_csv_file, names=['ID'])
-    print("train_val_subjects stuff")
-    print(train_val_subjects.head())
-    print(train_val_subjects.columns)
-    #train_val_subjects = train_val_subjects.values[0].tolist()
-    #train_val_subjects = list(map(str, train_val_subjects))
-    #train_val_subjects = list(set(normal_subjects).intersection(train_val_subjects))
-    #log.info(f"train_val_subjects[:5] = {train_val_subjects[:5]}")
-    #log.debug(f"train_val_subjects = {train_val_subjects}")
-
-    # Determines test dataframe
-    test_subjects = normal_subjects[~normal_subjects.Subject.isin(
-        train_val_subjects.ID)].index
-    len_test = len(test_subjects)
-    log.info(f"test_subjects[:5] = {test_subjects[:5]}")
-    log.debug(f"test_subjects = {test_subjects}")
-    log.info(f"Number of test subjects = {len_test}")
-
-    test_data = normal_data[test_subjects]
-    test_labels = subject_labels.loc[test_subjects]
-    print("head test_labels", test_labels[:5])
-    print("test_subjects is the indices of test_labels")
-
-    # Cuts train_val set to requested number
-    if config.nb_subjects == _ALL_SUBJECTS:
-        len_train_val = len(train_val_subjects)
-    else:
-        len_train_val = min(config.nb_subjects,
-                            len(train_val_subjects))
-        train_val_subjects = train_val_subjects[:len_train_val]
-
-    log.info(f"length of train/val dataframe: {len_train_val}")
-
-    # Determines train/val dataframe
-    train_val_subjects_index = normal_subjects[normal_subjects.Subject.isin(
-                                train_val_subjects.ID)].index
-    train_val_data = normal_data[train_val_subjects_index]
-    train_val_labels = subject_labels.loc[train_val_subjects_index]
-
-    # Creates the dataset from these tensors by doing some preprocessing
-    if mode == 'visualization':
-        test_dataset = ContrastiveDataset_Visualization(
-            filenames=test_subjects,
-            dataframe=test_data,
-            config=config)
-        train_val_dataset = ContrastiveDataset_Visualization(
-            filenames=train_val_subjects,
-            dataframe=train_val_data,
-            config=config)
-    else:
-        test_dataset = ContrastiveDataset_WithLabels(
-            filenames=test_subjects,
-            data=test_data,
-            labels=test_labels,
-            config=config)
-        train_val_dataset = ContrastiveDataset_WithLabels(
-            filenames=train_val_subjects,
-            data=train_val_data,
-            labels=train_val_labels,
-            config=config)
-
-    log.info(f"Length of test data set: {len(test_dataset)}")
-    log.info(
-        f"Length of complete train/val data set: {len(train_val_dataset)}")
-
-    # Split training/val set into train, val set
-    partition = config.partition
-
-    log.info([round(i * (len(train_val_dataset))) for i in partition])
-    np.random.seed(config.seed)
-    train_set, val_set = torch.utils.data.random_split(
-        train_val_dataset,
-        [round(i * (len(train_val_dataset))) for i in partition])
-
-    return train_set, val_set, test_dataset, train_val_dataset
-
-
-def create_sets_pure_contrastive(config, mode='training'):
-    """Creates train, validation and test sets
-
-    Args:
-        config (Omegaconf dict): contains configuration parameters
-        mode (str): either 'training' or 'visualization'
-    Returns:
-        train_set, val_set, test_set (tuple)
-    """
-    # coded with numpy (not pickle anymore)
-
-    # Loads crops from all subjects
-    numpy_all_path = config.numpy_all
-    log.info("Current directory = " + os.getcwd())
-    normal_data = np.load(numpy_all_path, mmap_mode='r')
-    print(f"shape of loaded numpy array = {normal_data.shape}")
-    normal_subjects = pd.read_csv(config.subjects_all)
-
-    # Gets train_val subjects from csv file
-    train_val_subjects = pd.read_csv(config.train_val_csv_file, names=['ID'])
-    print(f"train_val_subjects = {train_val_subjects}")
-
-    # Determines test dataframe
-    test_subjects = normal_subjects[~normal_subjects.Subject.isin(
-        train_val_subjects.ID)].index
-    len_test = len(test_subjects)
-    print(f"length of test = {len_test}")
-    print(f"test_subjects = {test_subjects[:5]}")
-
-    # /!\ copy the data to construct test_data
-    test_data = normal_data[test_subjects]
-    print(f'test set size: {test_data.shape}')
-
-    # Cuts train_val set to requested number
-    if config.nb_subjects == _ALL_SUBJECTS:
-        len_train_val = len(train_val_subjects)
-    else:
-        len_train_val = min(config.nb_subjects,
-                            len(train_val_subjects))
-        train_val_subjects = train_val_subjects[:len_train_val]
-
-    log.info(f"length of train/val dataframe: {len_train_val}")
-
-    # Determines train/val dataframe
-    train_val_subjects_index = normal_subjects[normal_subjects.Subject.isin(
-                                train_val_subjects.ID)].index
-    # /!\ copy the data to construct train_val_data
-    train_val_data = normal_data[train_val_subjects_index]
-
-    # Creates the dataset from these tensors by doing some preprocessing
-    if mode == 'visualization':
-        test_dataset = ContrastiveDataset_Visualization(
-            filenames=test_subjects,
-            dataframe=test_data,
-            config=config)
-        train_val_dataset = ContrastiveDataset_Visualization(
-            filenames=train_val_subjects,
-            dataframe=train_val_data,
-            config=config)
-    else:
-        test_dataset = ContrastiveDataset(
-            filenames=test_subjects,
-            array=test_data,
-            config=config)
-        train_val_dataset = ContrastiveDataset(
-            filenames=train_val_subjects,
-            array=train_val_data,
-            config=config)
-
-    log.info(f"Length of test data set: {len(test_dataset)}")
-    log.info(
-        f"Length of complete train/val data set: {len(train_val_dataset)}")
-
-    # Split training/val set into train, val set
-    partition = config.partition
-
-    log.info([round(i * (len(train_val_dataset))) for i in partition])
-
-    # à vérifier comment le rendre random
-    np.random.seed(config.seed) # numpy seeds have no effect on torch randomness. Use torch.manual_seed(0) instead
-    train_set, val_set = torch.utils.data.random_split(
-        train_val_dataset,
-        [round(i * (len(train_val_dataset))) for i in partition])
-
-    return train_set, val_set, test_dataset, train_val_dataset
