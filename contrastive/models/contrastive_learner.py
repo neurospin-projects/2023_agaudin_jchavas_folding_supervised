@@ -318,7 +318,7 @@ class ContrastiveLearner(DenseNet):
                 X_reordered = X_reordered.view(-1, X_i.shape[-1])
                 X = torch.cat((X, X_reordered.cpu()), dim=0)
                 filenames_duplicate = [
-                    item for item in filenames
+                    item.item() for item in filenames
                     for repetitions in range(2)]
                 filenames_list = filenames_list + filenames_duplicate
                 del inputs

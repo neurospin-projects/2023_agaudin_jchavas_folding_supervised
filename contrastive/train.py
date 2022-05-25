@@ -87,7 +87,7 @@ def train(config):
     elif config.model == "SimCLR_supervised":
         model = ContrastiveLearner_WithLabels(config,
                                sample_data=data_module)
-    elif config.mode == 'SimCLR':
+    elif config.model == 'SimCLR':
         model = ContrastiveLearner(config,
                                sample_data=data_module) 
     else:
