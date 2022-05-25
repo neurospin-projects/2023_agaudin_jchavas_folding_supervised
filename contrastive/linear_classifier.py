@@ -14,10 +14,11 @@ def train_classifier(config):
     axis=0, ignore_index=True)
 
     # get the labels (0 = no paracingulate, 1 = paracingulate)
-    labels = pd.read_csv(config.subjects_all)
+    labels = pd.read_csv(config.labels_paracingulate)
+    # supposed to contain ID as index and one column nammed label
 
     # join the two df (join allows to be sure to have the labels in the right order)
-
+    full_df = embeddings.join(labels, on='ID')
 
 
 
