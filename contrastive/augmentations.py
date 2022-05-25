@@ -40,7 +40,7 @@ import torch
 from scipy.ndimage import rotate
 from sklearn.preprocessing import OneHotEncoder
 
-from utils import logs
+from contrastive.utils import logs
 
 log = logs.set_file_logger(__file__)
 

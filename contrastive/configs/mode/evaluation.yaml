@@ -1,0 +1,4 @@
+# @package _global_
+test: False
+mode: evaluation
+verbose: 1
