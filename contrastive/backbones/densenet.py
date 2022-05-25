@@ -117,7 +117,7 @@ class DenseNet(pl.LightningModule):
 
         super(DenseNet, self).__init__()
 
-        assert mode in {'encoder', 'decoder', 'classifier'},\
+        assert mode in {'encoder', 'evaluation', 'decoder', 'classifier'},\
             "Unknown mode selected: %s" % mode
 
 
@@ -170,7 +170,7 @@ class DenseNet(pl.LightningModule):
             self.features.add_module('norm5', nn.BatchNorm3d(num_features))
             # Linear layer
             self.classifier = nn.Linear(num_features, num_classes)
-        elif self.mode == "encoder":
+        elif (self.mode == "encoder") or (self.mode == 'evaluation'):
             self.hidden_representation = nn.Linear(
                 num_features, self.num_representation_features)
             self.head_projection = nn.Linear(self.num_representation_features,
@@ -251,7 +251,7 @@ class DenseNet(pl.LightningModule):
             out = F.adaptive_avg_pool3d(out, 1)
             out = torch.flatten(out, 1)
             out = self.classifier(out)
-        elif self.mode == "encoder":
+        elif (self.mode == "encoder") or (self.mode == 'evaluation'):
             out = F.relu(features, inplace=True)
             out = F.adaptive_avg_pool3d(out, 1)
             out = torch.flatten(out, 1)
