@@ -156,10 +156,11 @@ def plot_scatter_matrix(tensor, buffer):
     else:
         plt.show()
 
-def plot_scatter_matrix_with_labels(embeddings, labels, buffer):
+def plot_scatter_matrix_with_labels(embeddings, labels, buffer, jitter=False):
     """Plots scatter matrix of the values of a tensor"""
     arr_embeddings = embeddings.detach().cpu().numpy()
-    arr_labels = labels.detach().cpu().numpy()
+    arr_labels = labels.detach().cpu().numpy() 
+    # arr_labels = arr_labels + 0.1 * np.random.randn(len(arr_labels))
     df_embeddings = pd.DataFrame(arr_embeddings)
     df_labels = pd.DataFrame(arr_labels)
     df_labels = df_labels.add_prefix("lab_")
