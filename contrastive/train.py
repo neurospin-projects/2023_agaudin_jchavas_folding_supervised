@@ -76,6 +76,8 @@ def train(config):
 
     set_root_logger_level(config.verbose)
 
+    print("TEST")
+
     if config.mode == 'evaluation':
         data_module = DataModule_Evaluation(config)
     else:

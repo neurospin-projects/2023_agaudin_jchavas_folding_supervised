@@ -4,17 +4,17 @@ import pandas as pd
 
 from contrastive.utils.config import process_config
 from contrastive.models.contrastive_learner import ContrastiveLearner
-from contrastive.data.datamodule import DataModule_Visualization, DataModule_PureContrastive
+from contrastive.models.contrastive_learner_visualization import ContrastiveLearner_Visualization
+from contrastive.data.datamodule import DataModule_Evaluation
 
 
 def embeddings_to_pandas(embeddings, csv_path):
     # embeddings is the output of the compute_representations function
     # csv_path is the path where to save the csv
+    print(len(embeddings[1]))
     values = pd.DataFrame(embeddings[0].numpy(), columns=['dim1', 'dim2',\
 'dim3', 'dim4'])
     labels = embeddings[1]
-    for i,tens in enumerate(labels):
-        labels[i] = tens.numpy()
     labels = pd.DataFrame(labels, columns=['ID'])
     df_embeddings = pd.concat([labels, values], axis=1)
     df_embeddings.to_csv(csv_path)
@@ -24,10 +24,10 @@ def embeddings_to_pandas(embeddings, csv_path):
 def compute_embeddings(config):
     config = process_config(config)
 
-    data_module = DataModule_PureContrastive(config)
+    data_module = DataModule_Evaluation(config)
     data_module.setup(stage='validate')
 
-    model = ContrastiveLearner(config,
+    model = ContrastiveLearner_Visualization(config,
                                sample_data=data_module)
 
 
@@ -40,6 +40,8 @@ map_location=torch.device('cpu'))
     # calculate embeddings for training set and save them somewhere
     train_embeddings = model.compute_representations(data_module.train_dataloader())
     print("train embeddings:", train_embeddings[0][:10])
+    print(train_embeddings[0].shape)
+    print(train_embeddings[1][:10])
 
     # convert the embeddings to pandas df and save them
     embeddings_to_pandas(train_embeddings, "/neurospin/dico/agaudin/Runs/02_explicabilite_humains_2022/\
@@ -52,7 +54,7 @@ Output/2022-05-18/11-00-10/train_embeddings.csv")
     embeddings_to_pandas(val_embeddings, "/neurospin/dico/agaudin/Runs/02_explicabilite_humains_2022/\
 Output/2022-05-18/11-00-10/val_embeddings.csv")
 
-    # /!\ DOESN'T WORK ON TEST => probably because test is not processed correctly in PureContrastive
+    # /!\ DOESN'T WORK ON TEST
     # same thing for test set
     test_embeddings = model.compute_representations(data_module.test_dataloader())
     print("test embeddings:", test_embeddings[:10])
