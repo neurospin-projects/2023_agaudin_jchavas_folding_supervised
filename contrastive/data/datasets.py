@@ -276,10 +276,10 @@ class ContrastiveDataset_WithFoldLabels():
 
         # Computes the transforms
         self.transform1 = transform_foldlabel(sample_foldlabel,
-                                              self.config.percentage_1,
+                                              self.config.percentage,
                                               self.config)
         self.transform2 = transform_foldlabel(sample_foldlabel,
-                                              self.config.percentage_2,
+                                              self.config.percentage,
                                               self.config)
         self.transform3 = transform_only_padding(self.config)
 
@@ -346,10 +346,10 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
 
         # Computes the transforms
         self.transform1 = transform_foldlabel(sample_foldlabel,
-                                              self.config.percentage_1,
+                                              self.config.percentage,
                                               self.config)
         self.transform2 = transform_foldlabel(sample_foldlabel,
-                                              self.config.percentage_1,
+                                              self.config.percentage,
                                               self.config)
         self.transform3 = transform_only_padding(self.config)
 

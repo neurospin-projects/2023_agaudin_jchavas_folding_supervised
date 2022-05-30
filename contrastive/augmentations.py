@@ -197,23 +197,36 @@ def intersection_skeleton_foldlabel(arr_foldlabel, arr_skel):
                          f"Skeleton has {count_skel} non-null elements")
     return count_intersec
     
-def remove_branches_up_to_percent(arr_foldlabel, arr_skel, percentage):
+
+def remove_bottom_branches(a):
+    """Removes bottom branches from foldlabel.
+    
+    Bottom branches are numerated between 2000 and 2999"""
+    return a*((a<2000) | (a>=3000)).astype(int)
+
+
+def remove_branches_up_to_percent(arr_foldlabel, arr_skel,
+                                  percentage, keep_bottom):
     """Removes from arr_skel random branches up to percentage of pixels
 
     If percentage==0, no pixel is deleted
     If percentage==100, all pixels are deleted
     """
+    # We make some initial checks
+    # of alignments between skeletons and foldlabels
+    total_pixels_after = intersection_skeleton_foldlabel(arr_foldlabel,
+                                                         arr_skel)
+
+    if keep_bottom:
+        arr_foldlabel = remove_bottom_branches(arr_foldlabel)
+
     branches, counts = np.unique(arr_foldlabel, return_counts=True)
+    total_pixels = count_non_null(arr_skel)
     # We take as index branches indexes that are not 0
     log.debug(f"Number of branches = {branches.size}")
     log.debug(f"Histogram of size of branches = {counts}")
     indexes = np.arange(branches.size-1) + 1
 
-    # We get initial total_pixels and make some checks
-    # of alignments between skeletons and foldlabels
-    total_pixels = count_non_null(arr_skel)
-    total_pixels_after = intersection_skeleton_foldlabel(arr_foldlabel,
-                                                         arr_skel)
     log.debug(f"total_pixels = {total_pixels}")
     log.debug(f"skel shape = {arr_skel.shape}")
     log.debug(f"foldlabel shape = {arr_foldlabel.shape}")
@@ -245,10 +258,11 @@ class RemoveRandomBranchTensor(object):
     """Removes randomly branches up to percent
     """
 
-    def __init__(self, sample_foldlabel, percentage, input_size):
+    def __init__(self, sample_foldlabel, percentage, input_size, keep_bottom):
         self.sample_foldlabel = sample_foldlabel
         self.percentage = percentage
         self.input_size = input_size
+        self.keep_bottom = keep_bottom
 
     def __call__(self, tensor_skel):
         log.debug(f"Shape of tensor_skel = {tensor_skel.shape}")
@@ -268,12 +282,14 @@ class RemoveRandomBranchTensor(object):
                 arr_skel_without_branches[num_img,...] = \
                     remove_branches_up_to_percent(arr_foldlabel[num_img,...],
                                                   arr_skel[num_img,...],
-                                                  self.percentage)
+                                                  self.percentage,
+                                                  self.keep_bottom)
         elif len(arr_skel.shape) == len(self.input_size):
             arr_skel_without_branches = \
                 remove_branches_up_to_percent(arr_foldlabel,
                                               arr_skel,
-                                              self.percentage)
+                                              self.percentage,
+                                              self.keep_bottom)
         else:
             raise RuntimeError(f"Unexpected skeleton shape."
                 f"Compare arr_skel shape {arr_skel.shape} "
