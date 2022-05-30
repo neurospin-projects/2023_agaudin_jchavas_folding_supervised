@@ -56,11 +56,11 @@ from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 
 from contrastive.data.datamodule import DataModule
-from contrastive.data.datamodule import DataModule_Visualization
+from contrastive.data.datamodule import DataModule_Evaluation
 from contrastive.evaluation.clustering import Cluster
 from contrastive.models.contrastive_learner import ContrastiveLearner
-#from contrastive.models.contrastive_learner_visualization \
-#    import ContrastiveLearner_Visualization
+from contrastive.models.contrastive_learner_visualization \
+    import ContrastiveLearner_Visualization
 from contrastive.utils.config import process_config
 from contrastive.utils.plots.visualize_tsne import plot_tsne
 
@@ -95,11 +95,11 @@ def postprocessing_results(config: DictConfig) -> None:
         plt.show()
         plt.pause(0.001)
 
-    data_module = DataModule(config)
+    data_module = DataModule_Evaluation(config)
     data_module.setup(stage='validate')
 
     # Show the views of the first skeleton after each epoch
-    model = ContrastiveLearner(config,
+    model = ContrastiveLearner_Visualization(config,
                                              sample_data=data_module)
     model = model.load_from_checkpoint(config.checkpoint_path,
                                        config=config,
@@ -191,7 +191,7 @@ def postprocessing_results(config: DictConfig) -> None:
         json.dump(result_dict, fp)
     torch.save(embeddings, f"{config.analysis_path}/train_val_embeddings.pt")
     with open(f"{config.analysis_path}/train_val_filenames.json", 'w') as f:
-        json.dump(filenames, f, indent=2)
+       f.write(json.dumps(filenames, indent=2))
 
 
 if __name__ == "__main__":

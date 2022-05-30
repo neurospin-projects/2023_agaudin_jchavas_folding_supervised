@@ -184,7 +184,7 @@ def extract_data(npy_file_path, config):
     train_val_subjects = read_train_val_csv(config.train_val_csv_file)
 
     # Extracts test subject names and corresponding data
-    test_subjects, test_data, test_subjects_index = \
+    test_subjects, test_data = \
         extract_test(normal_subjects, train_val_subjects, normal_data)
 
     # Restricts train_val length

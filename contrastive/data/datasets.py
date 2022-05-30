@@ -404,7 +404,7 @@ class ContrastiveDataset_Visualization():
 
         # Gets the data corresponding to idx
         sample = get_sample(self.arr, idx, 'float32')
-        filename = self.filenames[idx]
+        filename = get_filename(self.filenames, idx)
 
         # Computes the transforms
         self.transform1 = transform_only_padding(self.config)

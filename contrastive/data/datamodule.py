@@ -52,10 +52,10 @@ class DataModule(pl.LightningDataModule):
 
     def setup(self, stage=None, mode=None):
         if self.config.with_labels == True:
-            self.dataset_train, self.dataset_val, self.dataset_test, _ = \
+            self.dataset_train, self.dataset_val, self.dataset_test, self.dataset_train_val = \
                 create_sets_with_labels(self.config)
         else:
-            self.dataset_train, self.dataset_val, self.dataset_test, _ = \
+            self.dataset_train, self.dataset_val, self.dataset_test, self.dataset_train_val = \
                 create_sets_without_labels(self.config)
 
 
