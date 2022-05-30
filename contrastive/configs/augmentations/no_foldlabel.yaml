@@ -5,5 +5,3 @@ patch_size: [1, 12, 28, 28]
 max_angle: 10
 checkerboard_size: 4
 keep_bottom: True
-percentage_1: 50
-percentage_2: 50
