@@ -268,7 +268,7 @@ class RemoveRandomBranchTensor(object):
                 arr_skel_without_branches[num_img,...] = \
                     remove_branches_up_to_percent(arr_foldlabel[num_img,...],
                                                   arr_skel[num_img,...],
-                                                self.percentage)
+                                                  self.percentage)
         elif len(arr_skel.shape) == len(self.input_size):
             arr_skel_without_branches = \
                 remove_branches_up_to_percent(arr_foldlabel,
