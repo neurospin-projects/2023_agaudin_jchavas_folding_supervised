@@ -40,7 +40,7 @@ import torch
 from scipy.ndimage import rotate
 from sklearn.preprocessing import OneHotEncoder
 
-from utils import logs
+from contrastive.utils import logs
 
 log = logs.set_file_logger(__file__)
 
@@ -173,12 +173,29 @@ class BinarizeTensor(object):
         arr[arr > 0] = 1
         return torch.from_numpy(arr)
 
+def count_non_null(arr):
+    return (arr != 0).sum()
+
 def remove_branch(arr_foldlabel, arr_skel, selected_branch):
     """It masks the selected branch in arr_skel
     """
     mask = ( (arr_foldlabel != 0) & (arr_foldlabel != selected_branch))  
     mask = mask.astype(int)
     return arr_skel * mask
+
+def intersection_skeleton_foldlabel(arr_foldlabel, arr_skel):
+    """It returns the intersection between skeleton and foldlabel
+    """
+    mask = ( (arr_foldlabel != 0) ).astype(int) 
+    intersec = arr_skel*mask
+    count_intersec = count_non_null(intersec)
+    count_skel = count_non_null(arr_skel)
+    if count_intersec != count_skel:
+        raise ValueError("Probably misaligned skeleton and foldlabel\n"
+                         f"Intersection between skeleton and foldlabel "
+                         f"has {count_intersec} non-null elements.\n"
+                         f"Skeleton has {count_skel} non-null elements")
+    return count_intersec
     
 def remove_branches_up_to_percent(arr_foldlabel, arr_skel, percentage):
     """Removes from arr_skel random branches up to percentage of pixels
@@ -186,27 +203,37 @@ def remove_branches_up_to_percent(arr_foldlabel, arr_skel, percentage):
     If percentage==0, no pixel is deleted
     If percentage==100, all pixels are deleted
     """
-    branches = np.unique(arr_foldlabel)
+    branches, counts = np.unique(arr_foldlabel, return_counts=True)
     # We take as index branches indexes that are not 0
     log.debug(f"Number of branches = {branches.size}")
+    log.debug(f"Histogram of size of branches = {counts}")
     indexes = np.arange(branches.size-1) + 1
-    # We take random branches
-    np.random.shuffle(indexes)
-    arr_skel_without_branches = arr_skel
-    total_pixels = (arr_skel !=0 ).sum()
-    total_pixels_after=total_pixels
+
+    # We get initial total_pixels and make some checks
+    # of alignments between skeletons and foldlabels
+    total_pixels = count_non_null(arr_skel)
+    total_pixels_after = intersection_skeleton_foldlabel(arr_foldlabel,
+                                                         arr_skel)
     log.debug(f"total_pixels = {total_pixels}")
     log.debug(f"skel shape = {arr_skel.shape}")
     log.debug(f"foldlabel shape = {arr_foldlabel.shape}")
+
+    # We take random branches
+    np.random.seed()
+    np.random.shuffle(indexes)
+    arr_skel_without_branches = arr_skel
+
+    # We loop over shuffled indexes until enough branches have been removed
     for index in indexes:
-        if total_pixels_after <= total_pixels*(100-percentage)/100:
+        if total_pixels_after <= total_pixels*(100.-percentage)/100.:
             break
         arr_skel_without_branches = \
             remove_branch(arr_foldlabel,
                           arr_skel_without_branches,
                           branches[index])
         total_pixels_after = (arr_skel_without_branches != 0).sum()
-    log.debug(f"total_pixels_after = {total_pixels_after}")
+        log.debug(f"total_pixels_after (iteration) = {total_pixels_after}")
+    log.debug(f"total_pixels_after (final) = {total_pixels_after}")
     percent_pixels_removed = (total_pixels-total_pixels_after)/total_pixels*100
     log.debug(f"% removed pixels = {percent_pixels_removed}")
     assert(percent_pixels_removed >= percentage)

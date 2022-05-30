@@ -64,6 +64,8 @@ def create_sets_without_labels(config):
 
     # Loads and separates in train_val/test set foldlabels if requested
     if config.foldlabel == True:
+        check_subject_consistency(config.subjects_all,
+                                  config.subjects_foldlabel_all)
         train_val_foldlabel_subjects, train_val_foldlabel_data, \
             test_foldlabel_subjects, test_foldlabel_data = \
             extract_data(config.foldlabel_all, config)
@@ -149,6 +151,8 @@ def create_sets_with_labels(config):
 
     # Loads and separates in train_val/test set foldlabels if requested
     if config.foldlabel == True:
+        check_subject_consistency(config.subjects_all,
+                                  config.subjects_foldlabel_all)
         train_val_foldlabel_subjects, train_val_foldlabel_data, \
         train_val_labels, test_foldlabel_subjects, \
         test_foldlabel_data, test_labels = \

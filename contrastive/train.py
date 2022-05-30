@@ -43,6 +43,7 @@ import logging
 import hydra
 import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 
@@ -94,9 +95,13 @@ def train(config):
 
     summary(model, tuple(config.input_size), device="cpu")
 
+    # early_stop_callback = EarlyStopping(monitor="val_loss",
+    #     patience=config.early_stopping_patience)
+
     trainer = pl.Trainer(
         gpus=1,
         max_epochs=config.max_epochs,
+        # callbacks=[early_stop_callback],
         logger=tb_logger,
         flush_logs_every_n_steps=config.nb_steps_per_flush_logs,
         log_every_n_steps=config.log_every_n_steps)

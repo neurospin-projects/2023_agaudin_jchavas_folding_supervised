@@ -91,6 +91,14 @@ def read_numpy_data_and_subject_csv(npy_file_path, csv_file_path):
     return npy_data, subjects
 
 
+def check_subject_consistency(csv_file_path_1, csv_file_path_2):
+    subjects_1 = read_subject_csv(csv_file_path_1)
+    subjects_2 = read_subject_csv(csv_file_path_2)
+    if not subjects_1.equals(subjects_2):
+        raise ValueError("Both subject files (skel, foldlabel) are not equal:\n"
+                         f"subjects_1 head = {subjects_1.head()}\n"
+                         f"subjects_2 head = {subjects_2.head()}\n")
+
 def read_train_val_csv(csv_file_path: str) -> pd.DataFrame:
     """Reads train_val csv.
     
@@ -212,7 +220,10 @@ def extract_train_val_dataset(train_val_dataset, partition, seed):
 
 def check_if_same_subjects(subjects_1, subjects_2, keyword):
     """Checks if the dataframes subjects_1 and subjects_2 are equal"""
-    if not subjects_1.reset_index(drop=True).equals(subjects_2):
+    log.debug(f"Both heads (must be equal) of {keyword} subjects = \n"
+              f"{subjects_1.head()}\n"
+              f"and \n{subjects_2.head()}")
+    if not subjects_1.reset_index(drop=True).equals(subjects_2.reset_index(drop=True)):
         log.error(f"subjects_1 head = {subjects_1.head()}")
         log.error(f"subjects_2 head = {subjects_2.head()}")
         raise ValueError(f"Both {keyword} subject dataframes are not equal")
