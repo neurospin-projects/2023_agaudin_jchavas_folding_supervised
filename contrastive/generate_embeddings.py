@@ -27,12 +27,16 @@ def embeddings_to_pandas(embeddings, csv_path=None):
 def compute_embeddings(config):
     config = process_config(config)
 
+    config.mode = 'evaluation'
+
+    # create new models in mode visualisation
     data_module = DataModule_Evaluation(config)
     data_module.setup(stage='validate')
 
     model = ContrastiveLearner_Visualization(config,
                                sample_data=data_module)
 
+    # fetch and load weights
     # /!\ model weights are not necessarly at the same place that the embeddings you want to use
     if config.model_path:
         paths = config.model_path+r'*.ckpt'
@@ -46,6 +50,7 @@ def compute_embeddings(config):
     model.load_state_dict(checkpoint['state_dict'])
 
     # calculate embeddings for training set and save them somewhere
+    print("TRAIN SET")
     train_embeddings = model.compute_representations(data_module.train_dataloader())
     print("train embeddings:", train_embeddings[0][:10])
     print(train_embeddings[0].shape)
@@ -56,14 +61,16 @@ def compute_embeddings(config):
                          csv_path=config.embeddings_path+"train_embeddings.csv")
 
     # same thing for validation set
+    print("VAL SET")
     val_embeddings = model.compute_representations(data_module.val_dataloader())
     print("validation embeddings:",val_embeddings[0][:10])
 
     embeddings_to_pandas(val_embeddings,
                          csv_path=config.embeddings_path+"val_embeddings.csv")
 
-    # /!\ DOESN'T WORK ON TEST
+    # /!\ DOESN'T WORK ON TEST => problem in create_datasets
     # same thing for test set
+    print("TEST SET")
     test_embeddings = model.compute_representations(data_module.test_dataloader())
     print("test embeddings:", test_embeddings[:10])
 

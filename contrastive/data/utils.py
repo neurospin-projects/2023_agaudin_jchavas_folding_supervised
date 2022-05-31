@@ -99,6 +99,7 @@ def read_train_val_csv(csv_file_path: str) -> pd.DataFrame:
     """
     train_val_subjects = pd.read_csv(csv_file_path, names=['Subject'])
     log.debug(f"train_val_subjects = {train_val_subjects}")
+    print("TRAIN_VAL_SUBJECTS",train_val_subjects.head())
     return train_val_subjects
 
 
@@ -111,6 +112,7 @@ def extract_test(normal_subjects, train_val_subjects, normal_data):
     test_subjects_index = normal_subjects[~normal_subjects.Subject.isin(
         train_val_subjects.Subject)].index
     test_subjects = normal_subjects.loc[test_subjects_index]
+    test_subjects = test_subjects.reset_index(drop=True)
     len_test = len(test_subjects_index)
     log.debug(f"length of test = {len_test}")
     log.info(f"test_subjects = {test_subjects[:5]}")

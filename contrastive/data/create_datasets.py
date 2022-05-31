@@ -117,6 +117,11 @@ def create_sets_without_labels(config):
         extract_train_val_dataset(train_val_dataset,
                                   config.partition,
                                   config.seed)
+    
+    # just to have the same data format as train and val
+    test_dataset, _ = torch.utils.data.random_split(
+        test_dataset,
+        [len(test_dataset),0])
 
     return train_dataset, val_dataset, test_dataset, train_val_dataset
 
