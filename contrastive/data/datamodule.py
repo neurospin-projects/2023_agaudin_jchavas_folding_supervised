@@ -71,6 +71,7 @@ class DataModule_Learning(DataModule):
                                   batch_size=self.config.batch_size,
                                   sampler=RandomSampler(self.dataset_train),
                                   pin_memory=self.config.pin_mem,
+                                  multiprocessing_context='fork',
                                   num_workers=self.config.num_cpu_workers
                                   )
         return loader_train
@@ -79,6 +80,7 @@ class DataModule_Learning(DataModule):
         loader_val = DataLoader(self.dataset_val,
                                 batch_size=self.config.batch_size,
                                 pin_memory=self.config.pin_mem,
+                                multiprocessing_context='fork',
                                 num_workers=self.config.num_cpu_workers,
                                 shuffle=False
                                 )
@@ -88,6 +90,7 @@ class DataModule_Learning(DataModule):
         loader_test = DataLoader(self.dataset_test,
                                  batch_size=self.config.batch_size,
                                  pin_memory=self.config.pin_mem,
+                                 multiprocessing_context='fork',
                                  num_workers=self.config.num_cpu_workers,
                                  shuffle=False
                                  )

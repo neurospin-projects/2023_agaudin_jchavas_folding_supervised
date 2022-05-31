@@ -38,7 +38,7 @@
 ######################################################################
 # Imports and global variables definitions
 ######################################################################
-import logging
+import os
 
 import hydra
 import pytorch_lightning as pl
@@ -56,6 +56,7 @@ from contrastive.models.contrastive_learner_visualization import \
     ContrastiveLearner_Visualization
 from contrastive.utils.config import process_config
 from contrastive.utils.logs import set_root_logger_level
+from contrastive.utils.logs import set_file_log_handler
 from contrastive.utils.logs import set_file_logger
 
 tb_logger = pl_loggers.TensorBoardLogger('logs')
@@ -75,6 +76,10 @@ def train(config):
     config = process_config(config)
 
     set_root_logger_level(config.verbose)
+    # Sets handler for logger
+    set_file_log_handler(file_dir=os.getcwd(),
+                         suffix='output')
+    log.info(f"current directory = {os.getcwd()}")
 
     if config.mode == 'evaluation':
         data_module = DataModule_Evaluation(config)

@@ -95,6 +95,7 @@ def postprocessing_results(config: DictConfig) -> None:
         plt.show()
         plt.pause(0.001)
 
+    config.mode = 'evaluation'
     data_module = DataModule_Evaluation(config)
     data_module.setup(stage='validate')
 

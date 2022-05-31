@@ -57,8 +57,9 @@ def get_sample(arr, idx, type_el):
     First axis of arr (numpy array) corresponds to subject numbers from 0 to N-1
     type_el is 'float32' for input, 'int32' for foldlabel
     """
+    log.info(f"idx (in get_sample) = {idx}")
+    log.info(f"shape of arr (in get_sample) = {arr.shape}")
     sample = arr[idx].astype(type_el)
-    log.debug(f"idx (in get_sample) = {idx}")
 
     return torch.from_numpy(sample)
 
@@ -266,6 +267,7 @@ class ContrastiveDataset_WithFoldLabels():
             idx = idx.tolist()
 
         # Gets data corresponding to idx
+        log.info(f"length = {self.nb_train}")
         sample = get_sample(self.arr, idx, 'float32')
         sample_foldlabel = get_sample(self.foldlabel_arr, idx, 'int32')
         filename = get_filename(self.filenames, idx)
@@ -335,6 +337,8 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
             idx = idx.tolist()
 
         # Gets the data corresponding to idx
+        log.info(f"length = {self.nb_train}")
+        log.info(f"filenames = {self.filenames}")
         sample = get_sample(self.arr, idx, 'float32')
         sample_foldlabel = get_sample(self.foldlabel_arr, idx, 'int32')
         labels = get_label(self.labels, idx)
@@ -383,9 +387,15 @@ class ContrastiveDataset_Visualization():
         self.arr = array
         self.transform = True
         self.nb_train = len(filenames)
-        log.info(self.nb_train)
+        log.info(f"Number of subjects = {self.nb_train}")
         self.filenames = filenames
         self.config = config
+
+        # Some checks
+        if 'Subject' in filenames:
+            raise ValueError("\'Subject\' is not expected as subject name.\n"
+                             "Probably the column name has been considered "
+                             "as a subject. This is a bug.")
 
     def __len__(self):
         return (self.nb_train)
@@ -400,9 +410,11 @@ class ContrastiveDataset_Visualization():
             tuple of (views, subject ID)
         """
         if torch.is_tensor(idx):
-            idx = idx.tolist()
+            idx = idx.tolist(self.nb_train)
 
         # Gets the data corresponding to idx
+        log.info(f"length = {self.nb_train}")
+        log.info(f"filenames = {self.filenames}")
         sample = get_sample(self.arr, idx, 'float32')
         filename = get_filename(self.filenames, idx)
 

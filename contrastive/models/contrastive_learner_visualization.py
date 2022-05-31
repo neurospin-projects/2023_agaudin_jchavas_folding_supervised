@@ -36,6 +36,7 @@
 A test to just analyze randomly generated input images
 """
 import torch
+import numpy as np
 
 from contrastive.losses import NTXenLoss
 from contrastive.models.contrastive_learner import ContrastiveLearner
@@ -53,10 +54,10 @@ class ContrastiveLearner_Visualization(ContrastiveLearner):
             config=config, sample_data=sample_data)
         self.config = config
         self.sample_data = sample_data
-        self.sample_i = []
-        self.sample_j = []
-        self.val_sample_i = []
-        self.val_sample_j = []
+        self.sample_i = np.array([])
+        self.sample_j = np.array([])
+        self.val_sample_i = np.array([])
+        self.val_sample_j = np.array([])
         self.recording_done = False
         if self.config.environment == "brainvisa":
             self.visu_anatomist = Visu_Anatomist()
