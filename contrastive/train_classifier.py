@@ -20,9 +20,7 @@ def train_classifier(config):
 
     
     # import the embeddings (supposed to be already computed)
-    #dir_path = config.embeddings_path
-    dir_path = "/neurospin/dico/agaudin/Runs/02_explicabilite_humains_2022/\
-Output/2022-05-18/11-00-10/"  # should be passed as an argument/ in config
+    dir_path = config.embeddings_path
     train_embeddings = pd.read_csv(dir_path+'train_embeddings.csv', index_col=0)
     val_embeddings = pd.read_csv(dir_path+'val_embeddings.csv', index_col=0)
     #test_embeddings = pd.read_csv(dir_path+'test_embeddings.csv', index_col=0)
