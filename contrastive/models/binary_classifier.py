@@ -4,9 +4,11 @@ import pytorch_lightning as pl
 
 
 class BinaryClassifier(pl.LightningModule):
-    def __init__(self, input_size, output_size, activation=None, loss='MSE'):
+    def __init__(self, layers_sizes, activation=None, loss='MSE'):
         super().__init__()
-        self.layer0 = nn.Linear(input_size, output_size)
+        self.layers = []
+        for i in range(len(layers_sizes)-1):
+            self.layers.append(nn.Linear(layers_sizes[i], layers_sizes[i+1]))
 
         if activation == 'sigmoid':
             self.activation = nn.Sigmoid()
@@ -21,10 +23,11 @@ class BinaryClassifier(pl.LightningModule):
 
     def forward(self, x):
         # in lightning, forward defines the prediction/inference actions
-        output = self.layer0(x)
+        for layer in self.layers:
+            x = layer(x)
         if self.activation:
-            output = self.activation(output)
-        return output
+            x = self.activation(x)
+        return x
     
     def training_step(self, batch, batch_idx):
         # training_step defined the train loop.

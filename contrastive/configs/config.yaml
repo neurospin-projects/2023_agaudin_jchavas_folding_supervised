@@ -10,3 +10,4 @@ defaults:
   - platform: cuda_not_brainvisa
   - trainer: default
   - classifier: binary_classifier
+  - embeddings: embeddings

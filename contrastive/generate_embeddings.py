@@ -37,11 +37,7 @@ def compute_embeddings(config):
                                sample_data=data_module)
 
     # fetch and load weights
-    # /!\ model weights are not necessarly at the same place that the embeddings you want to use
-    if config.model_path:
-        paths = config.model_path+r'*.ckpt'
-    else:
-        paths = config.embeddings_path+"logs/lightning_logs/version_0/checkpoints/"+r'*.ckpt'
+    paths = config.model_path+"/logs/lightning_logs/version_0/checkpoints"+r'/*.ckpt'
     files = glob.glob(paths)
     print("model_weights:", files[0])
     cpkt_path = files[0]
@@ -58,7 +54,7 @@ def compute_embeddings(config):
 
     # convert the embeddings to pandas df and save them
     embeddings_to_pandas(train_embeddings,
-                         csv_path=config.embeddings_path+"train_embeddings.csv")
+                         csv_path=config.embeddings_save_path+"train_embeddings.csv")
 
     # same thing for validation set
     print("VAL SET")
@@ -66,16 +62,16 @@ def compute_embeddings(config):
     print("validation embeddings:",val_embeddings[0][:10])
 
     embeddings_to_pandas(val_embeddings,
-                         csv_path=config.embeddings_path+"val_embeddings.csv")
+                         csv_path=config.embeddings_save_path+"val_embeddings.csv")
 
     # /!\ DOESN'T WORK ON TEST => problem in create_datasets
     # same thing for test set
     print("TEST SET")
     test_embeddings = model.compute_representations(data_module.test_dataloader())
-    print("test embeddings:", test_embeddings[:10])
+    print("test embeddings:", test_embeddings[0][:10])
 
     embeddings_to_pandas(test_embeddings,
-                         csv_path=config.embeddings_path+"test_embeddings.csv")
+                         csv_path=config.embeddings_save_path+"test_embeddings.csv")
 
 
 
