@@ -6,9 +6,9 @@ import pytorch_lightning as pl
 class BinaryClassifier(pl.LightningModule):
     def __init__(self, layers_sizes, activation=None, loss='MSE'):
         super().__init__()
-        self.layers = []
+        self.layers = nn.Sequential()
         for i in range(len(layers_sizes)-1):
-            self.layers.append(nn.Linear(layers_sizes[i], layers_sizes[i+1]))
+            self.layers.add_module('layer%d'%(i), nn.Linear(layers_sizes[i], layers_sizes[i+1]))
 
         if activation == 'sigmoid':
             self.activation = nn.Sigmoid()

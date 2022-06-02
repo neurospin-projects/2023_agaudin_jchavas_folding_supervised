@@ -1,7 +1,10 @@
 # @package _global_
 # define path and parameters needed for the classifier on the latent space
-embeddings_load_path: "/neurospin/dico/agaudin/Runs/02_explicabilite_humains_2022/Output/2022-05-18/11-00-10/HCP_embeddings/${now:%Y-%m-%d_%H-%M}"
-labels_paracingulate: "/neurospin/dico/agaudin/Runs/02_explicabilite_humains_2022/2022_jchavas_cingulate_inhibitory_control/contrastive/notebooks/fake_labels.csv"
+training_embeddings: "/neurospin/dico/agaudin/Runs/02_explicabilite_humains_2022/Output/2022-05-18/11-00-10/HCP_embeddings/2022-06-02_09-46/"
+embeddings_of_interest:
+results_save_path:
+training_labels: "/neurospin/dico/agaudin/Runs/02_explicabilite_humains_2022/2022_jchavas_cingulate_inhibitory_control/contrastive/notebooks/fake_labels.csv"
+labels_of_interest:
 classifier_hidden_layers: [10]
 classifier_activation: None
 classifier_loss: 'MSE'
