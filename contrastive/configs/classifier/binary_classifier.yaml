@@ -8,3 +8,5 @@ labels_of_interest:
 classifier_hidden_layers: [10]
 classifier_activation: None
 classifier_loss: 'MSE'
+class_max_epochs: 10
+class_batch_size: 10

@@ -82,9 +82,9 @@ def train_classifier(config):
     #print("activation", bin_class.activation)
 
     class_train_set = TensorDataset(X, Y)
-    train_loader = DataLoader(class_train_set, batch_size=10)
+    train_loader = DataLoader(class_train_set, batch_size=config.class_batch_size)
 
-    trainer = pl.Trainer(max_epochs=5)
+    trainer = pl.Trainer(max_epochs=config.class_max_epochs)
     trainer.fit(model=bin_class, train_dataloaders=train_loader)
 
 
@@ -113,25 +113,30 @@ def train_classifier(config):
 
     # choose labels predicted with frontier = 0.5
     labels_pred = (labels_pred >= 0.5).astype('int')
-     # separate train, val and test predictions and true values (if necessary)
-    labels_pred_train = labels_pred[:n_train]
-    labels_pred_val = labels_pred[n_train:n_train+n_val]
-    labels_pred_test = labels_pred[n_train+n_val:]
-    # if not already separated:
-    labels_train = labels_true[:n_train]
-    labels_val = labels_true[n_train:n_train+n_val]
-    labels_test = labels_true[n_train+n_val:]
-
-    # compute accuracies
+    # compute accuracy
     accuracy = accuracy_score(labels_true, labels_pred)
-    accuracy_train = accuracy_score(labels_train, labels_pred_train)
-    accuracy_val = accuracy_score(labels_val, labels_pred_val)
-    accuracy_test = accuracy_score(labels_test, labels_pred_test)
 
-    accuracies = {'total': accuracy,
-                  'train': accuracy_train,
-                  'val': accuracy_val,
-                  'test': accuracy_test,
+
+    # separate train, val and test predictions and true values (if same embeddings
+    # used to train the SimCLR and the classifier)
+    if (EoI_path == train_embs_path) and (LoI_path == train_lab_paths): # /!\ not the good condition here
+        labels_pred_train = labels_pred[:n_train]
+        labels_pred_val = labels_pred[n_train:n_train+n_val]
+        labels_pred_test = labels_pred[n_train+n_val:]
+
+        labels_train = labels_true[:n_train]
+        labels_val = labels_true[n_train:n_train+n_val]
+        labels_test = labels_true[n_train+n_val:]
+
+        # compute accuracies
+        accuracy_train = accuracy_score(labels_train, labels_pred_train)
+        accuracy_val = accuracy_score(labels_val, labels_pred_val)
+        accuracy_test = accuracy_score(labels_test, labels_pred_test)
+
+    accuracies = {'total_accuracy': accuracy,
+                  #'train': accuracy_train,
+                  #'val': accuracy_val,
+                  #'test': accuracy_test,
                   'auc': roc_auc
                   }
 
