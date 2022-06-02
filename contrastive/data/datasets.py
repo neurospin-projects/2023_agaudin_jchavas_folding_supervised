@@ -57,8 +57,8 @@ def get_sample(arr, idx, type_el):
     First axis of arr (numpy array) corresponds to subject numbers from 0 to N-1
     type_el is 'float32' for input, 'int32' for foldlabel
     """
-    log.info(f"idx (in get_sample) = {idx}")
-    log.info(f"shape of arr (in get_sample) = {arr.shape}")
+    log.debug(f"idx (in get_sample) = {idx}")
+    log.debug(f"shape of arr (in get_sample) = {arr.shape}")
     sample = arr[idx].astype(type_el)
 
     return torch.from_numpy(sample)
@@ -337,8 +337,8 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
             idx = idx.tolist()
 
         # Gets the data corresponding to idx
-        log.info(f"length = {self.nb_train}")
-        log.info(f"filenames = {self.filenames}")
+        log.debug(f"length = {self.nb_train}")
+        log.debug(f"filenames = {self.filenames}")
         sample = get_sample(self.arr, idx, 'float32')
         sample_foldlabel = get_sample(self.foldlabel_arr, idx, 'int32')
         labels = get_label(self.labels, idx)

@@ -12,6 +12,8 @@ setup(
     long_description=open('README.rst').read(),
     install_requires=['pandas',
                       'scipy',
+		      'psutil',
+		      'orca',
                       'matplotlib',
                       'torch',
                       'tqdm',

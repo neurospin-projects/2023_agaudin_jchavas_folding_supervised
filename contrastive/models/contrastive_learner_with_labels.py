@@ -48,6 +48,7 @@ from contrastive.utils.plots.visualize_images \
     import plot_scatter_matrix_with_labels
 from contrastive.utils.plots.visualize_tsne import plot_tsne
 
+
 class SaveOutput:
     def __init__(self):
         self.outputs = {}
@@ -65,39 +66,38 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         super(ContrastiveLearner_WithLabels, self).__init__(
             config=config, sample_data=sample_data)
 
-    def plot_scatter_matrices_with_labels(self):
+    def plot_scatter_matrices_with_labels(self, dataloader, key):
         """Plots scatter matrices with label values."""
         # Makes scatter matrix of output space
-        r = self.compute_outputs_skeletons(
-            self.sample_data.train_dataloader())
-        X = r[0] # First element of tuple
-        labels = r[1] # Second element of tuple
+        r = self.compute_outputs_skeletons(dataloader())
+        X = r[0]  # First element of tuple
+        labels = r[1]  # Second element of tuple
         # Makes scatter matrix of output space with label values
         scatter_matrix_outputs_with_labels = \
             plot_scatter_matrix_with_labels(X, labels, buffer=True)
         self.logger.experiment.add_image(
-            'scatter_matrix_outputs_with_labels',
+            'scatter_matrix_outputs_with_labels_' + key,
             scatter_matrix_outputs_with_labels,
             self.current_epoch)
 
         # Makes scatter matrix of representation space with label values
-        r = self.compute_representations(
-            self.sample_data.train_dataloader())
-        X = r[0] # First element of tuple
-        labels = r[1] # Second element of tuple
+        r = self.compute_representations(dataloader())
+        X = r[0]  # First element of tuple
+        labels = r[1]  # Second element of tuple
         scatter_matrix_representations_with_labels = \
             plot_scatter_matrix_with_labels(X, labels, buffer=True)
         self.logger.experiment.add_image(
-            'scatter_matrix_representations_with_labels',
+            'scatter_matrix_representations_with_labels_' + key,
             scatter_matrix_representations_with_labels,
             self.current_epoch)
 
     def generalized_supervised_nt_xen_loss(self, z_i, z_j, labels):
         """Loss function for contrastive"""
-        temperature = max(self.config.temperature,
-                          self.config.temperature_initial
-                          - self.current_epoch/50. *
-                          (self.config.temperature_initial - self.config.temperature))
+        temperature = max(
+            self.config.temperature,
+            self.config.temperature_initial
+            - self.current_epoch/50. *
+            (self.config.temperature_initial - self.config.temperature))
 
         loss = GeneralizedSupervisedNTXenLoss(
             temperature=temperature,
@@ -322,7 +322,9 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             self.plot_scatter_matrices()
 
             # Plots scatter matrices with label values
-            self.plot_scatter_matrices_with_labels()
+            self.plot_scatter_matrices_with_labels(
+                self.sample_data.train_dataloader,
+                "train")
 
         # Plots views
         self.plot_views()
@@ -392,17 +394,9 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                     image_TSNE,
                     self.current_epoch)
 
-            # Makes scatter matrix of representation space
-            X, labels, _ = self.compute_representations(
-                self.sample_data.val_dataloader())
-
-            # Makes scatter matrix of representation space with label values
-            scatter_matrix_representations_with_labels = \
-                plot_scatter_matrix_with_labels(X, labels, buffer=True)
-            self.logger.experiment.add_image(
-                'scatter_matrix_representations_with_labels_validation',
-                scatter_matrix_representations_with_labels,
-                self.current_epoch)
+            # Plots scatter matrices
+            self.plot_scatter_matrices_with_labels(self.sample_data.val_dataloader,
+                                                   "validation")
 
         # calculates average loss
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()

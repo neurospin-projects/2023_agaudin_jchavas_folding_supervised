@@ -112,7 +112,7 @@ def train(config):
         log_every_n_steps=config.log_every_n_steps)
 
     trainer.fit(model, data_module, ckpt_path=config.checkpoint_path)
-
+    log.info("Fitting is done")
     log.info(f"Number of hooks: {len(model.save_output.outputs)}")
 
 

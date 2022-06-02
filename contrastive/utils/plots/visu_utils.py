@@ -42,12 +42,19 @@ logger = logging.getLogger(__name__)
 
 
 def buffer_to_image(buffer):
-    """Transforms IO buffer into PNG image"""
+    """Transforms IO buffer into tensor representing PNG image"""
 
     plt.savefig(buffer, format='png')
     buffer.seek(0)
     plt.close('all')
     image = PIL.Image.open(buffer)
+    image = ToTensor()(image).unsqueeze(0)[0]
+    return image
+
+def png_file_to_image(png_file):
+    """Transforms PNG file into tensor representing PNG image"""
+
+    image = PIL.Image.open(png_file)
     image = ToTensor()(image).unsqueeze(0)[0]
     return image
 

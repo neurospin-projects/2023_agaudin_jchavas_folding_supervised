@@ -34,17 +34,21 @@
 # knowledge of the CeCILL license version 2 and that you accept its terms.
 import io
 import logging
+import tempfile
 
 import matplotlib.pyplot as plt
+import plotly.express as px
 import numpy as np
 import pandas as pd
 from mpl_toolkits.mplot3d import Axes3D
 
 from .visu_utils import buffer_to_image
+from .visu_utils import png_file_to_image
 from .visu_utils import prime_factors
 
 logger = logging.getLogger(__name__)
 
+temp_dir = tempfile.mkdtemp()
 
 def plot_img(img, buffer):
     """Plots one 2D slice of one of the 3D images of the batch
@@ -163,14 +167,18 @@ def plot_scatter_matrix_with_labels(embeddings, labels, buffer, jitter=False):
     # arr_labels = arr_labels + 0.1 * np.random.randn(len(arr_labels))
     df_embeddings = pd.DataFrame(arr_embeddings)
     df_labels = pd.DataFrame(arr_labels)
-    df_labels = df_labels.add_prefix("lab_")
-    df = pd.concat([df_embeddings, df_labels], axis=1)
+    df = pd.concat([df_embeddings,
+                    df_labels.add_prefix("lab_")],
+                    axis=1)
+    df = pd.concat([df,
+                    df_labels.add_prefix("label_").astype(str)], axis=1)
 
-    pd.plotting.scatter_matrix(df,
-                               alpha=0.2,
-                               diagonal="hist")
+    fig = px.scatter_matrix(df,
+                            dimensions=df.columns[0:-1],
+                            color=df.columns[-1],
+                            opacity=0.5)
+    png_file = f"{temp_dir}/scatter_matrix.png"
+    fig.write_image(png_file, engine="kaleido")
 
     if buffer:
-        return buffer_to_image(buffer=io.BytesIO())
-    else:
-        plt.show()
+        return png_file_to_image(png_file)
