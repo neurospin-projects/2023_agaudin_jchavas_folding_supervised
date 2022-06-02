@@ -1,4 +1,4 @@
 # @package _global_
 # define path and parameters needed for the classifier on the latent space
-model_path: "/volatile/ag271121/Runs/02_explicabilite_humains_2022/Output/2022-05-18/11-00-10"
-embeddings_save_path: "/volatile/ag271121/Runs/02_explicabilite_humains_2022/Output/2022-05-18/11-00-10/HCP_embeddings/${now:%Y-%m-%d_%H-%M}"
+model_path: "/neurospin/dico/agaudin/Runs/02_explicabilite_humains_2022/Output/2022-05-18/11-00-10/"
+embeddings_save_path: "/neurospin/dico/agaudin/Runs/02_explicabilite_humains_2022/Output/2022-05-18/11-00-10/HCP_embeddings/${now:%Y-%m-%d_%H-%M}/"
