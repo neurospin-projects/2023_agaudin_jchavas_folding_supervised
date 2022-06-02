@@ -234,7 +234,8 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
                      + (1-self.proportion_pure_contrastive) * loss_label
 
         if self.return_logits:
-            return loss_multi, sim_zij, sim_zii, sim_zjj, correct_pairs, weights
+            return loss_multi, loss_label, \
+                   sim_zij, sim_zii, sim_zjj, correct_pairs, weights
 
         return loss_multi
 

@@ -95,9 +95,9 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         """Loss function for contrastive"""
         temperature = max(
             self.config.temperature,
-            self.config.temperature_initial
-            - self.current_epoch/50. *
-            (self.config.temperature_initial - self.config.temperature))
+            self.config.temperature_initial 
+            - self.current_epoch/50.
+            * (self.config.temperature_initial - self.config.temperature))
 
         loss = GeneralizedSupervisedNTXenLoss(
             temperature=temperature,
@@ -119,10 +119,12 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             sample = inputs[:, 2, :]
             batch_loss = self.cross_entropy_loss(sample, z_i, z_j)
         else:
-            batch_loss, sim_zij, sim_zii, sim_zjj, correct_pair, weights = \
+            batch_loss, batch_label_loss, \
+            sim_zij, sim_zii, sim_zjj, correct_pair, weights = \
                 self.generalized_supervised_nt_xen_loss(z_i, z_j, labels)
 
         self.log('train_loss', float(batch_loss))
+        self.log('train_label_loss', float(batch_label_loss))
 
         # Only computes graph on first step
         if self.global_step == 1:
@@ -139,11 +141,13 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 self.weights = weights
 
         # logs - a dictionary
-        logs = {"train_loss": float(batch_loss)}
+        logs = {"train_loss": float(batch_loss),
+                "train_label_loss": float(batch_label_loss)}
 
         batch_dictionary = {
             # REQUIRED: It is required for us to return "loss"
             "loss": batch_loss,
+            "label_loss": batch_label_loss,
             # optional for batch logging purposes
             "log": logs,
         }
@@ -331,6 +335,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # calculates average loss
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        avg_label_loss = torch.stack([x['loss_label'] for x in outputs]).mean()
 
         # logs histograms
         # self.custom_histogram_adder()
@@ -339,6 +344,10 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         self.logger.experiment.add_scalar(
             "Loss/Train",
             avg_loss,
+            self.current_epoch)
+        self.logger.experiment.add_scalar(
+            "Label_loss/Train",
+            avg_label_loss,
             self.current_epoch)
 
     def validation_step(self, val_batch, batch_idx):
@@ -355,18 +364,21 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             sample = inputs[:, 2, :]
             batch_loss = self.cross_entropy_loss(sample, z_i, z_j)
         else:
-            batch_loss, sim_zij, sim_sii, sim_sjj, correct_pairs, weights = \
+            batch_loss, batch_label_loss, \
+            sim_zij, sim_sii, sim_sjj, correct_pairs, weights = \
                 self.generalized_supervised_nt_xen_loss(z_i, z_j, labels)
 
         self.log('val_loss', float(batch_loss))
+        self.log('val_label_loss', float(batch_label_loss))
 
         # logs- a dictionary
-        logs = {"val_loss": float(batch_loss)}
+        logs = {"val_loss": float(batch_loss),
+                "val_label_loss": float(batch_label_loss)}
 
         batch_dictionary = {
             # REQUIRED: It is required for us to return "loss"
             "loss": batch_loss,
-
+            "label_loss": batch_label_loss,
             # optional for batch logging purposes
             "log": logs,
         }
@@ -400,9 +412,14 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # calculates average loss
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        avg_label_loss = torch.stack([x['label_loss'] for x in outputs]).mean()
 
         # logs losses using tensorboard logger
         self.logger.experiment.add_scalar(
             "Loss/Validation",
             avg_loss,
+            self.current_epoch)
+        self.logger.experiment.add_scalar(
+            "Label_loss/Validation",
+            avg_label_loss,
             self.current_epoch)
