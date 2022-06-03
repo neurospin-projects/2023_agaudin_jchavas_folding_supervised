@@ -33,8 +33,9 @@ class BinaryClassifier(pl.LightningModule):
         # training_step defined the train loop.
         # It is independent of forward
         x, y = batch
-        #x = x.view(x.size(0), -1)
+        x = x.view(x.size(0), -1)
         output = self.forward(x)
+        y = y.view(y.size(0), 1)
         loss = self.loss(output, y)
         # Logging to TensorBoard by default
         self.log("train_loss", loss)

@@ -50,7 +50,6 @@ def load_and_format_embeddings(dir_path, labels_path, config):
 def train_classifier(config):
     config = process_config(config)
 
-    set_root_logger_level(config.verbose)
 
     # set up load and save paths
     train_embs_path = config.training_embeddings
@@ -77,9 +76,6 @@ def train_classifier(config):
                                  loss=config.classifier_loss)
 
     print("model", bin_class)
-    #print("layers", bin_class.layers)
-    #print("loss", bin_class.loss)
-    #print("activation", bin_class.activation)
 
     class_train_set = TensorDataset(X, Y)
     train_loader = DataLoader(class_train_set, batch_size=config.class_batch_size)
@@ -93,10 +89,16 @@ def train_classifier(config):
         pass
     else:
         # load embeddings of interest
-        X,Y,n_train,n_val,_ = load_and_format_embeddings(train_embs_path, train_lab_paths, config)
+        X,Y,n_train,n_val,_ = load_and_format_embeddings(EoI_path, LoI_path, config)
 
+    # predict labels with the classifier
     labels_pred = bin_class.forward(X)
     labels_pred = labels_pred.detach().numpy()
+    # save the predicted labels
+    labels = read_labels(train_lab_paths, config.subject_column_name, config.label_names)
+    labels = pd.DataFrame(labels.values, columns=['Subject', 'label'])
+    labels['predicted'] = labels_pred
+    labels.to_csv(results_save_path+"labels.csv")
 
 
     # plot ROC curve
@@ -108,7 +110,6 @@ def train_classifier(config):
     plt.plot([0,1],[0,1],color='r')
     plt.legend()
     plt.savefig(results_save_path+"ROC_curve.png")
-    plt.show()
 
 
     # choose labels predicted with frontier = 0.5
@@ -143,6 +144,8 @@ def train_classifier(config):
     print(accuracies)  # find another way to get them than printing
     with open(results_save_path+"accuracies.json", 'w') as file:
         json.dump(accuracies, file)
+
+    plt.show()
 
 
 

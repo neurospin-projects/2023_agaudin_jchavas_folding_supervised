@@ -41,7 +41,7 @@ def compute_embeddings(config):
                                sample_data=data_module)
 
     # fetch and load weights
-    paths = config.model_path+"logs/lightning_logs/version_0/checkpoints"+r'/*.ckpt'
+    paths = config.model_path+"/logs/lightning_logs/version_0/checkpoints"+r'/*.ckpt'
     files = glob.glob(paths)
     print("model_weights:", files[0])
     cpkt_path = files[0]
