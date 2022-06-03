@@ -284,9 +284,9 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         or in the output space"""
 
         if register == "output":
-            X, _, _ = self.compute_outputs_skeletons(loader)
+            X, labels, _ = self.compute_outputs_skeletons(loader)
         elif register == "representation":
-            X, _, _ = self.compute_representations(loader)
+            X, labels, _ = self.compute_representations(loader)
         else:
             raise ValueError(
                 "Argument register must be either output or representation")
@@ -299,7 +299,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         X_tsne = tsne.fit_transform(Y)
 
         # Returns tsne embeddings
-        return X_tsne
+        return X_tsne, labels
 
     def training_epoch_end(self, outputs):
         """Computation done at the end of the epoch"""
@@ -308,34 +308,39 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             # Computes t-SNE both in representation and output space
             if self.current_epoch % self.config.nb_epochs_per_tSNE == 0 \
                     or self.current_epoch >= self.config.max_epochs:
-                X_tsne = self.compute_tsne(
+                X_tsne, labels = self.compute_tsne(
                     self.sample_data.train_dataloader(), "output")
-                image_TSNE = plot_tsne(X_tsne, buffer=True)
+                image_TSNE = plot_tsne(X_tsne, labels=labels, buffer=True)
                 self.logger.experiment.add_image(
                     'TSNE output image', image_TSNE, self.current_epoch)
-                X_tsne = self.compute_tsne(
+                X_tsne, labels = self.compute_tsne(
                     self.sample_data.train_dataloader(), "representation")
-                image_TSNE = plot_tsne(X_tsne, buffer=True)
+                image_TSNE = plot_tsne(X_tsne, labels=labels, buffer=True)
                 self.logger.experiment.add_image(
                     'TSNE representation image', image_TSNE, self.current_epoch)
 
-            # Plots zxx and weights histograms
-            self.plot_histograms()
+            if self.current_epoch % 5 == 0 \
+                    or self.current_epoch >= self.config.max_epochs:
+                # Plots scatter matrices
+                # Plots zxx and weights histograms
+                self.plot_histograms()
 
-            # Plots scatter matrices
-            self.plot_scatter_matrices()
+                # Plots scatter matrices
+                self.plot_scatter_matrices()
 
-            # Plots scatter matrices with label values
-            self.plot_scatter_matrices_with_labels(
-                self.sample_data.train_dataloader,
-                "train")
-
-        # Plots views
-        self.plot_views()
+                # Plots scatter matrices with label values
+                self.plot_scatter_matrices_with_labels(
+                    self.sample_data.train_dataloader,
+                    "train")
+        
+        if self.current_epoch % 5 == 0 \
+                or self.current_epoch >= self.config.max_epochs:
+            # Plots views
+            self.plot_views()
 
         # calculates average loss
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        avg_label_loss = torch.stack([x['loss_label'] for x in outputs]).mean()
+        avg_label_loss = torch.stack([x['label_loss'] for x in outputs]).mean()
 
         # logs histograms
         # self.custom_histogram_adder()
@@ -392,23 +397,26 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         if self.config.mode == "encoder":
             if self.current_epoch % self.config.nb_epochs_per_tSNE == 0 \
                     or self.current_epoch >= self.config.max_epochs:
-                X_tsne = self.compute_tsne(
+                X_tsne, labels = self.compute_tsne(
                     self.sample_data.val_dataloader(), "output")
-                image_TSNE = plot_tsne(X_tsne, buffer=True)
+                image_TSNE = plot_tsne(X_tsne, labels=labels, buffer=True)
                 self.logger.experiment.add_image(
                     'TSNE output validation image', image_TSNE, self.current_epoch)
-                X_tsne = self.compute_tsne(
+                X_tsne, labels = self.compute_tsne(
                     self.sample_data.val_dataloader(),
                     "representation")
-                image_TSNE = plot_tsne(X_tsne, buffer=True)
+                image_TSNE = plot_tsne(X_tsne, labels=labels, buffer=True)
                 self.logger.experiment.add_image(
                     'TSNE representation validation image',
                     image_TSNE,
                     self.current_epoch)
 
+            if self.current_epoch % 5 == 0 \
+                    or self.current_epoch >= self.config.max_epochs:
             # Plots scatter matrices
-            self.plot_scatter_matrices_with_labels(self.sample_data.val_dataloader,
-                                                   "validation")
+                self.plot_scatter_matrices_with_labels(
+                                                self.sample_data.val_dataloader,
+                                                "validation")
 
         # calculates average loss
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()

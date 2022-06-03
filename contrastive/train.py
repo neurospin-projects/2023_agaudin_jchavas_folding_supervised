@@ -74,6 +74,7 @@ We use the following definitions:
 @hydra.main(config_name='config', config_path="configs")
 def train(config):
     config = process_config(config)
+    os.environ["NUMEXPR_MAX_THREADS"] = str(config.num_cpu_workers)
 
     set_root_logger_level(config.verbose)
     # Sets handler for logger

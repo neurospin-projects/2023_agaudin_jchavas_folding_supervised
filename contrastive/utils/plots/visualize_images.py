@@ -76,9 +76,9 @@ def plot_bucket(img, buffer):
     """
 
     arr = img[0, 0, :, :, :]
-    logger.info(np.unique(arr, return_counts=True))
-    logger.info(img.shape)
-    logger.info(arr.shape)
+    logger.debug(np.unique(arr, return_counts=True))
+    logger.debug(img.shape)
+    logger.debug(arr.shape)
     bucket = np.argwhere(arr)
     bucket_t = (bucket).T
     x = bucket_t[:, 0]
@@ -164,7 +164,6 @@ def plot_scatter_matrix_with_labels(embeddings, labels, buffer, jitter=False):
     """Plots scatter matrix of the values of a tensor"""
     arr_embeddings = embeddings.detach().cpu().numpy()
     arr_labels = labels.detach().cpu().numpy() 
-    # arr_labels = arr_labels + 0.1 * np.random.randn(len(arr_labels))
     df_embeddings = pd.DataFrame(arr_embeddings)
     df_labels = pd.DataFrame(arr_labels)
     df = pd.concat([df_embeddings,

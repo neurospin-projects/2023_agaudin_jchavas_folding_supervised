@@ -177,9 +177,35 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         self.return_logits = return_logits
         self.INF = 1e8
 
-    def forward(self, z_i, z_j, labels):
+    def forward_pure_contrastive(self, z_i, z_j):
+        N = len(z_i)
+        z_i = func.normalize(z_i, p=2, dim=-1) # dim [N, D]
+        z_j = func.normalize(z_j, p=2, dim=-1) # dim [N, D]
+        sim_zii= (z_i @ z_i.T) / self.temperature # dim [N, N] 
+                        # => Upper triangle contains incorrect pairs
+        sim_zjj = (z_j @ z_j.T) / self.temperature # dim [N, N] 
+                        # => Upper triangle contains incorrect pairs
+        sim_zij = (z_i @ z_j.T) / self.temperature # dim [N, N] 
+                        # => the diag contains the correct pairs (i,j) 
+                        #    (x transforms via T_i and T_j)
+
+        # 'Remove' the diag terms by penalizing it (exp(-inf) = 0)
+        sim_zii = sim_zii - self.INF * torch.eye(N, device=z_i.device)
+        sim_zjj = sim_zjj - self.INF * torch.eye(N, device=z_i.device)
+
+        correct_pairs = torch.arange(N, device=z_i.device).long()
+
+        loss_i = func.cross_entropy(torch.cat([sim_zij, sim_zii], dim=1),
+                                    correct_pairs)
+        loss_j = func.cross_entropy(torch.cat([sim_zij.T, sim_zjj], dim=1),
+                                    correct_pairs)
+
+        return loss_i+loss_j
+
+    def forward_supervised(self, z_i, z_j, labels):
         N = len(z_i)
         assert N == len(labels), "Unexpected labels length: %i"%len(labels)
+
         z_i = func.normalize(z_i, p=2, dim=-1) # dim [N, D]
         z_j = func.normalize(z_j, p=2, dim=-1) # dim [N, D]
         sim_zii= (z_i @ z_i.T) / self.temperature # dim [N, N] 
@@ -199,16 +225,6 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         weights = self.kernel(all_labels, all_labels) # [2N, 2N]
         weights = weights * (1 - np.eye(2*N)) # puts 0 on the diagonal
 
-        # # We now apply a random mask
-        # random_mask = np.random.randint(0,2,weights.shape)
-        # random_mask = random_mask * (1 - np.eye(2*N))
-
-        # # We now assure that there is at least one 1 for each row
-        # for i in range(random_mask.shape[0]):
-        #     random_mask[i][(i+1)%random_mask.shape[0]] = 1
-
-        # weights = weights * random_mask # puts 0 randomly with 50% proba
-
         # We normalize the weights
         weights /= weights.sum(axis=1).reshape(2*N,1)
 
@@ -223,21 +239,64 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         loss_label = -1./N * (weights.to(z_i.device) \
                         * log_sim_Z).sum()
 
+        return loss_label, weights
+
+    def compute_parameters_for_display(self, z_i, z_j):
+        N = len(z_i)
+        z_i = func.normalize(z_i, p=2, dim=-1) # dim [N, D]
+        z_j = func.normalize(z_j, p=2, dim=-1) # dim [N, D]
+        sim_zii= (z_i @ z_i.T) / self.temperature # dim [N, N] 
+                        # => Upper triangle contains incorrect pairs
+        sim_zjj = (z_j @ z_j.T) / self.temperature # dim [N, N] 
+                        # => Upper triangle contains incorrect pairs
+        sim_zij = (z_i @ z_j.T) / self.temperature # dim [N, N] 
+                        # => the diag contains the correct pairs (i,j) 
+                        #    (x transforms via T_i and T_j)
+
+        # 'Remove' the diag terms by penalizing it (exp(-inf) = 0)
+        sim_zii = sim_zii - self.INF * torch.eye(N, device=z_i.device)
+        sim_zjj = sim_zjj - self.INF * torch.eye(N, device=z_i.device)
+
         correct_pairs = torch.arange(N, device=z_i.device).long()
 
-        loss_i = func.cross_entropy(torch.cat([sim_zij, sim_zii], dim=1),
-                                    correct_pairs)
-        loss_j = func.cross_entropy(torch.cat([sim_zij.T, sim_zjj], dim=1),
-                                    correct_pairs)
+        return sim_zii, sim_zij, sim_zjj, correct_pairs
 
-        loss_multi = self.proportion_pure_contrastive*(loss_i+loss_j) \
-                     + (1-self.proportion_pure_contrastive) * loss_label
+    def forward(self, z_i, z_j, labels):
+        N = len(z_i)
+        D = z_i.shape[1]
+        assert N == len(labels), "Unexpected labels length: %i"%len(labels)
+
+        # We compute the output dimension linked to the pure contrastive setting
+        D_pure_contrastive = int(D*self.proportion_pure_contrastive)
+
+        # We compute the pure SimCLR loss
+        z_i_pure_contrastive = z_i[:,:D_pure_contrastive]
+        z_j_pure_contrastive = z_j[:,:D_pure_contrastive]
+        loss_pure_contrastive = self.forward_pure_contrastive(
+                                    z_i_pure_contrastive,
+                                    z_j_pure_contrastive
+                                    )
+
+        # We compute the generalized supervised loss
+        z_i_supervised = z_i[:,D_pure_contrastive:]
+        z_j_supervised = z_j[:,D_pure_contrastive:]
+        loss_supervised, weights = self.forward_supervised(
+                                        z_i_supervised,
+                                        z_j_supervised,
+                                        labels)
+
+        # We compute matrices for tensorboard displays
+        sim_zii, sim_zij, sim_zjj, correct_pairs = \
+            self.compute_parameters_for_display(z_i, z_j)
+
+        loss_combined = self.proportion_pure_contrastive*loss_pure_contrastive \
+                        + (1-self.proportion_pure_contrastive)*loss_supervised
 
         if self.return_logits:
-            return loss_multi, loss_label, \
+            return loss_combined, loss_supervised.detach(), \
                    sim_zij, sim_zii, sim_zjj, correct_pairs, weights
 
-        return loss_multi
+        return loss_combined
 
     def __str__(self):
         return "{}(temp={}, kernel={}, sigma={})".format(type(self).__name__,
