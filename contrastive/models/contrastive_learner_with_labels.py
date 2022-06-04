@@ -48,6 +48,11 @@ from contrastive.utils.plots.visualize_images \
     import plot_scatter_matrix_with_labels
 from contrastive.utils.plots.visualize_tsne import plot_tsne
 
+try:
+    from soma import aims
+except ImportError:
+    print("INFO: you are not in a brainvisa environment. Probably OK.")
+
 
 class SaveOutput:
     def __init__(self):
@@ -109,7 +114,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def training_step(self, train_batch, batch_idx):
         """Training step.
         """
-        (inputs, labels, filenames) = train_batch
+        (inputs, labels, filenames, view3) = train_batch
         input_i = inputs[:, 0, :]
         input_j = inputs[:, 1, :]
         z_i = self.forward(input_i)
@@ -134,6 +139,20 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         if batch_idx == 0:
             self.sample_i = inputs[:, 0, :].cpu()
             self.sample_j = inputs[:, 1, :].cpu()
+            self.sample_k = view3.cpu()
+            self.sample_filenames = filenames
+            self.sample_labels = labels
+            if self.config.environment == 'brainvisa':
+                vol_file = f"{self.config.crop_dir}/{filenames[0]}{self.config.crop_file_suffix}"
+                vol = aims.read(vol_file)
+                self.sample_ref_0 = np.asarray(vol)
+                if not np.array_equal(self.sample_ref_0[...,0], self.sample_k[0,0,...]):
+                    raise ValueError("Images files don't match!!!\n"
+                        f"Subject name = {filenames[0]}\n"
+                        f"Shape of reference file = {self.sample_ref_0[...,0].shape}\n"
+                        f"Shape of file read from array = {self.sample_k[0,0,...].shape}\n"
+                        f"Sum of reference file = {self.sample_ref_0.sum()}\n"
+                        f"Sum of file read from array = {self.sample_k[0,...].sum()}")
             if self.config.mode != "decoder":
                 self.sim_zij = sim_zij * self.config.temperature
                 self.sim_zii = sim_zii * self.config.temperature
@@ -166,7 +185,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # Computes embeddings without computing gradient
         with torch.no_grad():
-            for (inputs, labels, filenames) in loader:
+            for (inputs, labels, filenames, _) in loader:
                 # First views of the whole batch
                 inputs = inputs.cuda()
                 model = self.cuda()
@@ -211,7 +230,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # Computes embeddings without computing gradient
         with torch.no_grad():
-            for (inputs, labels, filenames) in loader:
+            for (inputs, labels, filenames, _) in loader:
                 # First views of the whole batch
                 inputs = inputs.cuda()
                 model = self.cuda()
@@ -237,7 +256,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # Computes representation (without gradient computation)
         with torch.no_grad():
-            for (inputs, labels, filenames) in loader:
+            for (inputs, labels, filenames, _) in loader:
                 # We first compute the embeddings
                 # for the first views of the whole batch
                 inputs = inputs.cuda()
@@ -358,7 +377,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def validation_step(self, val_batch, batch_idx):
         """Validation step"""
 
-        (inputs, labels, filenames) = val_batch
+        (inputs, labels, filenames, _) = val_batch
         input_i = inputs[:, 0, :]
         input_j = inputs[:, 1, :]
 

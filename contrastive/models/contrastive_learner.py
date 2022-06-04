@@ -86,6 +86,8 @@ class ContrastiveLearner(DenseNet):
         self.sample_data = sample_data
         self.sample_i = np.array([])
         self.sample_j = np.array([])
+        self.sample_k = np.array([])
+        self.sample_filenames = []
         self.save_output = SaveOutput()
         self.hook_handles = []
         self.get_layers()
@@ -168,11 +170,22 @@ class ContrastiveLearner(DenseNet):
             image_input_i = self.visu_anatomist.plot_bucket(
                 self.sample_i, buffer=True)
             self.logger.experiment.add_image(
-                'input_ana_i', image_input_i, self.current_epoch)
+                'input_ana_i: ',
+                image_input_i, self.current_epoch)
+            self.logger.experiment.add_text(
+                'filename: ',self.sample_filenames[0], self.current_epoch)
+            self.logger.experiment.add_text(
+                'label: ',str(self.sample_labels[0]), self.current_epoch)
             image_input_j = self.visu_anatomist.plot_bucket(
                 self.sample_j, buffer=True)
             self.logger.experiment.add_image(
-                'input_ana_j', image_input_j, self.current_epoch)
+                'input_ana_j: ',
+                image_input_j, self.current_epoch)
+            image_input_k = self.visu_anatomist.plot_bucket(
+                self.sample_k, buffer=True)
+            self.logger.experiment.add_image(
+                'input_ana_k: ',
+                image_input_k, self.current_epoch)
 
     def configure_optimizers(self):
         """Adam optimizer"""
@@ -218,6 +231,7 @@ class ContrastiveLearner(DenseNet):
         if batch_idx == 0:
             self.sample_i = inputs[:, 0, :].cpu()
             self.sample_j = inputs[:, 1, :].cpu()
+            self.sample_filenames = filenames
             if self.config.mode != "decoder":
                 self.sim_zij = sim_zij * self.config.temperature
                 self.sim_zii = sim_zii * self.config.temperature

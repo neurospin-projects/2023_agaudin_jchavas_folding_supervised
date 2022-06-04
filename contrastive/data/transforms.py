@@ -46,6 +46,13 @@ from contrastive.augmentations import RotateTensor
 from contrastive.augmentations import SimplifyTensor
 from contrastive.augmentations import RemoveRandomBranchTensor
 
+def transform_nothing_done():
+    return \
+        transforms.Compose([
+            SimplifyTensor(),
+            EndTensor()
+        ])
+
 def transform_only_padding(config):
     return \
         transforms.Compose([
