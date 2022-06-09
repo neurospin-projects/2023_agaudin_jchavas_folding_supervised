@@ -4,8 +4,9 @@ import pytorch_lightning as pl
 
 
 class BinaryClassifier(pl.LightningModule):
-    def __init__(self, layers_sizes, activation=None, loss='MSE'):
+    def __init__(self, layers_sizes, activation=None, loss='MSE', keep_log=False):
         super().__init__()
+        self.keep_log = keep_log
         self.layers = nn.Sequential()
         for i in range(len(layers_sizes)-1):
             self.layers.add_module('layer%d'%(i), nn.Linear(layers_sizes[i], layers_sizes[i+1]))
@@ -37,8 +38,10 @@ class BinaryClassifier(pl.LightningModule):
         output = self.forward(x)
         y = y.view(y.size(0), 1)
         loss = self.loss(output, y)
-        # Logging to TensorBoard by default
-        self.log("train_loss", loss)
+        if self.keep_log:
+            print("KEEP LOG")
+            # Logging to TensorBoard by default
+            self.log("train_loss", loss)
         return loss
 
     def configure_optimizers(self):

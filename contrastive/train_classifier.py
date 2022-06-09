@@ -46,10 +46,11 @@ def load_and_format_embeddings(dir_path, labels_path, config):
     return X, Y, n_train, n_val, n_test
 
 
-@hydra.main(config_name='config', config_path="configs")
+@hydra.main(config_name='config_no_save', config_path="configs")
 def train_classifier(config):
     config = process_config(config)
 
+    set_root_logger_level(config.verbose)
 
     # set up load and save paths
     train_embs_path = config.training_embeddings
@@ -80,7 +81,7 @@ def train_classifier(config):
     class_train_set = TensorDataset(X, Y)
     train_loader = DataLoader(class_train_set, batch_size=config.class_batch_size)
 
-    trainer = pl.Trainer(max_epochs=config.class_max_epochs)
+    trainer = pl.Trainer(max_epochs=config.class_max_epochs, logger=False)
     trainer.fit(model=bin_class, train_dataloaders=train_loader)
 
 
