@@ -137,8 +137,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # Records sample for first batch of each epoch
         if batch_idx == 0:
-            self.sample_i = inputs[:, 0, :].cpu()
-            self.sample_j = inputs[:, 1, :].cpu()
+            self.sample_i = input_i.cpu()
+            self.sample_j = input_j.cpu()
             self.sample_k = view3.cpu()
             self.sample_filenames = filenames
             self.sample_labels = labels

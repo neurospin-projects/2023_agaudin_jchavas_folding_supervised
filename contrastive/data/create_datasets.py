@@ -35,6 +35,9 @@
 """
 Tools to create datasets
 """
+from deep_folding.brainvisa.utils.save_data import compare_npy_file_aims_files
+from deep_folding.brainvisa.utils.save_data import compare_array_aims_files
+
 from contrastive.utils.logs import set_file_logger
 
 from contrastive.data.datasets import ContrastiveDataset
@@ -138,10 +141,16 @@ def create_sets_with_labels(config):
                                  config.subject_column_name,
                                  config.label_names)
 
+    compare_npy_file_aims_files(config.subjects_all, config.numpy_all, config.crop_dir)
+
     # Loads and separates in train_val/test skeleton crops
     train_val_subjects, train_val_data, train_val_labels,\
     test_subjects, test_data, test_labels = \
-        extract_data_with_labels(config.numpy_all, subject_labels, config)
+        extract_data_with_labels(config.numpy_all, subject_labels, config.crop_dir, config)
+
+    compare_array_aims_files(train_val_subjects, train_val_data, config.crop_dir)
+    compare_array_aims_files(test_subjects, test_data, config.crop_dir)
+    
 
     # Makes some sanity checks on ordering of label subjects
     check_if_same_subjects(train_val_subjects,
@@ -157,7 +166,7 @@ def create_sets_with_labels(config):
         train_val_labels, test_foldlabel_subjects, \
         test_foldlabel_data, test_labels = \
             extract_data_with_labels(config.foldlabel_all, subject_labels,
-                                     config)
+                                     config.foldlabel_dir, config)
         log.info("foldlabel data loaded")
 
         # Makes some sanity checks
@@ -169,6 +178,14 @@ def create_sets_with_labels(config):
                             train_val_foldlabel_data, "train_val")
         check_if_same_shape(test_data,
                             test_foldlabel_data, "test")
+        check_if_same_subjects(train_val_foldlabel_subjects,
+                            train_val_labels[['Subject']], "train_val labels")
+        check_if_same_subjects(test_foldlabel_subjects,
+                            test_labels[['Subject']], "test labels")
+        compare_array_aims_files(train_val_foldlabel_subjects,
+                                 train_val_foldlabel_data, config.foldlabel_dir)
+        compare_array_aims_files(test_foldlabel_subjects,
+                                 test_foldlabel_data, config.foldlabel_dir)
     else:
         log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
 

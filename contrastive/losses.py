@@ -37,6 +37,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as func
 from sklearn.metrics.pairwise import rbf_kernel
+from contrastive.utils import logs
+
+log = logs.set_file_logger(__file__)
 
 
 def mean_off_diagonal(a):
@@ -54,15 +57,15 @@ def quantile_off_diagonal(a):
 def print_info(z_i, z_j, sim_zij, sim_zii, sim_zjj, temperature):
     """prints useful info over correlations"""
 
-    print("histogram of z_i after normalization:")
-    print(np.histogram(z_i.detach().cpu().numpy() * 100, bins='auto'))
+    log.info("histogram of z_i after normalization:")
+    log.info(np.histogram(z_i.detach().cpu().numpy() * 100, bins='auto'))
 
-    print("histogram of z_j after normalization:")
-    print(np.histogram(z_j.detach().cpu().numpy() * 100, bins='auto'))
+    log.info("histogram of z_j after normalization:")
+    log.info(np.histogram(z_j.detach().cpu().numpy() * 100, bins='auto'))
 
     # Gives histogram of sim vectors
-    print("histogram of sim_zij:")
-    print(
+    log.info("histogram of sim_zij:")
+    log.info(
         np.histogram(
             sim_zij.detach().cpu().numpy() *
             temperature *
@@ -74,7 +77,7 @@ def print_info(z_i, z_j, sim_zij, sim_zii, sim_zjj, temperature):
 
     # Prints quantiles of positive pairs (views from the same image)
     quantile_positive_pairs = diag_ij.quantile(0.75)
-    print(
+    log.info(
         f"quantile of positives ij = "
         f"{quantile_positive_pairs.cpu()*temperature*100}")
 
@@ -84,13 +87,13 @@ def print_info(z_i, z_j, sim_zij, sim_zii, sim_zjj, temperature):
     quantile_negative_ij = quantile_off_diagonal(sim_zij)
 
     # Prints quantiles of negative pairs
-    print(
+    log.info(
         f"quantile of negatives ii = "
         f"{quantile_negative_ii.cpu()*temperature*100}")
-    print(
+    log.info(
         f"quantile of negatives jj = "
         f"{quantile_negative_jj.cpu()*temperature*100}")
-    print(
+    log.info(
         f"quantile of negatives ij = "
         f"{quantile_negative_ij.cpu()*temperature*100}")
 
@@ -266,20 +269,17 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         D = z_i.shape[1]
         assert N == len(labels), "Unexpected labels length: %i"%len(labels)
 
-        # We compute the output dimension linked to the pure contrastive setting
-        D_pure_contrastive = int(D*self.proportion_pure_contrastive)
-
         # We compute the pure SimCLR loss
-        z_i_pure_contrastive = z_i[:,:D_pure_contrastive]
-        z_j_pure_contrastive = z_j[:,:D_pure_contrastive]
+        z_i_pure_contrastive = z_i
+        z_j_pure_contrastive = z_j
         loss_pure_contrastive = self.forward_pure_contrastive(
                                     z_i_pure_contrastive,
                                     z_j_pure_contrastive
                                     )
 
         # We compute the generalized supervised loss
-        z_i_supervised = z_i[:,D_pure_contrastive:]
-        z_j_supervised = z_j[:,D_pure_contrastive:]
+        z_i_supervised = z_i
+        z_j_supervised = z_j
         loss_supervised, weights = self.forward_supervised(
                                         z_i_supervised,
                                         z_j_supervised,
@@ -374,8 +374,8 @@ class NTXenLoss_NearestNeighbours(nn.Module):
         sim_zij = (z_i @ z_j.T) / self.temperature
         sim_zji = sim_zij.T
 
-        print("histogram of zij:")
-        print(
+        log.info("histogram of zij:")
+        log.info(
             np.histogram(
                 sim_zij.detach().cpu().numpy() *
                 self.temperature,
@@ -498,7 +498,7 @@ class NTXenLoss_WithoutHardNegative(nn.Module):
 
         # Prints quantiles of positive pairs (views from the same image)
         quantile_positive_pairs = diag_ij.quantile(0.75)
-        print(
+        log.info(
             f"quantile of positives ij = "
             f"{quantile_positive_pairs.cpu()*self.temperature*100}")
 
@@ -508,13 +508,13 @@ class NTXenLoss_WithoutHardNegative(nn.Module):
         quantile_negative_ij = quantile_off_diagonal(sim_zij)
 
         # Prints quantiles of negative pairs
-        print(
+        log.info(
             f"quantile of negatives ii = "
             f"{quantile_negative_ii.cpu()*self.temperature*100}")
-        print(
+        log.info(
             f"quantile of negatives jj = "
             f"{quantile_negative_jj.cpu()*self.temperature*100}")
-        print(
+        log.info(
             f"quantile of negatives ij = "
             f"{quantile_negative_ij.cpu()*self.temperature*100}")
 
@@ -569,14 +569,14 @@ class NTXenLoss_Mixed(nn.Module):
         # Computes the classical terms for NTXenLoss
         #####################################################
 
-        print("histogram of z_i before normalization:")
-        print(np.histogram(z_i.detach().cpu().numpy() * 100, bins='auto'))
+        log.info("histogram of z_i before normalization:")
+        log.info(np.histogram(z_i.detach().cpu().numpy() * 100, bins='auto'))
 
         z_i = func.normalize(z_i, p=2, dim=-1)  # dim [N, D]
         z_j = func.normalize(z_j, p=2, dim=-1)  # dim [N, D]
 
-        print("histogram of z_i after normalization:")
-        print(np.histogram(z_i.detach().cpu().numpy() * 100, bins='auto'))
+        log.info("histogram of z_i after normalization:")
+        log.info(np.histogram(z_i.detach().cpu().numpy() * 100, bins='auto'))
 
         # dim [N, N] => Upper triangle contains incorrect pairs
         sim_zii = (z_i @ z_i.T) / self.temperature
@@ -589,8 +589,8 @@ class NTXenLoss_Mixed(nn.Module):
         sim_zij = (z_i @ z_j.T) / self.temperature
         sim_zji = sim_zij.T
 
-        print("histogram of sim_zij:")
-        print(
+        log.info("histogram of sim_zij:")
+        log.info(
             np.histogram(
                 sim_zij.detach().cpu().numpy() *
                 self.temperature *
@@ -669,14 +669,14 @@ class NTXenLoss_Mixed(nn.Module):
         # Computes the classical terms for NTXenLoss
         #####################################################
 
-        print("histogram of z_i before normalization:")
-        print(np.histogram(z_i.detach().cpu().numpy() * 100, bins='auto'))
+        log.info("histogram of z_i before normalization:")
+        log.info(np.histogram(z_i.detach().cpu().numpy() * 100, bins='auto'))
 
         z_i = func.normalize(z_i, p=2, dim=-1)  # dim [N, D]
         z_j = func.normalize(z_j, p=2, dim=-1)  # dim [N, D]
 
-        print("histogram of z_i after normalization:")
-        print(np.histogram(z_i.detach().cpu().numpy() * 100, bins='auto'))
+        log.info("histogram of z_i after normalization:")
+        log.info(np.histogram(z_i.detach().cpu().numpy() * 100, bins='auto'))
 
         # dim [N, N] => Upper triangle contains incorrect pairs
         sim_zii = (z_i @ z_i.T) / self.temperature
@@ -689,8 +689,8 @@ class NTXenLoss_Mixed(nn.Module):
         sim_zij = (z_i @ z_j.T) / self.temperature
         sim_zji = sim_zij.T
 
-        print("histogram of sim_zij:")
-        print(
+        log.info("histogram of sim_zij:")
+        log.info(
             np.histogram(
                 sim_zij.detach().cpu().numpy() *
                 self.temperature *
@@ -795,7 +795,7 @@ class NTXenLoss_Mixed(nn.Module):
 
         # Prints quantiles of positive pairs (views from the same image)
         quantile_positive_pairs = diag_ij.quantile(0.75)
-        print(
+        log.info(
             f"quantile of positives ij = "
             f"{quantile_positive_pairs.cpu()*self.temperature*100}")
 
@@ -805,13 +805,13 @@ class NTXenLoss_Mixed(nn.Module):
         quantile_negative_ij = quantile_off_diagonal(sim_zij)
 
         # Prints quantiles of negative pairs
-        print(
+        log.info(
             f"quantile of negatives ii = "
             f"{quantile_negative_ii.cpu()*self.temperature*100}")
-        print(
+        log.info(
             f"quantile of negatives jj = "
             f"{quantile_negative_jj.cpu()*self.temperature*100}")
-        print(
+        log.info(
             f"quantile of negatives ij = "
             f"{quantile_negative_ij.cpu()*self.temperature*100}")
 
