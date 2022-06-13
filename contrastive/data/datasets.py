@@ -399,7 +399,7 @@ class ContrastiveDataset_Visualization():
         self.config = config
 
         # Some checks
-        if 'Subject' in filenames:
+        if 'Subject' in filenames.Subject.tolist():
             raise ValueError("\'Subject\' is not expected as subject name.\n"
                              "Probably the column name has been considered "
                              "as a subject. This is a bug.")
