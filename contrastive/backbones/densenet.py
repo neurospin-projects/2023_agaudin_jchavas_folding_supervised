@@ -49,7 +49,7 @@ class _DenseLayer(nn.Sequential):
         return new_features
 
 
-class _DenseBlock(nn.Module):
+class _DenseBlock(pl.LightningModule):
     def __init__(self, num_layers, num_input_features, bn_size, growth_rate,
                  drop_rate, memory_efficient=False):
         super(_DenseBlock, self).__init__()
@@ -209,6 +209,15 @@ class DenseNet(pl.LightningModule):
                 nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, 0, 0.5)
+                nn.init.constant_(m.bias, 0)
+        for m in [self.hidden_representation, self.head_projection]:
+            if isinstance(m, nn.Conv3d):
+                nn.init.kaiming_normal_(m.weight)
+            elif isinstance(m, nn.BatchNorm3d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.constant_(m.bias, 0)
 
         
