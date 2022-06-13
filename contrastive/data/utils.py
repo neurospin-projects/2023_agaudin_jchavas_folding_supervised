@@ -110,6 +110,7 @@ def read_train_val_csv(csv_file_path: str) -> pd.DataFrame:
     """
     train_val_subjects = pd.read_csv(csv_file_path, names=['Subject'])
     log.debug(f"train_val_subjects = {train_val_subjects}")
+    print("TRAIN_VAL_SUBJECTS",train_val_subjects.head())
     return train_val_subjects
 
 

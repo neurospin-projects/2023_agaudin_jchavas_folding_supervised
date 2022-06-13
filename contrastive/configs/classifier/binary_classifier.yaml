@@ -1,0 +1,12 @@
+# @package _global_
+# define path and parameters needed for the classifier on the latent space
+training_embeddings: "/neurospin/dico/agaudin/Runs/02_explicabilite_humains_2022/Output/2022-06-02/16-55-07/ACCpatterns_embeddings/2022-06-03_09-21/"
+embeddings_of_interest:
+results_save_path:
+training_labels: /neurospin/dico/data/bv_databases/human/partially_labeled/ACCpatterns/all.csv
+labels_of_interest:
+classifier_hidden_layers: [10]
+classifier_activation: None
+classifier_loss: MSE
+class_max_epochs: 10
+class_batch_size: 10
