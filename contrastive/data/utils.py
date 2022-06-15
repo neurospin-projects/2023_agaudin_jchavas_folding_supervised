@@ -42,8 +42,9 @@ import pandas as pd
 import torch
 
 from contrastive.utils.logs import set_file_logger
-from data.transforms import transform_foldlabel
-from deep_folding.brainvisa.utils.save_data import compare_array_aims_files
+from contrastive.data.transforms import transform_foldlabel
+# only if foldlabel == True
+#from deep_folding.brainvisa.utils.save_data import compare_array_aims_files
 
 
 _ALL_SUBJECTS = -1

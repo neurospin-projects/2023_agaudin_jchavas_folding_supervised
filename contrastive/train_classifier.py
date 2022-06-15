@@ -1,5 +1,6 @@
 import hydra
 import torch
+import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
 import matplotlib.pyplot as plt
@@ -16,9 +17,9 @@ from contrastive.utils.logs import set_root_logger_level
 
 
 def load_and_format_embeddings(dir_path, labels_path, config):
-    train_embeddings = pd.read_csv(dir_path+'train_embeddings.csv', index_col=0)
-    val_embeddings = pd.read_csv(dir_path+'val_embeddings.csv', index_col=0)
-    test_embeddings = pd.read_csv(dir_path+'test_embeddings.csv', index_col=0)
+    train_embeddings = pd.read_csv(dir_path+'/train_embeddings.csv', index_col=0)
+    val_embeddings = pd.read_csv(dir_path+'/val_embeddings.csv', index_col=0)
+    test_embeddings = pd.read_csv(dir_path+'/test_embeddings.csv', index_col=0)
 
     n_train = train_embeddings.shape[0]
     n_val = val_embeddings.shape[0]
@@ -99,7 +100,7 @@ def train_classifier(config):
     labels = read_labels(train_lab_paths, config.subject_column_name, config.label_names)
     labels = pd.DataFrame(labels.values, columns=['Subject', 'label'])
     labels['predicted'] = labels_pred
-    labels.to_csv(results_save_path+"labels.csv")
+    labels.to_csv(results_save_path+"/labels.csv")
 
 
     # plot ROC curve
@@ -110,13 +111,33 @@ def train_classifier(config):
     plt.plot(curves[0], curves[1], label="ROC curve (area = %0.2f)" % roc_auc)
     plt.plot([0,1],[0,1],color='r')
     plt.legend()
-    plt.savefig(results_save_path+"ROC_curve.png")
+    plt.savefig(results_save_path+"/ROC_curve.png")
 
 
     # choose labels predicted with frontier = 0.5
     labels_pred = (labels_pred >= 0.5).astype('int')
     # compute accuracy
     accuracy = accuracy_score(labels_true, labels_pred)
+
+
+    # plot the histogram of predicted values
+    with_paracingulate = labels[labels.label == 1]
+    without_paracingulate = labels[labels.label == 0]
+
+    print(with_paracingulate.shape[0], "-", without_paracingulate.shape[0])
+
+    x_min = min(0, np.min(labels.predicted))
+    x_max = max(1, np.max(labels.predicted))
+
+    plt.figure()
+    plt.hist(without_paracingulate.predicted, bins=np.arange(x_min,x_max,0.01), alpha=0.6)
+    plt.hist(with_paracingulate.predicted, bins=np.arange(x_min,x_max,0.01), alpha=0.6, color='r')
+    plt.legend(['without_paracingulate', "with_paracingulate"])
+
+    ax = plt.gca()
+    plt.vlines([0.5], ax.get_ylim()[0], ax.get_ylim()[1], color='black')
+
+    plt.savefig(results_save_path+"/prediction_histogram.png")
 
 
     # separate train, val and test predictions and true values (if same embeddings
@@ -143,7 +164,7 @@ def train_classifier(config):
                   }
 
     print(accuracies)  # find another way to get them than printing
-    with open(results_save_path+"accuracies.json", 'w') as file:
+    with open(results_save_path+"/accuracies.json", 'w') as file:
         json.dump(accuracies, file)
 
     plt.show()

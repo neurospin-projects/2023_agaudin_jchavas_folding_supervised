@@ -35,8 +35,10 @@
 """
 Tools to create datasets
 """
-from deep_folding.brainvisa.utils.save_data import compare_npy_file_aims_files
-from deep_folding.brainvisa.utils.save_data import compare_array_aims_files
+
+# only if foldlabel == True
+#from deep_folding.brainvisa.utils.save_data import compare_npy_file_aims_files
+#from deep_folding.brainvisa.utils.save_data import compare_array_aims_files
 
 from contrastive.utils.logs import set_file_logger
 

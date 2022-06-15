@@ -59,14 +59,14 @@ def compute_embeddings(config):
 
     # convert the embeddings to pandas df and save them
     embeddings_to_pandas(train_embeddings,
-                         csv_path=embeddings_path+"train_embeddings.csv")
+                         csv_path=embeddings_path+"/train_embeddings.csv")
 
     # same thing for validation set
     print("VAL SET")
     val_embeddings = model.compute_representations(data_module.val_dataloader())
 
     embeddings_to_pandas(val_embeddings,
-                         csv_path=embeddings_path+"val_embeddings.csv")
+                         csv_path=embeddings_path+"/val_embeddings.csv")
 
     # /!\ DOESN'T WORK ON TEST => problem in create_datasets
     # same thing for test set
@@ -74,7 +74,7 @@ def compute_embeddings(config):
     test_embeddings = model.compute_representations(data_module.test_dataloader())
 
     embeddings_to_pandas(test_embeddings,
-                         csv_path=embeddings_path+"test_embeddings.csv")
+                         csv_path=embeddings_path+"/test_embeddings.csv")
 
 
 
