@@ -1,4 +1,4 @@
 # @package _global_
 # define path and parameters needed for the classifier on the latent space
-model_path: "/volatile/jc225751/Runs/43_supervised_contrastive_ACCpatterns/Output/2022-06-13/10-00-13"
-embeddings_save_path: "/volatile/jc225751/Runs/43_supervised_contrastive_ACCpatterns/Output/2022-06-13/10-00-13/ACCpatterns_embeddings/${now:%Y-%m-%d_%H-%M}/"
+model_path: "/neurospin/dico/agaudin/Runs/02_explicabilite_humains_2022/Output/2022-06-02/16-55-07"
+embeddings_save_path: "/neurospin/dico/agaudin/Runs/02_explicabilite_humains_2022/Output/2022-06-02/16-55-07/ACCpatterns_embeddings/03_monkeys"

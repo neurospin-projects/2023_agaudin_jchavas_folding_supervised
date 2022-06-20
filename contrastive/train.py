@@ -39,6 +39,7 @@
 # Imports and global variables definitions
 ######################################################################
 import os
+import yaml
 
 import hydra
 import pytorch_lightning as pl
@@ -82,6 +83,29 @@ def train(config):
                          suffix='output')
     log.info(f"current directory = {os.getcwd()}")
 
+
+    # copies some of the config parameters to make them easily accessible
+    with open(os.getcwd()+"/.hydra/config.yaml", 'r') as file:
+        config_dict = yaml.load(file, Loader=yaml.FullLoader)
+
+    keys_to_keep = ['numpy_all', 'train_val_csv_file', 'nb_subjects', 'model', 'with_labels', 
+    'input_size', 'temperature_initial', 'temperature', 'sigma', 'drop_rate', 'depth_decoder',
+    'mode', 'foldlabel', 'fill_value', 'patch_size', 'max_angle', 'checkerboard_size', 'keep_bottom',
+    'growth_rate', 'block_config', 'num_init_features', 'num_representation_features', 'num_outputs',
+    'environment', 'batch_size', 'pin_mem', 'partition', 'lr', 'weight_decay', 'max_epochs',
+     'early_stopping_patience', 'seed']
+
+    partial_config = {}
+
+    for key in config_dict.keys():
+        if key in keys_to_keep:
+            partial_config[key] = config[key]
+    
+    with open(os.getcwd()+'partial_config.yaml', 'w') as file:
+        yaml.dump(partial_config, file)
+
+    
+
     if config.mode == 'evaluation':
         data_module = DataModule_Evaluation(config)
     else:
@@ -101,13 +125,13 @@ def train(config):
 
     summary(model, tuple(config.input_size), device="cpu")
 
-    # early_stop_callback = EarlyStopping(monitor="val_loss",
-    #     patience=config.early_stopping_patience)
+    early_stop_callback = EarlyStopping(monitor="val_loss",
+         patience=config.early_stopping_patience)
 
     trainer = pl.Trainer(
         gpus=1,
         max_epochs=config.max_epochs,
-        # callbacks=[early_stop_callback],
+        callbacks=[early_stop_callback],
         logger=tb_logger,
         flush_logs_every_n_steps=config.nb_steps_per_flush_logs,
         log_every_n_steps=config.log_every_n_steps)
