@@ -55,7 +55,8 @@ from contrastive.models.contrastive_learner_with_labels import \
     ContrastiveLearner_WithLabels
 from contrastive.models.contrastive_learner_visualization import \
     ContrastiveLearner_Visualization
-from contrastive.utils.config import process_config
+from contrastive.utils.config import create_accessible_config, process_config,\
+get_config_diff
 from contrastive.utils.logs import set_root_logger_level
 from contrastive.utils.logs import set_file_log_handler
 from contrastive.utils.logs import set_file_logger
@@ -84,27 +85,19 @@ def train(config):
     log.info(f"current directory = {os.getcwd()}")
 
 
-    # copies some of the config parameters to make them easily accessible
-    with open(os.getcwd()+"/.hydra/config.yaml", 'r') as file:
-        config_dict = yaml.load(file, Loader=yaml.FullLoader)
-
+    # copies some of the config parameters in a yaml file easily accessible
     keys_to_keep = ['numpy_all', 'train_val_csv_file', 'nb_subjects', 'model', 'with_labels', 
     'input_size', 'temperature_initial', 'temperature', 'sigma', 'drop_rate', 'depth_decoder',
     'mode', 'foldlabel', 'fill_value', 'patch_size', 'max_angle', 'checkerboard_size', 'keep_bottom',
     'growth_rate', 'block_config', 'num_init_features', 'num_representation_features', 'num_outputs',
     'environment', 'batch_size', 'pin_mem', 'partition', 'lr', 'weight_decay', 'max_epochs',
-     'early_stopping_patience', 'seed']
+    'early_stopping_patience', 'seed']
 
-    partial_config = {}
+    create_accessible_config(keys_to_keep, os.getcwd()+"/.hydra/config.yaml")
 
-    for key in config_dict.keys():
-        if key in keys_to_keep:
-            partial_config[key] = config[key]
-    
-    with open(os.getcwd()+'partial_config.yaml', 'w') as file:
-        yaml.dump(partial_config, file)
+    # create a csv file where the parameters changing between runs are stored
+    get_config_diff(os.getcwd()+'/..', whole_config=True, save=True)    
 
-    
 
     if config.mode == 'evaluation':
         data_module = DataModule_Evaluation(config)
