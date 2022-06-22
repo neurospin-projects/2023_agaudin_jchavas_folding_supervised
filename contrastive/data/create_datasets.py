@@ -153,6 +153,9 @@ def create_sets_with_labels(config):
     test_subjects, test_data, test_labels = \
         extract_data_with_labels(config.numpy_all, subject_labels, config.crop_dir, config)
 
+    check_if_skeleton(train_val_data, "train_val")
+    check_if_skeleton(test_data, "test")
+
     compare_array_aims_files(train_val_subjects, train_val_data, config.crop_dir)
     compare_array_aims_files(test_subjects, test_data, config.crop_dir)
     

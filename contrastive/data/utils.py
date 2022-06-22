@@ -102,6 +102,31 @@ def check_subject_consistency(csv_file_path_1, csv_file_path_2):
                          f"subjects_1 head = {subjects_1.head()}\n"
                          f"subjects_2 head = {subjects_2.head()}\n")
 
+
+def check_if_skeleton(a: np.array, key: str):
+    """Checks if values are compatible with skeletons"""
+    is_skeleton = ((a == 0) +
+                   (a == 10) +
+                   (a == 20) +
+                   (a == 11) +
+                   (a == 30) +
+                   (a == 40) +
+                   (a == 50) +
+                   (a == 60) +
+                   (a == 70) +
+                   (a == 80) +
+                   (a == 90) +
+                   (a == 100)+
+                   (a == 110)+
+                   (a == 120)).all()
+    log.info(f"Values of {key} crops are in: {np.unique(a)}")
+    if not is_skeleton:
+        raise ValueError(
+            f"Input array values of {key} are not compatible with skeletons"
+            f"np.unique of input array = {np.unique(a)}"
+        )
+
+
 def read_train_val_csv(csv_file_path: str) -> pd.DataFrame:
     """Reads train_val csv.
     
