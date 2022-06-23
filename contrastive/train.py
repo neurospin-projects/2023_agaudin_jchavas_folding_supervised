@@ -39,7 +39,6 @@
 # Imports and global variables definitions
 ######################################################################
 import os
-import yaml
 
 import hydra
 import pytorch_lightning as pl
