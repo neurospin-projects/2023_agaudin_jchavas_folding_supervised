@@ -5,9 +5,12 @@ import pandas as pd
 import pytorch_lightning as pl
 import matplotlib.pyplot as plt
 import json
+import os
 
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import roc_curve, roc_auc_score, accuracy_score
+from sklearn.model_selection import train_test_split
+
 from contrastive.models.binary_classifier import BinaryClassifier 
 
 from contrastive.data.utils import read_labels
@@ -17,39 +20,60 @@ from contrastive.utils.logs import set_root_logger_level
 
 
 def load_and_format_embeddings(dir_path, labels_path, config):
-    train_embeddings = pd.read_csv(dir_path+'/train_embeddings.csv', index_col=0)
-    val_embeddings = pd.read_csv(dir_path+'/val_embeddings.csv', index_col=0)
-    test_embeddings = pd.read_csv(dir_path+'/test_embeddings.csv', index_col=0)
+    if os.path.exists(dir_path+'/full_embeddings.csv'):
+        embeddings = pd.read_csv(dir_path+'/full_embeddings.csv', index_col=0)
+    elif os.path.exists(dir_path+'/pca_embeddings.csv'):
+        embeddings = pd.read_csv(dir_path+'/pca_embeddings.csv', index_col=0)
+    else:
+        train_embeddings = pd.read_csv(dir_path+'/train_embeddings.csv', index_col=0)
+        val_embeddings = pd.read_csv(dir_path+'/val_embeddings.csv', index_col=0)
+        test_embeddings = pd.read_csv(dir_path+'/test_embeddings.csv', index_col=0)
 
-    n_train = train_embeddings.shape[0]
-    n_val = val_embeddings.shape[0]
-    n_test = test_embeddings.shape[0]
-
-    # regroup them in one dataframe (discuss with Joël)
-    embeddings = pd.concat([train_embeddings, val_embeddings, test_embeddings],
-                           axis=0, ignore_index=False)
+        # regroup them in one dataframe (discuss with Joël)
+        embeddings = pd.concat([train_embeddings, val_embeddings, test_embeddings],
+                            axis=0, ignore_index=False)
+    
     embeddings.sort_values(by='ID', inplace=True)
     print("sorted embeddings:", embeddings.head())
 
     # get the labels (0 = no paracingulate, 1 = paracingulate)
     # /!\ use read_labels
     labels = read_labels(labels_path, config.subject_column_name, config.label_names)
-    labels = pd.DataFrame(labels.values, columns=['ID', 'label'])
-    labels.sort_values(by='ID', inplace=True, ignore_index=True)
+    labels = pd.DataFrame(labels.values, columns=['Subjects', 'label'])
+    labels.sort_values(by='Subjects', inplace=True, ignore_index=True)
     print("sorted labels", labels.head())
     # supposed to contain one column 'ID' and one column 'label' with the actual labels
     # /!\ multiple labels is not handled
 
-    # cast the dataset to the torch format
-    X =  torch.from_numpy(embeddings.loc[:, embeddings.columns != 'ID'].values).type(torch.FloatTensor)
-    Y = torch.from_numpy(labels.label.values.astype('float32')).type(torch.FloatTensor)
+    # create train-test datasets
+    embeddings_train, embeddings_test, labels_train, labels_test = \
+        train_test_split(embeddings, labels, test_size=0.2, random_state=24)
 
-    return X, Y, n_train, n_val, n_test
+    # cast the dataset to the torch format
+    X_train =  torch.from_numpy(embeddings_train.loc[:, embeddings_train.columns != 'ID'].values).type(torch.FloatTensor)
+    X_test =  torch.from_numpy(embeddings_test.loc[:, embeddings_test.columns != 'ID'].values).type(torch.FloatTensor)
+    Y_train = torch.from_numpy(labels_train.label.values.astype('float32')).type(torch.FloatTensor)
+    Y_test = torch.from_numpy(labels_test.label.values.astype('float32')).type(torch.FloatTensor)
+
+    return X_train, X_test, Y_train, Y_test, labels_train, labels_test
+
+
+def compute_indicators(Y, labels_pred):
+    # compute ROC curve and auc
+    labels_true = Y.detach_().numpy()
+    curves = roc_curve(labels_true, labels_pred)
+    roc_auc = roc_auc_score(labels_true, labels_pred)
+
+    # choose labels predicted with frontier = 0.5
+    labels_pred = (labels_pred >= 0.5).astype('int')
+    # compute accuracy
+    accuracy = accuracy_score(labels_true, labels_pred)
+    return curves, roc_auc, accuracy
 
 
 # would highly benefit from paralellisation
 @hydra.main(config_name='config_no_save', config_path="configs")
-def train_classifier(config):
+def train_classifiers(config):
     config = process_config(config)
 
     set_root_logger_level(config.verbose)
@@ -68,22 +92,26 @@ def train_classifier(config):
     
     
     # import the embeddings (supposed to be already computed)
-    X,Y,n_train,n_val,_ = load_and_format_embeddings(train_embs_path, train_lab_paths, config)
+    X_train, X_test, Y_train, Y_test, labels_train, labels_test = \
+        load_and_format_embeddings(train_embs_path, train_lab_paths, config)
 
-    # import labels
-    labels = read_labels(train_lab_paths, config.subject_column_name, config.label_names)
-    labels = pd.DataFrame(labels.values, columns=['Subject', 'label'])
 
-    Curves = []
-    aucs = []
-    accuracies = []
+    train_prediction_matrix = np.zeros((labels_train.shape[0], config.n_repeat))
+    test_prediction_matrix = np.zeros((labels_test.shape[0], config.n_repeat))
+
+    Curves = {'train': [],
+              'test': []}
+    aucs = {'train': [],
+            'test': []}
+    accuracies = {'train': [],
+                  'test': []}
 
     for i in range(config.n_repeat):
         print("model number", i)
         # create and train the model
         if i == 0:
             hidden_layers = list(config.classifier_hidden_layers)
-            layers_shapes = [config.num_representation_features]+hidden_layers+[1]
+            layers_shapes = [np.shape(X_train)[1]]+hidden_layers+[1]
         
         bin_class = BinaryClassifier(layers_shapes,
                                     activation=config.classifier_activation,
@@ -92,7 +120,7 @@ def train_classifier(config):
         if i == 0:
             print("model", bin_class)
 
-        class_train_set = TensorDataset(X, Y)
+        class_train_set = TensorDataset(X_train, Y_train)
         train_loader = DataLoader(class_train_set, batch_size=config.class_batch_size)
 
         trainer = pl.Trainer(max_epochs=config.class_max_epochs, logger=False)
@@ -103,30 +131,30 @@ def train_classifier(config):
         if (EoI_path == train_embs_path) and (LoI_path == train_lab_paths):
             pass
         else:
+            pass
+            """# /!\ DOESN'T WORK !!!!
             # load embeddings of interest
             X,Y,n_train,n_val,_ = load_and_format_embeddings(EoI_path, LoI_path, config)
+            X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=1.0, random_state=24)"""
 
-        # predict labels with the classifier
-        labels_pred = bin_class.forward(X)
-        labels_pred = labels_pred.detach().numpy()
+        # predict labels with the classifier (both for train and test sets)
+        labels_pred_train = bin_class.forward(X_train).detach().numpy()
+        labels_pred_test = bin_class.forward(X_test).detach().numpy()
         # save the predicted labels
-        labels['predicted_'+str(i)] = labels_pred
+        train_prediction_matrix[:,i] = labels_pred_train.flatten()
+        test_prediction_matrix[:,i] = labels_pred_test.flatten()
 
+        # compute indicators for train
+        curves, roc_auc, accuracy = compute_indicators(Y_train, labels_pred_train)
+        Curves['train'].append(curves)
+        aucs['train'].append(roc_auc)
+        accuracies['train'].append(accuracy)
 
-        # compute ROC curve
-        labels_true = Y.detach_().numpy()
-        curves = roc_curve(labels_true, labels_pred)
-        roc_auc = roc_auc_score(labels_true, labels_pred)
-
-        Curves.append(curves)
-        aucs.append(roc_auc)
-
-
-        # choose labels predicted with frontier = 0.5
-        labels_pred = (labels_pred >= 0.5).astype('int')
-        # compute accuracy
-        accuracy = accuracy_score(labels_true, labels_pred)
-        accuracies.append(accuracy)
+        # compute indicators for test
+        curves, roc_auc, accuracy = compute_indicators(Y_test, labels_pred_test)
+        Curves['test'].append(curves)
+        aucs['test'].append(roc_auc)
+        accuracies['test'].append(accuracy)
 
 
         # plot the histogram of predicted values
@@ -148,66 +176,60 @@ def train_classifier(config):
 
         plt.savefig(results_save_path+"/prediction_histogram.png")"""
 
+    # add the predictions to the df where the true values are
+    columns_names = ["predicted_"+str(i) for i in range(config.n_repeat)]
+    train_preds = pd.DataFrame(train_prediction_matrix, columns=columns_names, index=labels_train.index)
+    labels_train = pd.concat([labels_train, train_preds], axis=1)
 
-        # separate train, val and test predictions and true values (if same embeddings
-        # used to train the SimCLR and the classifier)
-        """if (EoI_path == train_embs_path) and (LoI_path == train_lab_paths): # /!\ not the good condition here
-            labels_pred_train = labels_pred[:n_train]
-            labels_pred_val = labels_pred[n_train:n_train+n_val]
-            labels_pred_test = labels_pred[n_train+n_val:]
+    test_preds = pd.DataFrame(test_prediction_matrix, columns=columns_names, index=labels_test.index)
+    labels_test = pd.concat([labels_test, test_preds], axis=1)
 
-            labels_train = labels_true[:n_train]
-            labels_val = labels_true[n_train:n_train+n_val]
-            labels_test = labels_true[n_train+n_val:]
 
-            # compute accuracies
-            accuracy_train = accuracy_score(labels_train, labels_pred_train)
-            accuracy_val = accuracy_score(labels_val, labels_pred_val)
-            accuracy_test = accuracy_score(labels_test, labels_pred_test)
+    values = {}
 
-        accuracies = {'total_accuracy': accuracy,
-                    #'train': accuracy_train,
-                    #'val': accuracy_val,
-                    #'test': accuracy_test,
-                    'auc': roc_auc
-                    }
+    for mode in ['train', 'test']:
+        if mode == 'train':
+            labels = labels_train
+        elif mode == 'test':
+            labels = labels_test
+        
+        labels_true = labels.label.values.astype('float64')
+        
+        # compute agregated models
+        predicted_labels = labels[columns_names]
 
-        print(accuracies)  # find another way to get them than printing
-        with open(results_save_path+"/accuracies.json", 'w') as file:
-            json.dump(accuracies, file)"""
+        labels['median_pred'] = predicted_labels.median(axis=1)
+        labels['mean_pred'] = predicted_labels.mean(axis=1)
 
-    # compute agregated models
-    predicted = ['predicted_'+str(i) for i in range(config.n_repeat)]
-    predicted_labels = labels[predicted]
+        # plot ROC curves
+        plt.figure()
+        for curves in Curves[mode]:
+            plt.plot(curves[0], curves[1], color='grey', alpha=0.1)
+        plt.plot([0,1],[0,1],color='r')
+        roc_curve_median = roc_curve(labels_true, labels.median_pred.values)
+        roc_curve_mean = roc_curve(labels_true, labels.mean_pred.values)
+        plt.plot(roc_curve_median[0], roc_curve_median[1], color='blue', label='agregated model (median)')
+        plt.plot(roc_curve_mean[0], roc_curve_mean[1], color='black', label='agregated model (mean)')
+        plt.legend()
+        plt.title(f"{mode} ROC curves")
+        plt.savefig(results_save_path+f"/{mode}_ROC_curves.png")
 
-    labels['median_pred'] = predicted_labels.median(axis=1)
-    labels['mean_pred'] = predicted_labels.mean(axis=1)
+        print(f"{mode} accuracy", np.mean(accuracies[mode]), np.std(accuracies[mode]))
+        print(f"{mode} AUC", np.mean(aucs[mode]), np.std(aucs[mode]))
 
-    # plot ROC curves
-    for curves in Curves:
-        plt.plot(curves[0], curves[1], color='grey', alpha=0.1)
-    plt.plot([0,1],[0,1],color='r')
-    roc_curve_median = roc_curve(labels_true, labels.median_pred)
-    roc_curve_mean = roc_curve(labels_true, labels.mean_pred)
-    plt.plot(roc_curve_median[0], roc_curve_median[1], color='blue', label='agregated model (median)')
-    plt.plot(roc_curve_mean[0], roc_curve_mean[1], color='black', label='agregated model (mean)')
-    plt.legend()
-    plt.savefig(results_save_path+"/ROC_curves.png")
+        values[f'{mode}_total_accuracy'] = [np.mean(accuracies[mode]), np.std(accuracies[mode])]
+        values[f'{mode}_auc'] = [np.mean(aucs[mode]), np.std(aucs[mode])]
 
-    print("Accuracy", np.mean(accuracies), np.std(accuracies))
-    print("AUC", np.mean(aucs), np.std(aucs))
+        # save predicted labels
+        labels.to_csv(results_save_path+f"/{mode}_predicted_labels.csv")
 
-    values = {'total_accuracy': [np.mean(accuracies), np.std(accuracies)],
-              'auc': [np.mean(aucs), np.std(aucs)]}
-    with open(results_save_path+"/values.json", 'w') as file:
+    with open(results_save_path+"/values.json", 'w+') as file:
         json.dump(values, file)
 
-    # save predicted labels
-    labels.to_csv(results_save_path+"/predicted_labels.csv")
-
     plt.show()
+    plt.close('all')
 
 
 
 if __name__ == "__main__":
-    train_classifier()
+    train_classifiers()
