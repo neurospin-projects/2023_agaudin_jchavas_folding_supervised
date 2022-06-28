@@ -27,7 +27,7 @@ def embeddings_to_pandas(embeddings, csv_path=None, verbose=False):
         return df_embeddings
 
 
-@hydra.main(config_name='config_no_save', config_path="configs")
+@hydra.main(config_name='config_no_save', config_path="../configs")
 def compute_embeddings(config):
     config = process_config(config)
 

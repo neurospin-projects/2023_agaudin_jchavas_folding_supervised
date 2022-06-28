@@ -1,3 +1,4 @@
+import re
 import hydra
 import torch
 import numpy as np
@@ -20,38 +21,41 @@ from contrastive.utils.logs import set_root_logger_level
 
 
 def load_and_format_embeddings(dir_path, labels_path, config):
-    if os.path.exists(dir_path+'/full_embeddings.csv'):
-        embeddings = pd.read_csv(dir_path+'/full_embeddings.csv', index_col=0)
-    elif os.path.exists(dir_path+'/pca_embeddings.csv'):
-        embeddings = pd.read_csv(dir_path+'/pca_embeddings.csv', index_col=0)
+    if not os.path.isdir(dir_path):
+        embeddings = pd.read_csv(dir_path, index_col=0)
     else:
-        train_embeddings = pd.read_csv(dir_path+'/train_embeddings.csv', index_col=0)
-        val_embeddings = pd.read_csv(dir_path+'/val_embeddings.csv', index_col=0)
-        test_embeddings = pd.read_csv(dir_path+'/test_embeddings.csv', index_col=0)
+        if os.path.exists(dir_path+'/full_embeddings.csv'):
+            embeddings = pd.read_csv(dir_path+'/full_embeddings.csv', index_col=0)
+        elif os.path.exists(dir_path+'/pca_embeddings.csv'):
+            embeddings = pd.read_csv(dir_path+'/pca_embeddings.csv', index_col=0)
+        else:
+            train_embeddings = pd.read_csv(dir_path+'/train_embeddings.csv', index_col=0)
+            val_embeddings = pd.read_csv(dir_path+'/val_embeddings.csv', index_col=0)
+            test_embeddings = pd.read_csv(dir_path+'/test_embeddings.csv', index_col=0)
 
-        # regroup them in one dataframe (discuss with Joël)
-        embeddings = pd.concat([train_embeddings, val_embeddings, test_embeddings],
-                            axis=0, ignore_index=False)
+            # regroup them in one dataframe (discuss with Joël)
+            embeddings = pd.concat([train_embeddings, val_embeddings, test_embeddings],
+                                axis=0, ignore_index=False)
     
-    embeddings.sort_values(by='ID', inplace=True)
+    names_col = 'ID' if 'ID' in embeddings.columns else 'Subject'
+    embeddings.sort_values(by=names_col, inplace=True)
     print("sorted embeddings:", embeddings.head())
 
     # get the labels (0 = no paracingulate, 1 = paracingulate)
     # /!\ use read_labels
     labels = read_labels(labels_path, config.subject_column_name, config.label_names)
-    labels = pd.DataFrame(labels.values, columns=['Subjects', 'label'])
-    labels.sort_values(by='Subjects', inplace=True, ignore_index=True)
+    labels = pd.DataFrame(labels.values, columns=['Subject', 'label'])
+    labels.sort_values(by='Subject', inplace=True, ignore_index=True)
     print("sorted labels", labels.head())
-    # supposed to contain one column 'ID' and one column 'label' with the actual labels
     # /!\ multiple labels is not handled
 
     # create train-test datasets
     embeddings_train, embeddings_test, labels_train, labels_test = \
-        train_test_split(embeddings, labels, test_size=0.2, random_state=24)
+        train_test_split(embeddings, labels, test_size=0.2, random_state=config.classifier_seed)
 
     # cast the dataset to the torch format
-    X_train =  torch.from_numpy(embeddings_train.loc[:, embeddings_train.columns != 'ID'].values).type(torch.FloatTensor)
-    X_test =  torch.from_numpy(embeddings_test.loc[:, embeddings_test.columns != 'ID'].values).type(torch.FloatTensor)
+    X_train =  torch.from_numpy(embeddings_train.loc[:, embeddings_train.columns != names_col].values).type(torch.FloatTensor)
+    X_test =  torch.from_numpy(embeddings_test.loc[:, embeddings_test.columns != names_col].values).type(torch.FloatTensor)
     Y_train = torch.from_numpy(labels_train.label.values.astype('float32')).type(torch.FloatTensor)
     Y_test = torch.from_numpy(labels_test.label.values.astype('float32')).type(torch.FloatTensor)
 
@@ -72,7 +76,7 @@ def compute_indicators(Y, labels_pred):
 
 
 # would highly benefit from paralellisation
-@hydra.main(config_name='config_no_save', config_path="configs")
+@hydra.main(config_name='config_no_save', config_path="../configs")
 def train_classifiers(config):
     config = process_config(config)
 
@@ -89,6 +93,8 @@ def train_classifiers(config):
     # if not specified, the outputs of the classifier will be stored next to the embeddings
     # used to generate them
     results_save_path = config.results_save_path if config.results_save_path else EoI_path
+    if not os.path.isdir(results_save_path):
+        results_save_path = os.path.dirname(results_save_path)
     
     
     # import the embeddings (supposed to be already computed)
@@ -221,7 +227,7 @@ def train_classifiers(config):
         values[f'{mode}_auc'] = [np.mean(aucs[mode]), np.std(aucs[mode])]
 
         # save predicted labels
-        labels.to_csv(results_save_path+f"/{mode}_predicted_labels.csv")
+        labels.to_csv(results_save_path+f"/{mode}_predicted_labels.csv", index=False)
 
     with open(results_save_path+"/values.json", 'w+') as file:
         json.dump(values, file)
