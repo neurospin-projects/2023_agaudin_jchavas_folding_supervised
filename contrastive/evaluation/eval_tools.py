@@ -68,6 +68,7 @@ def plot_loss(list_loss_train, list_loss_val, root_dir):
     plt.ylabel('Loss value')
     plt.legend()
     plt.savefig(root_dir + "loss.png")
+    plt.close()
 
 
 def plot_trajectories(loss_dict, nb_epoch, root_dir):
@@ -147,6 +148,7 @@ def plot_trajectories(loss_dict, nb_epoch, root_dir):
     ax.legend(loc='upper right')
     ax.grid()
     fig.savefig(root_dir + "trajectories_ave.png")
+    plt.close()
 
 
 def plot_auc(auc_dict, nb_epoch, root_dir):
@@ -208,6 +210,7 @@ def plot_auc(auc_dict, nb_epoch, root_dir):
     ax.legend(loc='upper left')
     ax.grid()
     fig.savefig(root_dir + "auc_trajectories.png")
+    plt.close()
 
 
 def compute_loss(dico_set_loaders, model, loss_type, root_dir):
@@ -351,6 +354,7 @@ def plot_distrib(loss_nor, root_dir, *loss_abnor):
     plt.title("Loss distributions for continuous and interrupted CS")
     plt.legend()
     plt.savefig(root_dir + "distrib.png")
+    plt.close()
 
 
 def get_outliers(skeleton, dico_set_loaders, model, loss_type):

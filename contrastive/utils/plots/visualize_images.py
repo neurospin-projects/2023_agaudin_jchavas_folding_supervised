@@ -36,6 +36,8 @@ import io
 import logging
 import tempfile
 
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import plotly.express as px
 import numpy as np

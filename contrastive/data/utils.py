@@ -42,8 +42,9 @@ import pandas as pd
 import torch
 
 from contrastive.utils.logs import set_file_logger
-from data.transforms import transform_foldlabel
-from deep_folding.brainvisa.utils.save_data import compare_array_aims_files
+from contrastive.data.transforms import transform_foldlabel
+# only if foldlabel == True
+#from deep_folding.brainvisa.utils.save_data import compare_array_aims_files
 
 
 _ALL_SUBJECTS = -1
@@ -233,6 +234,8 @@ def extract_train_val_dataset(train_val_dataset, partition, seed):
     """Extracts traing and validation dataset from a train_val dataset"""
     # Split training/val set into train and validation set
     size_partitions = [round(i * (len(train_val_dataset))) for i in partition]
+    # to be sure all the elements are actually taken
+    size_partitions[-1] = len(train_val_dataset) - sum(size_partitions[:-1])
 
     log.info(f"size partitions = {size_partitions}")
 

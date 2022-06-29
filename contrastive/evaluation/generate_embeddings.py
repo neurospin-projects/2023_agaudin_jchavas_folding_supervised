@@ -27,7 +27,7 @@ def embeddings_to_pandas(embeddings, csv_path=None, verbose=False):
         return df_embeddings
 
 
-@hydra.main(config_name='config', config_path="configs")
+@hydra.main(config_name='config_no_save', config_path="../configs")
 def compute_embeddings(config):
     config = process_config(config)
 
@@ -51,30 +51,35 @@ def compute_embeddings(config):
 
     # create folder where to save the embeddings
     embeddings_path = config.embeddings_save_path
-    os.makedirs(embeddings_path)
+    if not os.path.exists(embeddings_path):
+        os.makedirs(embeddings_path)
 
     # calculate embeddings for training set and save them somewhere
     print("TRAIN SET")
     train_embeddings = model.compute_representations(data_module.train_dataloader())
 
     # convert the embeddings to pandas df and save them
-    embeddings_to_pandas(train_embeddings,
-                         csv_path=embeddings_path+"train_embeddings.csv")
+    train_embeddings_df = embeddings_to_pandas(train_embeddings)
+    train_embeddings_df.to_csv(embeddings_path+"/train_embeddings.csv")
 
     # same thing for validation set
     print("VAL SET")
     val_embeddings = model.compute_representations(data_module.val_dataloader())
 
-    embeddings_to_pandas(val_embeddings,
-                         csv_path=embeddings_path+"val_embeddings.csv")
+    val_embeddings_df = embeddings_to_pandas(val_embeddings)
+    val_embeddings_df.to_csv(embeddings_path+"/val_embeddings.csv")
 
-    # /!\ DOESN'T WORK ON TEST => problem in create_datasets
     # same thing for test set
     print("TEST SET")
     test_embeddings = model.compute_representations(data_module.test_dataloader())
 
-    embeddings_to_pandas(test_embeddings,
-                         csv_path=embeddings_path+"test_embeddings.csv")
+    test_embeddings_df = embeddings_to_pandas(test_embeddings)
+    test_embeddings_df.to_csv(embeddings_path+"/test_embeddings.csv")
+
+    # same thing on the entire dataset
+    full_df = pd.concat([train_embeddings_df, val_embeddings_df, test_embeddings_df],
+                         axis=0)
+    full_df.to_csv(embeddings_path+"/full_embeddings.csv")
 
 
 
