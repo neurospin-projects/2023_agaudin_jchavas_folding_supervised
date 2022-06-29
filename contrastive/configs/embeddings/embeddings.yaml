@@ -4,4 +4,4 @@ model_path: /neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/main
 embeddings_save_path: /neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders
 pca_Xfit: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton.npy
 pca_Xtransform: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/CINGULATE/mask/Rskeleton.npy
-n_pca: 4
+n_pca: 30

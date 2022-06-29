@@ -20,9 +20,12 @@ from contrastive.utils.config import process_config
 from contrastive.utils.logs import set_root_logger_level
 
 
+
 def load_and_format_embeddings(dir_path, labels_path, config):
+    # if targeting directly the target csv file
     if not os.path.isdir(dir_path):
         embeddings = pd.read_csv(dir_path, index_col=0)
+    # if only giving the directory (implies constraints on the file name)
     else:
         if os.path.exists(dir_path+'/full_embeddings.csv'):
             embeddings = pd.read_csv(dir_path+'/full_embeddings.csv', index_col=0)
@@ -50,8 +53,13 @@ def load_and_format_embeddings(dir_path, labels_path, config):
     # /!\ multiple labels is not handled
 
     # create train-test datasets
-    embeddings_train, embeddings_test, labels_train, labels_test = \
-        train_test_split(embeddings, labels, test_size=0.2, random_state=config.classifier_seed)
+    if config.classifier_test_size:
+        embeddings_train, embeddings_test, labels_train, labels_test = \
+            train_test_split(embeddings, labels, test_size=config.classifier_test_size, 
+            random_state=config.classifier_seed)
+    else: # no train-test sets for the classifier
+        embeddings_train = embeddings_test = embeddings
+        labels_train = labels_test = labels
 
     # cast the dataset to the torch format
     X_train =  torch.from_numpy(embeddings_train.loc[:, embeddings_train.columns != names_col].values).type(torch.FloatTensor)
@@ -60,6 +68,7 @@ def load_and_format_embeddings(dir_path, labels_path, config):
     Y_test = torch.from_numpy(labels_test.label.values.astype('float32')).type(torch.FloatTensor)
 
     return X_train, X_test, Y_train, Y_test, labels_train, labels_test
+
 
 
 def compute_indicators(Y, labels_pred):
@@ -73,6 +82,7 @@ def compute_indicators(Y, labels_pred):
     # compute accuracy
     accuracy = accuracy_score(labels_true, labels_pred)
     return curves, roc_auc, accuracy
+
 
 
 # would highly benefit from paralellisation
@@ -102,6 +112,7 @@ def train_classifiers(config):
         load_and_format_embeddings(train_embs_path, train_lab_paths, config)
 
 
+    # create objects that will be filled during the loop
     train_prediction_matrix = np.zeros((labels_train.shape[0], config.n_repeat))
     test_prediction_matrix = np.zeros((labels_test.shape[0], config.n_repeat))
 
@@ -111,6 +122,7 @@ def train_classifiers(config):
             'test': []}
     accuracies = {'train': [],
                   'test': []}
+
 
     for i in range(config.n_repeat):
         print("model number", i)
@@ -191,6 +203,7 @@ def train_classifiers(config):
     labels_test = pd.concat([labels_test, test_preds], axis=1)
 
 
+    # evaluation of the aggregation of the models
     values = {}
 
     for mode in ['train', 'test']:
@@ -220,6 +233,7 @@ def train_classifiers(config):
         plt.title(f"{mode} ROC curves")
         plt.savefig(results_save_path+f"/{mode}_ROC_curves.png")
 
+        # compute accuracy and area under the curve
         print(f"{mode} accuracy", np.mean(accuracies[mode]), np.std(accuracies[mode]))
         print(f"{mode} AUC", np.mean(aucs[mode]), np.std(aucs[mode]))
 

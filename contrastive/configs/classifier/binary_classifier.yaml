@@ -1,6 +1,6 @@
 # @package _global_
 # define path and parameters needed for the classifier on the latent space
-training_embeddings: /neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/pca_embeddings/ACCpatterns_fit_transform/4/pca_embeddings_4.csv
+training_embeddings: /neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/main_models/humans/HCP_30_30/pca_embeddings/pca_embeddings_30.csv
 embeddings_of_interest:
 results_save_path:
 training_labels: /neurospin/dico/data/bv_databases/human/partially_labeled/ACCpatterns/all.csv
@@ -12,3 +12,4 @@ class_max_epochs: 10
 class_batch_size: 10
 n_repeat: 250
 classifier_seed: 24
+classifier_test_size: 0.2
