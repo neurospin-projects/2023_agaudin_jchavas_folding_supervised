@@ -48,7 +48,7 @@ from contrastive.data.transforms import *
 
 from contrastive.augmentations import PaddingTensor
 
-from data.transforms import transform_nothing_done
+from contrastive.data.transforms import transform_nothing_done
 
 log = set_file_logger(__file__)
 

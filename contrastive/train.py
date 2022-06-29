@@ -54,7 +54,8 @@ from contrastive.models.contrastive_learner_with_labels import \
     ContrastiveLearner_WithLabels
 from contrastive.models.contrastive_learner_visualization import \
     ContrastiveLearner_Visualization
-from contrastive.utils.config import process_config
+from contrastive.utils.config import create_accessible_config, process_config,\
+get_config_diff
 from contrastive.utils.logs import set_root_logger_level
 from contrastive.utils.logs import set_file_log_handler
 from contrastive.utils.logs import set_file_logger
@@ -82,6 +83,21 @@ def train(config):
                          suffix='output')
     log.info(f"current directory = {os.getcwd()}")
 
+
+    # copies some of the config parameters in a yaml file easily accessible
+    keys_to_keep = ['dataset', 'numpy_all', 'train_val_csv_file', 'nb_subjects', 'model', 'with_labels', 
+    'input_size', 'temperature_initial', 'temperature', 'sigma', 'drop_rate', 'depth_decoder',
+    'mode', 'foldlabel', 'fill_value', 'patch_size', 'max_angle', 'checkerboard_size', 'keep_bottom',
+    'growth_rate', 'block_config', 'num_init_features', 'num_representation_features', 'num_outputs',
+    'environment', 'batch_size', 'pin_mem', 'partition', 'lr', 'weight_decay', 'max_epochs',
+    'early_stopping_patience', 'seed']
+
+    create_accessible_config(keys_to_keep, os.getcwd()+"/.hydra/config.yaml")
+
+    # create a csv file where the parameters changing between runs are stored
+    get_config_diff(os.getcwd()+'/..', whole_config=False, save=True)    
+
+
     if config.mode == 'evaluation':
         data_module = DataModule_Evaluation(config)
     else:
@@ -101,13 +117,13 @@ def train(config):
 
     summary(model, tuple(config.input_size), device="cpu")
 
-    # early_stop_callback = EarlyStopping(monitor="val_loss",
-    #     patience=config.early_stopping_patience)
+    early_stop_callback = EarlyStopping(monitor="val_loss",
+         patience=config.early_stopping_patience)
 
     trainer = pl.Trainer(
         gpus=1,
         max_epochs=config.max_epochs,
-        # callbacks=[early_stop_callback],
+        callbacks=[early_stop_callback],
         logger=tb_logger,
         flush_logs_every_n_steps=config.nb_steps_per_flush_logs,
         log_every_n_steps=config.log_every_n_steps)

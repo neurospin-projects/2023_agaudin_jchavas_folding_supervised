@@ -111,6 +111,7 @@ class Cluster():
             ax1.set_yticks([])  # Clear the yaxis labels / ticks
             ax1.set_xticks([-0.1, 0, 0.2, 0.4, 0.6, 0.8, 1])
             plt.savefig(f"{self.dir}/kmeans_silhouette_{n}clusters.png")
+            plt.close()
 
         af = AffinityPropagation().fit(self.x)
         cluster_labels_ini = af.labels_
@@ -179,6 +180,7 @@ class Cluster():
             ax2.set_yticks([])  # Clear the yaxis labels / ticks
             ax2.set_xticks([-0.1, 0, 0.2, 0.4, 0.6, 0.8, 1])
             plt.savefig(f"{self.dir}/AffinityPropagation_silhouette.png")
+            plt.close()
 
         eps_list = [1.0, 1.5, 1.8, 2.0, 2.2, 2.5, 3.0]
         for idx, eps in enumerate(eps_list):
@@ -242,6 +244,7 @@ class Cluster():
                 ax3.set_yticks([])  # Clear the yaxis labels / ticks
                 ax3.set_xticks([-0.1, 0, 0.2, 0.4, 0.6, 0.8, 1])
                 plt.savefig(f"{self.dir}/dbscan_silhouette_{eps}.png")
+                plt.close()
 
         print(res_silhouette)
         return res_silhouette
