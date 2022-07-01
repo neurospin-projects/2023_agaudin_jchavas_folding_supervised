@@ -7,7 +7,7 @@ defaults:
   - mode: encoder
   - augmentations: foldlabel
   - backbone: DenseNet
-  - platform: cpu
+  - platform: cuda_not_brainvisa
   - trainer: default
   - classifier: binary_classifier
   - embeddings: embeddings

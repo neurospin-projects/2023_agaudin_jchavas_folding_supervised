@@ -104,7 +104,7 @@ class ContrastiveLearner(pl.LightningModule):
         self.sample_k = np.array([])
         self.sample_filenames = []
         self.save_output = SaveOutput()
-        self.backbone.hook_handles = []
+        self.hook_handles = []
         self.get_layers()
         if self.config.environment == "brainvisa":
             self.visu_anatomist = Visu_Anatomist()
@@ -117,14 +117,14 @@ class ContrastiveLearner(pl.LightningModule):
         for layer in self.modules():
             if isinstance(layer, torch.nn.Linear):
                 handle = layer.register_forward_hook(self.save_output)
-                self.backbone.hook_handles.append(handle)
+                self.hook_handles.append(handle)
 
     def custom_histogram_adder(self):
         """Builds histogram for each model parameter.
         """
         # iterating through all parameters
         for name, params in self.named_parameters():
-            self.backbone.logger.experiment.add_histogram(
+            self.logger.experiment.add_histogram(
                 name,
                 params,
                 self.current_epoch)
@@ -133,23 +133,23 @@ class ContrastiveLearner(pl.LightningModule):
         """Plots all zii, zjj, zij and weights histograms"""
         # Computes histogram of sim_zii
         histogram_sim_zii = plot_histogram(self.sim_zii, buffer=True)
-        self.backbone.logger.experiment.add_image(
+        self.logger.experiment.add_image(
             'histo_sim_zii', histogram_sim_zii, self.current_epoch)
 
         # Computes histogram of sim_zjj
         histogram_sim_zjj = plot_histogram(self.sim_zjj, buffer=True)
-        self.backbone.logger.experiment.add_image(
+        self.logger.experiment.add_image(
             'histo_sim_zjj', histogram_sim_zjj, self.current_epoch)
 
         # Computes histogram of sim_zij
         histogram_sim_zij = plot_histogram(self.sim_zij, buffer=True)
-        self.backbone.logger.experiment.add_image(
+        self.logger.experiment.add_image(
             'histo_sim_zij', histogram_sim_zij, self.current_epoch)
 
         # Computes histogram of weights
         histogram_weights = plot_histogram_weights(self.weights,
                                                     buffer=True)
-        self.backbone.logger.experiment.add_image(
+        self.logger.experiment.add_image(
             'histo_weights', histogram_weights, self.current_epoch)
 
     def plot_scatter_matrices(self):
@@ -159,7 +159,7 @@ class ContrastiveLearner(pl.LightningModule):
             self.sample_data.train_dataloader())
         X = r[0] # First element of tuple
         scatter_matrix_outputs = plot_scatter_matrix(X, buffer=True)
-        self.backbone.logger.experiment.add_image(
+        self.logger.experiment.add_image(
             'scatter_matrix_outputs',
             scatter_matrix_outputs,
             self.current_epoch)
@@ -170,7 +170,7 @@ class ContrastiveLearner(pl.LightningModule):
         X = r[0] # First element of tuple
         scatter_matrix_representations = plot_scatter_matrix(
             X, buffer=True)
-        self.backbone.logger.experiment.add_image(
+        self.logger.experiment.add_image(
             'scatter_matrix_representations',
             scatter_matrix_representations,
             self.current_epoch)
@@ -178,31 +178,31 @@ class ContrastiveLearner(pl.LightningModule):
     def plot_views(self):
         """Plots different 3D views"""
         image_input_i = plot_bucket(self.sample_i, buffer=True)
-        self.backbone.logger.experiment.add_image(
+        self.logger.experiment.add_image(
             'input_i', image_input_i, self.current_epoch)
         image_input_j = plot_bucket(self.sample_j, buffer=True)
-        self.backbone.logger.experiment.add_image(
+        self.logger.experiment.add_image(
             'input_j', image_input_j, self.current_epoch)
 
         # Plots view using anatomist
         if self.config.environment == "brainvisa":
             image_input_i = self.visu_anatomist.plot_bucket(
                 self.sample_i, buffer=True)
-            self.backbone.logger.experiment.add_image(
+            self.logger.experiment.add_image(
                 'input_ana_i: ',
                 image_input_i, self.current_epoch)
-            self.backbone.logger.experiment.add_text(
+            self.logger.experiment.add_text(
                 'filename: ',self.sample_filenames[0], self.current_epoch)
-            self.backbone.logger.experiment.add_text(
+            self.logger.experiment.add_text(
                 'label: ',str(self.sample_labels[0]), self.current_epoch)
             image_input_j = self.visu_anatomist.plot_bucket(
                 self.sample_j, buffer=True)
-            self.backbone.logger.experiment.add_image(
+            self.logger.experiment.add_image(
                 'input_ana_j: ',
                 image_input_j, self.current_epoch)
             image_input_k = self.visu_anatomist.plot_bucket(
                 self.sample_k, buffer=True)
-            self.backbone.logger.experiment.add_image(
+            self.logger.experiment.add_image(
                 'input_ana_k: ',
                 image_input_k, self.current_epoch)
 
@@ -244,7 +244,7 @@ class ContrastiveLearner(pl.LightningModule):
 
         # Only computes graph on first step
         if self.global_step == 1:
-            self.backbone.logger.experiment.add_graph(self, inputs[:, 0, :])
+            self.logger.experiment.add_graph(self, inputs[:, 0, :])
 
         # Records sample for first batch of each epoch
         if batch_idx == 0:
@@ -393,17 +393,17 @@ class ContrastiveLearner(pl.LightningModule):
                 X_tsne = self.compute_tsne(
                     self.sample_data.train_dataloader(), "output")
                 image_TSNE = plot_tsne(X_tsne, buffer=True)
-                self.backbone.logger.experiment.add_image(
+                self.logger.experiment.add_image(
                     'TSNE output image', image_TSNE, self.current_epoch)
                 X_tsne = self.compute_tsne(
                     self.sample_data.train_dataloader(), "representation")
                 image_TSNE = plot_tsne(X_tsne, buffer=True)
-                self.backbone.logger.experiment.add_image(
+                self.logger.experiment.add_image(
                     'TSNE representation image', image_TSNE, self.current_epoch)
 
             # Computes histogram of sim_zij
             histogram_sim_zij = plot_histogram(self.sim_zij, buffer=True)
-            self.backbone.logger.experiment.add_image(
+            self.logger.experiment.add_image(
                 'histo_sim_zij', histogram_sim_zij, self.current_epoch)
 
         # Plots views
@@ -416,7 +416,7 @@ class ContrastiveLearner(pl.LightningModule):
         self.custom_histogram_adder()
 
         # logging using tensorboard logger
-        self.backbone.logger.experiment.add_scalar(
+        self.logger.experiment.add_scalar(
             "Loss/Train",
             avg_loss,
             self.current_epoch)
@@ -460,13 +460,13 @@ class ContrastiveLearner(pl.LightningModule):
                 X_tsne = self.compute_tsne(
                     self.sample_data.val_dataloader(), "output")
                 image_TSNE = plot_tsne(X_tsne, buffer=True)
-                self.backbone.logger.experiment.add_image(
+                self.logger.experiment.add_image(
                     'TSNE output validation image', image_TSNE, self.current_epoch)
                 X_tsne = self.compute_tsne(
                     self.sample_data.val_dataloader(),
                     "representation")
                 image_TSNE = plot_tsne(X_tsne, buffer=True)
-                self.backbone.logger.experiment.add_image(
+                self.logger.experiment.add_image(
                     'TSNE representation validation image',
                     image_TSNE,
                     self.current_epoch)
@@ -475,7 +475,7 @@ class ContrastiveLearner(pl.LightningModule):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
 
         # logs losses using tensorboard logger
-        self.backbone.logger.experiment.add_scalar(
+        self.logger.experiment.add_scalar(
             "Loss/Validation",
             avg_loss,
             self.current_epoch)
