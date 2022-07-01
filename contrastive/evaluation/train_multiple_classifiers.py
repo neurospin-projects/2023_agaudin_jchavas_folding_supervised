@@ -41,7 +41,7 @@ def load_and_format_embeddings(dir_path, labels_path, config):
                                 axis=0, ignore_index=False)
     
     names_col = 'ID' if 'ID' in embeddings.columns else 'Subject'
-    embeddings.sort_values(by=names_col, inplace=True)
+    embeddings.sort_index(inplace=True)
     print("sorted embeddings:", embeddings.head())
 
     # get the labels (0 = no paracingulate, 1 = paracingulate)
@@ -82,6 +82,21 @@ def compute_indicators(Y, labels_pred):
     # compute accuracy
     accuracy = accuracy_score(labels_true, labels_pred)
     return curves, roc_auc, accuracy
+
+
+
+def compute_auc(column, label_col=None):
+    print("COMPUTE AUC")
+    print(label_col.head())
+    print(column.head())
+    return roc_auc_score(label_col, column)
+
+# get a model with performance that is representative of the group
+def get_average_model(labels_df):
+    aucs = labels_df.apply(compute_auc, args=[labels_df.label])
+    aucs = aucs[aucs.index != 'label']
+    aucs = aucs[aucs == aucs.quantile(interpolation='nearest')]
+    return(aucs.index[0])
 
 
 
@@ -141,7 +156,7 @@ def train_classifiers(config):
         class_train_set = TensorDataset(X_train, Y_train)
         train_loader = DataLoader(class_train_set, batch_size=config.class_batch_size)
 
-        trainer = pl.Trainer(max_epochs=config.class_max_epochs, logger=False)
+        trainer = pl.Trainer(max_epochs=config.class_max_epochs, logger=False, enable_checkpointing=False)
         trainer.fit(model=bin_class, train_dataloaders=train_loader)
 
 
@@ -222,11 +237,21 @@ def train_classifiers(config):
 
         # plot ROC curves
         plt.figure()
+
+        # ROC curves of all models
         for curves in Curves[mode]:
             plt.plot(curves[0], curves[1], color='grey', alpha=0.1)
-        plt.plot([0,1],[0,1],color='r')
+        plt.plot([0,1],[0,1],color='r', linestyle='dashed')
+
+        # get the average model (with AUC as a criteria)
+        # /!\ This model is a classifier that exists in the pool != 'mean_pred' and 'median_pred'
+        average_model = get_average_model(labels[['label'] + columns_names].astype('float64'))
+        roc_curve_average = roc_curve(labels_true, labels[average_model].values)
+        # ROC curves of "special" models
         roc_curve_median = roc_curve(labels_true, labels.median_pred.values)
         roc_curve_mean = roc_curve(labels_true, labels.mean_pred.values)
+        
+        plt.plot(roc_curve_average[0], roc_curve_average[1], color='red', alpha=0.5, label='average model')
         plt.plot(roc_curve_median[0], roc_curve_median[1], color='blue', label='agregated model (median)')
         plt.plot(roc_curve_mean[0], roc_curve_mean[1], color='black', label='agregated model (mean)')
         plt.legend()
