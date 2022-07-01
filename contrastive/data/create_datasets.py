@@ -37,8 +37,11 @@ Tools to create datasets
 """
 
 # only if foldlabel == True
-#from deep_folding.brainvisa.utils.save_data import compare_npy_file_aims_files
-#from deep_folding.brainvisa.utils.save_data import compare_array_aims_files
+try:
+    from deep_folding.brainvisa.utils.save_data import compare_npy_file_aims_files
+    from deep_folding.brainvisa.utils.save_data import compare_array_aims_files
+except ImportError:
+    print("INFO: you cannot use deep_folding in brainvisa. Probably OK.")
 
 from contrastive.utils.logs import set_file_logger
 
@@ -158,8 +161,9 @@ def create_sets_with_labels(config):
     check_if_skeleton(train_val_data, "train_val")
     check_if_skeleton(test_data, "test")
 
-    compare_array_aims_files(train_val_subjects, train_val_data, config.crop_dir)
-    compare_array_aims_files(test_subjects, test_data, config.crop_dir)
+    if config.environment == "brainvisa":
+        compare_array_aims_files(train_val_subjects, train_val_data, config.crop_dir)
+        compare_array_aims_files(test_subjects, test_data, config.crop_dir)
     
 
     # Makes some sanity checks on ordering of label subjects

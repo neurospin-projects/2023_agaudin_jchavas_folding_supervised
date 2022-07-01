@@ -44,8 +44,10 @@ import torch
 from contrastive.utils.logs import set_file_logger
 from contrastive.data.transforms import transform_foldlabel
 # only if foldlabel == True
-#from deep_folding.brainvisa.utils.save_data import compare_array_aims_files
-
+try:
+    from deep_folding.brainvisa.utils.save_data import compare_array_aims_files
+except ImportError:
+    print("INFO: you cannot use deep_folding in brainvisa. Probably OK.")
 
 _ALL_SUBJECTS = -1
 
@@ -349,7 +351,8 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
     normal_subjects = normal_subjects.loc[normal_subjects_index]
     normal_data = normal_data[normal_subjects_index]
 
-    compare_array_aims_files(normal_subjects, normal_data, sample_dir)
+    if config.environment == "brainvisa":
+        compare_array_aims_files(normal_subjects, normal_data, sample_dir)
 
     # Sort subject_labels according to normal_subjects
     subject_labels = \
@@ -371,8 +374,9 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
         extract_train_val(normal_subjects, train_val_subjects, normal_data)
     train_val_labels = extract_labels(subject_labels, train_val_subjects)
 
-    compare_array_aims_files(train_val_subjects, train_val_data, sample_dir)
-    compare_array_aims_files(test_subjects, test_data, sample_dir)
+    if config.environment == "brainvisa":
+        compare_array_aims_files(train_val_subjects, train_val_data, sample_dir)
+        compare_array_aims_files(test_subjects, test_data, sample_dir)
 
 
     return train_val_subjects, train_val_data, train_val_labels,\
