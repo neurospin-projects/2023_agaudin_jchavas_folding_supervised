@@ -131,6 +131,7 @@ contrastive/notebooks/temp
 contrastive/notebooks/*.bck
 contrastive/notebooks/*.bck.minf
 contrastive/multirun
+contrastive/checkpoints
 
 # Rope project settings
 .ropeproject
