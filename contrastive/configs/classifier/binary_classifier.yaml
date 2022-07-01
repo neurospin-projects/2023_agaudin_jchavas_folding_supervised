@@ -1,6 +1,6 @@
 # @package _global_
 # define path and parameters needed for the classifier on the latent space
-training_embeddings: /neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/main_models/humans/HCP_30_30/pca_embeddings/pca_embeddings_30.csv
+training_embeddings: /neurospin/dico/agaudin/Runs/03_monkeys/Output/2022-06-30/fold_ACC_4/ACCpatterns_embeddings/full_embeddings.csv
 embeddings_of_interest:
 results_save_path:
 training_labels: /neurospin/dico/data/bv_databases/human/partially_labeled/ACCpatterns/all.csv

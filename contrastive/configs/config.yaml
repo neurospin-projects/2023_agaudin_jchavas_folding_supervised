@@ -5,7 +5,7 @@ defaults:
   - dataset: cingulate_ACCpatterns
   - model: SimCLR
   - mode: encoder
-  - augmentations: no_foldlabel
+  - augmentations: foldlabel
   - backbone: DenseNet
   - platform: cuda_not_brainvisa
   - trainer: default
