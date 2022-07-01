@@ -148,15 +148,17 @@ def create_sets_with_labels(config):
                                  config.subject_column_name,
                                  config.label_names)
 
-    compare_npy_file_aims_files(config.subjects_all, config.numpy_all, config.crop_dir)
+    if config.environment == "brainvisa":
+        compare_npy_file_aims_files(config.subjects_all, config.numpy_all, config.crop_dir)
 
     # Loads and separates in train_val/test skeleton crops
     train_val_subjects, train_val_data, train_val_labels,\
     test_subjects, test_data, test_labels = \
         extract_data_with_labels(config.numpy_all, subject_labels, config.crop_dir, config)
 
-    compare_array_aims_files(train_val_subjects, train_val_data, config.crop_dir)
-    compare_array_aims_files(test_subjects, test_data, config.crop_dir)
+    if config.environment == "brainvisa":
+        compare_array_aims_files(train_val_subjects, train_val_data, config.crop_dir)
+        compare_array_aims_files(test_subjects, test_data, config.crop_dir)
     
 
     # Makes some sanity checks on ordering of label subjects
@@ -189,10 +191,11 @@ def create_sets_with_labels(config):
                             train_val_labels[['Subject']], "train_val labels")
         check_if_same_subjects(test_foldlabel_subjects,
                             test_labels[['Subject']], "test labels")
-        compare_array_aims_files(train_val_foldlabel_subjects,
-                                 train_val_foldlabel_data, config.foldlabel_dir)
-        compare_array_aims_files(test_foldlabel_subjects,
-                                 test_foldlabel_data, config.foldlabel_dir)
+        if config.environment == "brainvisa":
+            compare_array_aims_files(train_val_foldlabel_subjects,
+                                    train_val_foldlabel_data, config.foldlabel_dir)
+            compare_array_aims_files(test_foldlabel_subjects,
+                                    test_foldlabel_data, config.foldlabel_dir)
     else:
         log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
 

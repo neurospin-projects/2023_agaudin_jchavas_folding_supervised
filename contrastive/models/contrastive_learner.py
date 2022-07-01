@@ -39,10 +39,12 @@ https://learnopencv.com/tensorboard-with-pytorch-lightning
 """
 import numpy as np
 import torch
+import pytorch_lightning as pl
 from sklearn.manifold import TSNE
 from toolz.itertoolz import first
 
 from contrastive.backbones.densenet import DenseNet
+from contrastive.backbones.convnet import ConvNet
 from contrastive.losses import NTXenLoss
 from contrastive.losses import CrossEntropyLoss
 from contrastive.utils.plots.visualize_images import plot_bucket
@@ -69,10 +71,23 @@ class SaveOutput:
         self.outputs = {}
 
 
-class ContrastiveLearner(DenseNet):
+class ContrastiveLearner(pl.LightningModule):
 
     def __init__(self, config, sample_data):
-        super(ContrastiveLearner, self).__init__(
+        super(ContrastiveLearner, self).__init__()
+        if config.backbone_name == 'densenet':
+            self.backbone = DenseNet(
+            growth_rate=config.growth_rate,
+            block_config=config.block_config,
+            num_init_features=config.num_init_features,
+            num_representation_features=config.num_representation_features,
+            num_outputs=config.num_outputs,
+            mode=config.mode,
+            drop_rate=config.drop_rate,
+            in_shape=config.input_size,
+            depth=config.depth_decoder)
+        elif config.backbone_name == "convnet":
+            self.backbone = ConvNet(
             growth_rate=config.growth_rate,
             block_config=config.block_config,
             num_init_features=config.num_init_features,
@@ -93,6 +108,10 @@ class ContrastiveLearner(DenseNet):
         self.get_layers()
         if self.config.environment == "brainvisa":
             self.visu_anatomist = Visu_Anatomist()
+
+
+    def forward(self, x):
+        return self.backbone.forward(x)
 
     def get_layers(self):
         for layer in self.modules():
