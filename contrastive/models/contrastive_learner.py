@@ -77,26 +77,24 @@ class ContrastiveLearner(pl.LightningModule):
         super(ContrastiveLearner, self).__init__()
         if config.backbone_name == 'densenet':
             self.backbone = DenseNet(
-            growth_rate=config.growth_rate,
-            block_config=config.block_config,
-            num_init_features=config.num_init_features,
-            num_representation_features=config.num_representation_features,
-            num_outputs=config.num_outputs,
-            mode=config.mode,
-            drop_rate=config.drop_rate,
-            in_shape=config.input_size,
-            depth=config.depth_decoder)
+                growth_rate=config.growth_rate,
+                block_config=config.block_config,
+                num_init_features=config.num_init_features,
+                num_representation_features=config.num_representation_features,
+                num_outputs=config.num_outputs,
+                mode=config.mode,
+                drop_rate=config.drop_rate,
+                in_shape=config.input_size,
+                depth=config.depth_decoder)
         elif config.backbone_name == "convnet":
             self.backbone = ConvNet(
-            growth_rate=config.growth_rate,
-            block_config=config.block_config,
-            num_init_features=config.num_init_features,
-            num_representation_features=config.num_representation_features,
-            num_outputs=config.num_outputs,
-            mode=config.mode,
-            drop_rate=config.drop_rate,
-            in_shape=config.input_size,
-            depth=config.depth_decoder)
+                encoder_depth=config.encoder_depth,
+                num_representation_features=config.num_representation_features,
+                num_outputs=config.num_outputs,
+                projection_head_dims=config.projection_head_dims,
+                drop_rate=config.drop_rate,
+                mode=config.mode,
+                in_shape=config.input_size)
         self.config = config
         self.sample_data = sample_data
         self.sample_i = np.array([])

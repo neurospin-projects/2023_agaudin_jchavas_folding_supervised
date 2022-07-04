@@ -43,7 +43,7 @@ import torch.nn.functional as F
 
 
 class ConvNet(pl.LightningModule):
-     def __init__(self):
+    def __init__(self):
         super(ConvNet, self).__init__()
         
         self.conv_layer1 = self._conv_layer_set(3, 32)

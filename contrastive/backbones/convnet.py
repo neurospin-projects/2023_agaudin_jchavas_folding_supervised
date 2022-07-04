@@ -7,80 +7,6 @@ import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 
 
-def _bn_function_factory(norm, relu, conv):
-    def bn_function(*inputs):
-        concated_features = torch.cat(inputs, 1)
-        bottleneck_output = conv(relu(norm(concated_features)))
-        return bottleneck_output
-    return bn_function
-
-
-class _DenseLayer(nn.Sequential):
-    def __init__(self, num_input_features, growth_rate, bn_size,
-                 drop_rate, memory_efficient=False):
-        super(_DenseLayer, self).__init__()
-        self.add_module('norm1', nn.BatchNorm3d(num_input_features)),
-        self.add_module('relu1', nn.ReLU(inplace=True)),
-        self.add_module('conv1', nn.Conv3d(num_input_features, bn_size *
-                                           growth_rate, kernel_size=1,
-                                           stride=1, bias=False)),
-        self.add_module('norm2', nn.BatchNorm3d(bn_size * growth_rate)),
-        self.add_module('relu2', nn.ReLU(inplace=True)),
-        self.add_module('conv2', nn.Conv3d(bn_size * growth_rate, growth_rate,
-                                           kernel_size=3, stride=1, padding=1,
-                                           bias=False)),
-        self.drop_rate = drop_rate
-        self.memory_efficient = memory_efficient
-
-    def forward(self, *prev_features):
-        bn_function = _bn_function_factory(self.norm1, self.relu1, self.conv1)
-        if self.memory_efficient and any(prev_feature.requires_grad
-                                         for prev_feature in prev_features):
-            bottleneck_output = cp.checkpoint(bn_function, *prev_features)
-        else:
-            bottleneck_output = bn_function(*prev_features)
-
-        new_features = self.conv2(self.relu2(self.norm2(bottleneck_output)))
-
-        if self.drop_rate > 0:
-            new_features = F.dropout(new_features, p=self.drop_rate,
-                                     training=self.training)
-
-        return new_features
-
-
-class _DenseBlock(pl.LightningModule):
-    def __init__(self, num_layers, num_input_features, bn_size, growth_rate,
-                 drop_rate, memory_efficient=False):
-        super(_DenseBlock, self).__init__()
-        for i in range(num_layers):
-            layer = _DenseLayer(
-                num_input_features + i * growth_rate,
-                growth_rate=growth_rate,
-                bn_size=bn_size,
-                drop_rate=drop_rate,
-                memory_efficient=memory_efficient,
-            )
-            self.add_module('denselayer%d' % (i + 1), layer)
-
-    def forward(self, init_features):
-        features = [init_features]
-        for name, layer in self.named_children():
-            new_features = layer(*features)
-            features.append(new_features)
-        return torch.cat(features, 1)
-
-
-class _Transition(nn.Sequential):
-    def __init__(self, num_input_features, num_output_features):
-        super(_Transition, self).__init__()
-        self.add_module('norm', nn.BatchNorm3d(num_input_features))
-        self.add_module('relu', nn.ReLU(inplace=True))
-        self.add_module('conv', nn.Conv3d(num_input_features,
-                                          num_output_features,
-                                          kernel_size=1, stride=1, bias=False))
-        self.add_module('pool', nn.AvgPool3d(kernel_size=2, stride=2))
-
 
 class ConvNet(pl.LightningModule):
     r"""3D-DenseNet model class, based on
@@ -105,79 +31,74 @@ class ConvNet(pl.LightningModule):
             See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
     """
 
-    def __init__(self, growth_rate=32, block_config=(3, 12, 24, 16),
-                 num_init_features=64, bn_size=4, drop_rate=0,
-                 num_classes=1000, in_channels=1,
+    def __init__(self, in_channels=1, encoder_depth=3,
                  num_representation_features=256,
-                 num_outputs=64,
-                 mode="encoder",
+                 num_outputs=64, projection_head_dims=None,
+                 drop_rate=0.1, mode="encoder",
                  memory_efficient=False,
-                 in_shape=None,
-                 depth=3):
+                 in_shape=None):
 
         super(ConvNet, self).__init__()
 
-        assert mode in {'encoder', 'evaluation', 'decoder', 'classifier'},\
+        assert mode in {'encoder', 'evaluation', 'decoder'},\
             "Unknown mode selected: %s" % mode
 
 
         self.mode = mode
         self.num_representation_features = num_representation_features
         self.num_outputs = num_outputs
+        if projection_head_dims:
+            self.projection_head_dims = projection_head_dims
+        else:
+            self.projection_head_dims = [num_outputs]
+        self.drop_rate = drop_rate
 
         # Decoder part
         self.in_shape = in_shape
         c, h, w, d = in_shape
-        self.depth = depth
-        self.z_dim_h = h//2**self.depth # receptive field downsampled 2 times
-        self.z_dim_w = w//2**self.depth
-        self.z_dim_d = d//2**self.depth
+        self.encoder_depth = encoder_depth
+        self.z_dim_h = h//2**self.encoder_depth # receptive field downsampled 2 times
+        self.z_dim_w = w//2**self.encoder_depth
+        self.z_dim_d = d//2**self.encoder_depth
 
-        # First convolution
-        self.features = nn.Sequential(OrderedDict([
-            ('conv0', nn.Conv3d(in_channels, num_init_features, kernel_size=7,
-                                stride=2, padding=3, bias=False)),
-            ('norm0', nn.BatchNorm3d(num_init_features)),
-            ('relu0', nn.ReLU(inplace=True)),
-            ('pool0', nn.MaxPool3d(kernel_size=3, stride=2, padding=1)),
-        ]))
 
-        # Each denseblock
-        num_features = num_init_features
-        for i, num_layers in enumerate(block_config):
-            block = _DenseBlock(
-                num_layers=num_layers,
-                num_input_features=num_features,
-                bn_size=bn_size,
-                growth_rate=growth_rate,
-                drop_rate=drop_rate,
-                memory_efficient=memory_efficient
-            )
-            self.features.add_module('denseblock%d' % (i + 1), block)
-            num_features = num_features + num_layers * growth_rate
-            if i != len(block_config) - 1:
-                num_output_features = max(num_features // 2, 2)
-                trans = _Transition(num_input_features=num_features,
-                                    num_output_features=num_output_features)
-                self.features.add_module('transition%d' % (i + 1), trans)
-                num_features = num_output_features
+        modules_encoder = []
+        for step in range(encoder_depth):
+            in_channels = 1 if step == 0 else out_channels
+            out_channels = 16 if step == 0  else 16 * (2**step)
+            modules_encoder.append(('conv%s' %step, nn.Conv3d(in_channels, out_channels,
+                    kernel_size=3, stride=1, padding=1)))
+            modules_encoder.append(('norm%s' %step, nn.BatchNorm3d(out_channels)))
+            modules_encoder.append(('LeakyReLU%s' %step, nn.LeakyReLU()))
+            modules_encoder.append(('conv%sa' %step, nn.Conv3d(out_channels, out_channels,
+                    kernel_size=4, stride=2, padding=1)))
+            modules_encoder.append(('norm%sa' %step, nn.BatchNorm3d(out_channels)))
+            modules_encoder.append(('LeakyReLU%sa' %step, nn.LeakyReLU()))
+            self.num_features = out_channels
+        # flatten and reduce to the desired dimension
+        modules_encoder.append(('Flatten', nn.Flatten()))
+        modules_encoder.append(('Linear', 
+                    nn.Linear(self.num_features*self.z_dim_h*self.z_dim_w*self.z_dim_d,
+                              self.num_representation_features)))
+        self.encoder = nn.Sequential(OrderedDict(modules_encoder))
 
-        self.num_features = num_features
-        print(f"num_features = {num_features}")
 
-        if self.mode == "classifier":
-            # Final batch norm
-            self.features.add_module('norm5', nn.BatchNorm3d(num_features))
-            # Linear layer
-            self.classifier = nn.Linear(num_features, num_classes)
-        elif (self.mode == "encoder") or (self.mode == 'evaluation'):
-            self.hidden_representation = nn.Linear(
-                num_features, self.num_representation_features)
-            self.head_projection = nn.Linear(self.num_representation_features,
-                                             self.num_outputs)
+        if (self.mode == "encoder") or (self.mode == 'evaluation'):
+            # build a projection head
+            projection_head = []
+            input_size = self.num_representation_features
+            for i, dim_i in enumerate(self.projection_head_dims):
+                output_size = dim_i
+                projection_head.append(('Linear%s' %i, nn.Linear(input_size, output_size)))
+                projection_head.append(('ReLU%s' %i, nn.ReLU()))
+                input_size = output_size
+            projection_head.append(('Output layer' ,nn.Linear(input_size,
+                                                             self.num_outputs)))
+            self.projection_head = nn.Sequential(OrderedDict(projection_head))
+
         elif self.mode == "decoder":
             self.hidden_representation = nn.Linear(
-                num_features, self.num_representation_features)
+                self.num_features, self.num_representation_features)
             self.develop = nn.Linear(self.num_representation_features,
                                      64 *self.z_dim_h * self.z_dim_w* self.z_dim_d)
             modules_decoder = []
@@ -201,7 +122,7 @@ class ConvNet(pl.LightningModule):
 
 
         # Init. with kaiming
-        for m in self.modules():
+        for m in self.encoder:
             if isinstance(m, nn.Conv3d):
                 nn.init.kaiming_normal_(m.weight)
             elif isinstance(m, nn.BatchNorm3d):
@@ -210,7 +131,7 @@ class ConvNet(pl.LightningModule):
             elif isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, 0, 0.5)
                 nn.init.constant_(m.bias, 0)
-        for m in [self.hidden_representation, self.head_projection]:
+        for m in self.projection_head:
             if isinstance(m, nn.Conv3d):
                 nn.init.kaiming_normal_(m.weight)
             elif isinstance(m, nn.BatchNorm3d):
@@ -254,22 +175,16 @@ class ConvNet(pl.LightningModule):
     def forward(self, x):
         # Eventually keep the input images for visualization
         # self.input_imgs = x.detach().cpu().numpy()
-        features = self.features(x)
-        if self.mode == "classifier":
-            out = F.relu(features, inplace=True)
-            out = F.adaptive_avg_pool3d(out, 1)
-            out = torch.flatten(out, 1)
-            out = self.classifier(out)
-        elif (self.mode == "encoder") or (self.mode == 'evaluation'):
-            out = F.relu(features, inplace=True)
-            out = F.adaptive_avg_pool3d(out, 1)
-            out = torch.flatten(out, 1)
+        out = self.encoder(x)
 
-            out = self.hidden_representation(out)
-            out = F.relu(out, inplace=True)
-            out = self.head_projection(out)
+        if (self.mode == "encoder") or (self.mode == 'evaluation'):
+            out = self.projection_head(out)
+            if self.drop_rate > 0:
+                out = F.dropout(out, p=self.drop_rate,
+                                training=self.training)
+
         elif self.mode == "decoder":
-            out = F.relu(features, inplace=True)
+            out = F.relu(out, inplace=True)
             out = F.adaptive_avg_pool3d(out, 1)
             out = torch.flatten(out, 1)
 
@@ -278,7 +193,6 @@ class ConvNet(pl.LightningModule):
             out = self.develop(out)
             out = out.view(out.size(0), 16 * 2**(self.depth-1), self.z_dim_h, self.z_dim_w, self.z_dim_d)
             out = self.decoder(out)
-
         return out.squeeze(dim=1)
 
     def get_current_visuals(self):
@@ -286,7 +200,7 @@ class ConvNet(pl.LightningModule):
 
 
 def _densenet(arch, growth_rate, block_config, num_init_features, **kwargs):
-    model = DenseNet(growth_rate, block_config, num_init_features, **kwargs)
+    model = ConvNet(growth_rate, block_config, num_init_features, **kwargs)
     return model
 
 
