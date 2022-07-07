@@ -84,8 +84,9 @@ def get_config_diff(dir_path, whole_config=True, save=True, verbose=False):
         the ones in the partial_config are compared."""
 
     # number of sub directories (excluding files)
-    only_dirs = [name for name in os.listdir(dir_path) if (not (os.path.isfile(dir_path+'/'+name))
-                                                           and os.path.exists(dir_path+'/'+name + r'/*config.yaml'))]
+    only_dirs = [name for name in os.listdir(dir_path) 
+                 if (not (os.path.isfile(dir_path+'/'+name))
+                 and (glob.glob(dir_path+'/'+name + r'/*config.yaml') != []))]
     n_subdir = len(only_dirs)
     if verbose:
         print(f'{n_subdir} subdirs:', only_dirs)
