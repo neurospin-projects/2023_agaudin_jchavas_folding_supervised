@@ -15,6 +15,7 @@ def preprocess_config(sub_dir, dataset, verbose=False):
     cfg.model_path = sub_dir
     cfg.embeddings_save_path = sub_dir + f"/{dataset}_embeddings"
     cfg.training_embeddings = sub_dir + f"/{dataset}_embeddings/full_embeddings.csv"
+    cfg.classifier_name = "svm"
 
     # replace the dataset
     with open(f'./configs/dataset/{dataset}.yaml', 'r') as file:
@@ -67,5 +68,5 @@ overwrite to True if you still want to compute them.")
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/03_monkeys/Output/2022-07-06",
+embeddings_pipeline("/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/convnet",
 dataset='cingulate_ACCpatterns', overwrite=False)

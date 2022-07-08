@@ -74,7 +74,7 @@ class ConvNet(pl.LightningModule):
                     kernel_size=4, stride=2, padding=1)))
             modules_encoder.append(('norm%sa' %step, nn.BatchNorm3d(out_channels)))
             modules_encoder.append(('LeakyReLU%sa' %step, nn.LeakyReLU()))
-            modules_encoder.append('Dropout', nn.Dropout3d(p=drop_rate))
+            modules_encoder.append(('Dropout', nn.Dropout3d(p=drop_rate)))
             self.num_features = out_channels
         # flatten and reduce to the desired dimension
         modules_encoder.append(('Flatten', nn.Flatten()))

@@ -10,9 +10,10 @@ import os
 
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import roc_curve, roc_auc_score, accuracy_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_predict, train_test_split
 
 from contrastive.models.binary_classifier import BinaryClassifier 
+from sklearn.svm import LinearSVR
 
 from contrastive.data.utils import read_labels
 
@@ -21,7 +22,9 @@ from contrastive.utils.logs import set_root_logger_level
 
 
 
-def load_and_format_embeddings(dir_path, labels_path, config):
+# load the embeddings and the labels
+def load_embeddings(dir_path, labels_path, config):
+    # load embeddings
     # if targeting directly the target csv file
     if not os.path.isdir(dir_path):
         embeddings = pd.read_csv(dir_path, index_col=0)
@@ -40,7 +43,6 @@ def load_and_format_embeddings(dir_path, labels_path, config):
             embeddings = pd.concat([train_embeddings, val_embeddings, test_embeddings],
                                 axis=0, ignore_index=False)
     
-    names_col = 'ID' if 'ID' in embeddings.columns else 'Subject'
     embeddings.sort_index(inplace=True)
     print("sorted embeddings:", embeddings.head())
 
@@ -51,6 +53,15 @@ def load_and_format_embeddings(dir_path, labels_path, config):
     labels.sort_values(by='Subject', inplace=True, ignore_index=True)
     print("sorted labels", labels.head())
     # /!\ multiple labels is not handled
+    
+    return embeddings, labels
+
+
+# used for torch neural network (special formatting required)
+def load_and_format_embeddings(dir_path, labels_path, config):
+    # load embeddings
+    embeddings, labels = load_embeddings(dir_path, labels_path, config)
+    names_col = 'ID' if 'ID' in embeddings.columns else 'Subject'
 
     # create train-test datasets
     if config.classifier_test_size:
@@ -73,7 +84,10 @@ def load_and_format_embeddings(dir_path, labels_path, config):
 
 def compute_indicators(Y, labels_pred):
     # compute ROC curve and auc
-    labels_true = Y.detach_().numpy()
+    if type(Y) == torch.tensor:
+        labels_true = Y.detach_().numpy()
+    else:
+        labels_true = Y.values.astype('float64')
     curves = roc_curve(labels_true, labels_pred)
     roc_auc = roc_auc_score(labels_true, labels_pred)
 
@@ -84,12 +98,12 @@ def compute_indicators(Y, labels_pred):
     return curves, roc_auc, accuracy
 
 
-
 def compute_auc(column, label_col=None):
     print("COMPUTE AUC")
     print(label_col.head())
     print(column.head())
     return roc_auc_score(label_col, column)
+
 
 # get a model with performance that is representative of the group
 def get_average_model(labels_df):
@@ -99,14 +113,52 @@ def get_average_model(labels_df):
     return(aucs.index[0])
 
 
+def post_processing_results(labels, Curves, aucs, accuracies, values, columns_names, mode, results_save_path):
+    
+    labels_true = labels.label.values.astype('float64')
+    
+    # compute agregated models
+    predicted_labels = labels[columns_names]
 
-# would highly benefit from paralellisation
-@hydra.main(config_name='config_no_save', config_path="../configs")
-def train_classifiers(config):
-    config = process_config(config)
+    labels['median_pred'] = predicted_labels.median(axis=1)
+    labels['mean_pred'] = predicted_labels.mean(axis=1)
 
-    set_root_logger_level(config.verbose)
+    # plot ROC curves
+    plt.figure()
 
+    # ROC curves of all models
+    for curves in Curves[mode]:
+        plt.plot(curves[0], curves[1], color='grey', alpha=0.1)
+    plt.plot([0,1],[0,1],color='r', linestyle='dashed')
+
+    # get the average model (with AUC as a criteria)
+    # /!\ This model is a classifier that exists in the pool != 'mean_pred' and 'median_pred'
+    average_model = get_average_model(labels[['label'] + columns_names].astype('float64'))
+    roc_curve_average = roc_curve(labels_true, labels[average_model].values)
+    # ROC curves of "special" models
+    roc_curve_median = roc_curve(labels_true, labels.median_pred.values)
+    roc_curve_mean = roc_curve(labels_true, labels.mean_pred.values)
+    
+    plt.plot(roc_curve_average[0], roc_curve_average[1], color='red', alpha=0.5, label='average model')
+    plt.plot(roc_curve_median[0], roc_curve_median[1], color='blue', label='agregated model (median)')
+    plt.plot(roc_curve_mean[0], roc_curve_mean[1], color='black', label='agregated model (mean)')
+    plt.legend()
+    plt.title(f"{mode} ROC curves")
+    plt.savefig(results_save_path+f"/{mode}_ROC_curves.png")
+
+    # compute accuracy and area under the curve
+    print(f"{mode} accuracy", np.mean(accuracies[mode]), np.std(accuracies[mode]))
+    print(f"{mode} AUC", np.mean(aucs[mode]), np.std(aucs[mode]))
+
+    values[f'{mode}_total_accuracy'] = [np.mean(accuracies[mode]), np.std(accuracies[mode])]
+    values[f'{mode}_auc'] = [np.mean(aucs[mode]), np.std(aucs[mode])]
+
+    # save predicted labels
+    labels.to_csv(results_save_path+f"/{mode}_predicted_labels.csv", index=False)
+
+
+
+def train_nn_classifiers(config):
     # set up load and save paths
     train_embs_path = config.training_embeddings
     train_lab_paths = config.training_labels
@@ -138,10 +190,10 @@ def train_classifiers(config):
     accuracies = {'train': [],
                   'test': []}
 
-
+    # loop to train the classifiers
     for i in range(config.n_repeat):
         print("model number", i)
-        # create and train the model
+
         if i == 0:
             hidden_layers = list(config.classifier_hidden_layers)
             layers_shapes = [np.shape(X_train)[1]]+hidden_layers+[1]
@@ -227,52 +279,103 @@ def train_classifiers(config):
         elif mode == 'test':
             labels = labels_test
         
-        labels_true = labels.label.values.astype('float64')
+        post_processing_results(labels, Curves, aucs, accuracies, values, columns_names, mode, results_save_path)
+        # values is changed in place
         
-        # compute agregated models
-        predicted_labels = labels[columns_names]
-
-        labels['median_pred'] = predicted_labels.median(axis=1)
-        labels['mean_pred'] = predicted_labels.mean(axis=1)
-
-        # plot ROC curves
-        plt.figure()
-
-        # ROC curves of all models
-        for curves in Curves[mode]:
-            plt.plot(curves[0], curves[1], color='grey', alpha=0.1)
-        plt.plot([0,1],[0,1],color='r', linestyle='dashed')
-
-        # get the average model (with AUC as a criteria)
-        # /!\ This model is a classifier that exists in the pool != 'mean_pred' and 'median_pred'
-        average_model = get_average_model(labels[['label'] + columns_names].astype('float64'))
-        roc_curve_average = roc_curve(labels_true, labels[average_model].values)
-        # ROC curves of "special" models
-        roc_curve_median = roc_curve(labels_true, labels.median_pred.values)
-        roc_curve_mean = roc_curve(labels_true, labels.mean_pred.values)
-        
-        plt.plot(roc_curve_average[0], roc_curve_average[1], color='red', alpha=0.5, label='average model')
-        plt.plot(roc_curve_median[0], roc_curve_median[1], color='blue', label='agregated model (median)')
-        plt.plot(roc_curve_mean[0], roc_curve_mean[1], color='black', label='agregated model (mean)')
-        plt.legend()
-        plt.title(f"{mode} ROC curves")
-        plt.savefig(results_save_path+f"/{mode}_ROC_curves.png")
-
-        # compute accuracy and area under the curve
-        print(f"{mode} accuracy", np.mean(accuracies[mode]), np.std(accuracies[mode]))
-        print(f"{mode} AUC", np.mean(aucs[mode]), np.std(aucs[mode]))
-
-        values[f'{mode}_total_accuracy'] = [np.mean(accuracies[mode]), np.std(accuracies[mode])]
-        values[f'{mode}_auc'] = [np.mean(aucs[mode]), np.std(aucs[mode])]
-
-        # save predicted labels
-        labels.to_csv(results_save_path+f"/{mode}_predicted_labels.csv", index=False)
-
     with open(results_save_path+"/values.json", 'w+') as file:
         json.dump(values, file)
 
     plt.show()
     plt.close('all')
+
+
+
+def train_svm_classifiers(config):
+    # import the data
+
+    # set up load and save paths
+    train_embs_path = config.training_embeddings
+    train_lab_paths = config.training_labels
+    # if not specified, the embeddings the results are created from are the ones used for training
+
+    EoI_path = config.embeddings_of_interest if config.embeddings_of_interest else train_embs_path
+    LoI_path = config.labels_of_interest if config.labels_of_interest else train_lab_paths
+
+    # if not specified, the outputs of the classifier will be stored next to the embeddings
+    # used to generate them
+    results_save_path = config.results_save_path if config.results_save_path else EoI_path
+    if not os.path.isdir(results_save_path):
+        results_save_path = os.path.dirname(results_save_path)
+
+    embeddings, labels = load_embeddings(train_embs_path, train_lab_paths, config)
+    names_col = 'ID' if 'ID' in embeddings.columns else 'Subject'
+    X = embeddings.loc[:, embeddings.columns != names_col]
+    Y = labels.label
+
+    # objects where the results are saved
+    Curves = {'cross_val': []}
+    aucs = {'cross_val': []}
+    accuracies = {'cross_val': []}
+    prediction_matrix = np.zeros((labels.shape[0], config.n_repeat))
+
+
+    for i in range(config.n_repeat):
+        print("model number", i)
+
+        if i == 0:
+            ## show the parameters
+            pass
+
+        model = LinearSVR(max_iter=config.class_max_epochs) # set the params here
+
+        # train the model with cross validation and get the predictions
+        labels_pred = cross_val_predict(model, X, Y)
+
+        # store the predictions
+        prediction_matrix[:,i] = labels_pred#.values
+
+        # compute the indicators and store th results
+        curves, roc_auc, accuracy = compute_indicators(Y, labels_pred)
+        Curves['cross_val'].append(curves)
+        aucs['cross_val'].append(roc_auc)
+        accuracies['cross_val'].append(accuracy)
+    
+    # add the predictions to the df where the true values are
+    columns_names = ["predicted_"+str(i) for i in range(config.n_repeat)]
+    preds = pd.DataFrame(prediction_matrix, columns=columns_names, index=labels.index)
+    labels = pd.concat([labels, preds], axis=1)
+
+    # post processing (mainly plotting graphs)
+    values = {}
+    mode = 'cross_val'
+    post_processing_results(labels, Curves, aucs, accuracies, values, columns_names, mode, results_save_path)
+        
+    with open(results_save_path+"/values.json", 'w+') as file:
+        json.dump(values, file)
+
+    plt.show()
+    plt.close('all')
+
+
+
+# would highly benefit from paralellisation
+@hydra.main(config_name='config_no_save', config_path="../configs")
+def train_classifiers(config):
+    config = process_config(config)
+
+    set_root_logger_level(config.verbose)
+
+    # runs the analysis with the chosen type of classifiers
+    if config.classifier_name == 'neural_network':
+        train_nn_classifiers(config)
+    
+    elif config.classifier_name == 'svm':
+        train_svm_classifiers(config)
+
+    else:
+        raise ValueError(f"The classifer type {config.classifier_name} you are asking for is not implemented. \
+Please change the config.classifier you are calling to solve the problem.")
+    
 
 
 
