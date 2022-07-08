@@ -173,8 +173,11 @@ class DenseNet(pl.LightningModule):
         elif (self.mode == "encoder") or (self.mode == 'evaluation'):
             self.hidden_representation = nn.Linear(
                 num_features, self.num_representation_features)
-            self.head_projection = nn.Linear(self.num_representation_features,
-                                             self.num_outputs)
+            self.head_projection = nn.Sequential(
+                                        nn.Linear(self.num_representation_features,
+                                                  self.num_outputs),
+                                        nn.Linear(self.num_outputs,
+                                                  self.num_outputs))
         elif self.mode == "decoder":
             self.hidden_representation = nn.Linear(
                 num_features, self.num_representation_features)
