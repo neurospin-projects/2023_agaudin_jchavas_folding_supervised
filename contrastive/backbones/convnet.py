@@ -6,12 +6,69 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 
+from torch import Tensor
+
+class _DropoutNd(nn.Module):
+    __constants__ = ['p', 'inplace']
+    p: float
+    inplace: bool
+
+    def __init__(self, p: float = 0.5, inplace: bool = False) -> None:
+        super(_DropoutNd, self).__init__()
+        if p < 0 or p > 1:
+            raise ValueError("dropout probability has to be between 0 and 1, "
+                             "but got {}".format(p))
+        self.p = p
+        self.inplace = inplace
+
+    def extra_repr(self) -> str:
+        return 'p={}, inplace={}'.format(self.p, self.inplace)
+
+
+class Dropout3d_always(_DropoutNd):
+    r"""Randomly zero out entire channels (a channel is a 3D feature map,
+    e.g., the :math:`j`-th channel of the :math:`i`-th sample in the
+    batched input is a 3D tensor :math:`\text{input}[i, j]`).
+    Each channel will be zeroed out independently on every forward call with
+    probability :attr:`p` using samples from a Bernoulli distribution.
+
+    Alwyas applies dropout also during evaluation
+
+    As described in the paper
+    `Efficient Object Localization Using Convolutional Networks`_ ,
+    if adjacent pixels within feature maps are strongly correlated
+    (as is normally the case in early convolution layers) then i.i.d. dropout
+    will not regularize the activations and will otherwise just result
+    in an effective learning rate decrease.
+
+    In this case, :func:`nn.Dropout3d` will help promote independence between
+    feature maps and should be used instead.
+
+    Args:
+        p (float, optional): probability of an element to be zeroed.
+        inplace (bool, optional): If set to ``True``, will do this operation
+            in-place
+
+    Shape:
+        - Input: :math:`(N, C, D, H, W)` or :math:`(C, D, H, W)`.
+        - Output: :math:`(N, C, D, H, W)` or :math:`(C, D, H, W)` (same shape as input).
+
+    Examples::
+
+        >>> m = nn.Dropout3d(p=0.2)
+        >>> input = torch.randn(20, 16, 4, 32, 32)
+        >>> output = m(input)
+
+    .. _Efficient Object Localization Using Convolutional Networks:
+       https://arxiv.org/abs/1411.4280
+    """
+
+    def forward(self, input: Tensor) -> Tensor:
+        return F.dropout3d(input, self.p, True, self.inplace)
 
 
 class ConvNet(pl.LightningModule):
-    r"""3D-DenseNet model class, based on
-    `"Densely Connected Convolutional Networks"
-    <https://arxiv.org/pdf/1608.06993.pdf>`_
+    r"""3D-ConvNet model class, based on
 
     Attributes:
         growth_rate (int) - how many filters to add each layer (`k` in paper)
@@ -20,7 +77,7 @@ class ConvNet(pl.LightningModule):
             convolution layer
         bn_size (int) - multiplicative factor for number of bottle neck layers
             (i.e. bn_size * k features in the bottleneck layer)
-        drop_rate (float) - dropout rate after each dense layer
+        drop_rate (float) - dropout rate 
         num_classes (int) - number of classification classes
             (if 'classifier' mode)
         in_channels (int) - number of input channels (1 for sMRI)
@@ -70,10 +127,12 @@ class ConvNet(pl.LightningModule):
                     kernel_size=3, stride=1, padding=1)))
             modules_encoder.append(('norm%s' %step, nn.BatchNorm3d(out_channels)))
             modules_encoder.append(('LeakyReLU%s' %step, nn.LeakyReLU()))
+            modules_encoder.append(('DropOut%s' %step, Dropout3d_always(p=drop_rate)))
             modules_encoder.append(('conv%sa' %step, nn.Conv3d(out_channels, out_channels,
                     kernel_size=4, stride=2, padding=1)))
             modules_encoder.append(('norm%sa' %step, nn.BatchNorm3d(out_channels)))
             modules_encoder.append(('LeakyReLU%sa' %step, nn.LeakyReLU()))
+            modules_encoder.append(('DropOut%sa' %step, Dropout3d_always(p=drop_rate)))
             self.num_features = out_channels
         # flatten and reduce to the desired dimension
         modules_encoder.append(('Flatten', nn.Flatten()))
@@ -90,10 +149,12 @@ class ConvNet(pl.LightningModule):
             for i, dim_i in enumerate(self.projection_head_dims):
                 output_size = dim_i
                 projection_head.append(('Linear%s' %i, nn.Linear(input_size, output_size)))
+                projection_head.append(('Norm%s' %i, nn.BatchNorm1d(output_size)))
                 projection_head.append(('ReLU%s' %i, nn.ReLU()))
                 input_size = output_size
             projection_head.append(('Output layer' ,nn.Linear(input_size,
                                                              self.num_outputs)))
+            projection_head.append(('Norm layer', nn.BatchNorm1d(self.num_outputs)))
             self.projection_head = nn.Sequential(OrderedDict(projection_head))
 
         elif self.mode == "decoder":
@@ -137,8 +198,11 @@ class ConvNet(pl.LightningModule):
             elif isinstance(m, nn.BatchNorm3d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm1d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.normal_(m.weight, 0, 0.5)
                 nn.init.constant_(m.bias, 0)
 
         
@@ -178,10 +242,10 @@ class ConvNet(pl.LightningModule):
         out = self.encoder(x)
 
         if (self.mode == "encoder") or (self.mode == 'evaluation'):
-            out = self.projection_head(out)
             if self.drop_rate > 0:
                 out = F.dropout(out, p=self.drop_rate,
-                                training=self.training)
+                                training=True)
+            out = self.projection_head(out)
 
         elif self.mode == "decoder":
             out = F.relu(out, inplace=True)
@@ -197,23 +261,3 @@ class ConvNet(pl.LightningModule):
 
     def get_current_visuals(self):
         return self.input_imgs
-
-
-def _densenet(arch, growth_rate, block_config, num_init_features, **kwargs):
-    model = ConvNet(growth_rate, block_config, num_init_features, **kwargs)
-    return model
-
-
-def densenet121(**kwargs):
-    r"""Densenet-121 model from
-    `"Densely Connected Convolutional Networks"
-    <https://arxiv.org/pdf/1608.06993.pdf>`_
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a download progress bar to stderr
-        memory_efficient (bool) - If True, uses checkpointing:
-            much more memory efficient, but slower. Default: *False*.
-            See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
-    """
-    return _densenet('densenet121', 32, (6, 12, 24, 16), 64, **kwargs)
