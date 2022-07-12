@@ -229,7 +229,9 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         weights = weights * (1 - np.eye(2*N)) # puts 0 on the diagonal
 
         # We normalize the weights
-        weights /= weights.sum(axis=1).reshape(2*N,1)
+        norm = weights.sum(axis=1).reshape(2*N,1)
+        weights /= norm
+        weights_norm = weights * np.log(norm)
 
         # if 'rbf' kernel and sigma->0, 
         # we retrieve the classical NTXenLoss (without labels)
@@ -239,8 +241,10 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         log_sim_Z = func.log_softmax(sim_Z, dim=1)
 
         weights = torch.from_numpy(weights)
+        weights_norm = torch.from_numpy(weights_norm)
         loss_label = -1./N * (weights.to(z_i.device) \
                         * log_sim_Z).sum()
+        loss_label += -1./N * (weights_norm.to(z_i.device)).sum()
 
         return loss_label, weights
 
