@@ -191,18 +191,17 @@ class ContrastiveLearner(pl.LightningModule):
                 image_input_i, self.current_epoch)
             self.logger.experiment.add_text(
                 'filename: ',self.sample_filenames[0], self.current_epoch)
-            self.logger.experiment.add_text(
-                'label: ',str(self.sample_labels[0]), self.current_epoch)
             image_input_j = self.visu_anatomist.plot_bucket(
                 self.sample_j, buffer=True)
             self.logger.experiment.add_image(
                 'input_ana_j: ',
                 image_input_j, self.current_epoch)
-            image_input_k = self.visu_anatomist.plot_bucket(
-                self.sample_k, buffer=True)
-            self.logger.experiment.add_image(
-                'input_ana_k: ',
-                image_input_k, self.current_epoch)
+            if len(self.sample_k) != 0:
+                image_input_k = self.visu_anatomist.plot_bucket(
+                    self.sample_k, buffer=True)
+                self.logger.experiment.add_image(
+                    'input_ana_k: ',
+                    image_input_k, self.current_epoch)
 
     def configure_optimizers(self):
         """Adam optimizer"""
