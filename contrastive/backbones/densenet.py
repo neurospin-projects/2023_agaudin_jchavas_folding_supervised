@@ -19,12 +19,12 @@ class _DenseLayer(nn.Sequential):
     def __init__(self, num_input_features, growth_rate, bn_size,
                  drop_rate, memory_efficient=False):
         super(_DenseLayer, self).__init__()
-        self.add_module('norm1', nn.BatchNorm3d(num_input_features)),
+        self.add_module('norm1', nn.BatchNorm3d(num_input_features, track_running_stats=False)),
         self.add_module('relu1', nn.ReLU(inplace=True)),
         self.add_module('conv1', nn.Conv3d(num_input_features, bn_size *
                                            growth_rate, kernel_size=1,
                                            stride=1, bias=False)),
-        self.add_module('norm2', nn.BatchNorm3d(bn_size * growth_rate)),
+        self.add_module('norm2', nn.BatchNorm3d(bn_size * growth_rate, track_running_stats=False)),
         self.add_module('relu2', nn.ReLU(inplace=True)),
         self.add_module('conv2', nn.Conv3d(bn_size * growth_rate, growth_rate,
                                            kernel_size=3, stride=1, padding=1,
@@ -44,7 +44,7 @@ class _DenseLayer(nn.Sequential):
 
         if self.drop_rate > 0:
             new_features = F.dropout(new_features, p=self.drop_rate,
-                                     training=self.training)
+                                     training=True)
 
         return new_features
 
@@ -74,7 +74,7 @@ class _DenseBlock(pl.LightningModule):
 class _Transition(nn.Sequential):
     def __init__(self, num_input_features, num_output_features):
         super(_Transition, self).__init__()
-        self.add_module('norm', nn.BatchNorm3d(num_input_features))
+        self.add_module('norm', nn.BatchNorm3d(num_input_features, track_running_stats=False))
         self.add_module('relu', nn.ReLU(inplace=True))
         self.add_module('conv', nn.Conv3d(num_input_features,
                                           num_output_features,
@@ -129,17 +129,17 @@ class DenseNet(pl.LightningModule):
         self.in_shape = in_shape
         c, h, w, d = in_shape
         self.depth = depth
+        self.drop_rate = drop_rate
         self.z_dim_h = h//2**self.depth # receptive field downsampled 2 times
         self.z_dim_w = w//2**self.depth
         self.z_dim_d = d//2**self.depth
 
         # First convolution
         self.features = nn.Sequential(OrderedDict([
-            ('conv0', nn.Conv3d(in_channels, num_init_features, kernel_size=7,
-                                stride=2, padding=3, bias=False)),
-            ('norm0', nn.BatchNorm3d(num_init_features)),
+            ('conv0', nn.Conv3d(in_channels, num_init_features, kernel_size=3,
+                                stride=2, padding=1, bias=False)),
+            ('norm0', nn.BatchNorm3d(num_init_features, track_running_stats=False)),
             ('relu0', nn.ReLU(inplace=True)),
-            ('pool0', nn.MaxPool3d(kernel_size=3, stride=2, padding=1)),
         ]))
 
         # Each denseblock
@@ -173,8 +173,16 @@ class DenseNet(pl.LightningModule):
         elif (self.mode == "encoder") or (self.mode == 'evaluation'):
             self.hidden_representation = nn.Linear(
                 num_features, self.num_representation_features)
-            self.head_projection = nn.Linear(self.num_representation_features,
-                                             self.num_outputs)
+            projection_head = []
+            input_size = self.num_representation_features
+            output_size = self.num_outputs
+            i = 0
+            projection_head.append(('Linear%s' %i, nn.Linear(input_size, output_size)))
+            projection_head.append(('Norm%s' %i, nn.BatchNorm1d(output_size, track_running_stats=False)))
+            projection_head.append(('ReLU%s' %i, nn.ReLU()))
+            projection_head.append(('Linear Output', nn.Linear(input_size, output_size)))
+            projection_head.append(('Norm Output', nn.BatchNorm1d(output_size, track_running_stats=False)))   
+            self.head_projection = nn.Sequential(OrderedDict(projection_head))
         elif self.mode == "decoder":
             self.hidden_representation = nn.Linear(
                 num_features, self.num_representation_features)
@@ -216,8 +224,11 @@ class DenseNet(pl.LightningModule):
             elif isinstance(m, nn.BatchNorm3d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm1d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.normal_(m.weight, 0, 0.5)
                 nn.init.constant_(m.bias, 0)
 
         
@@ -267,6 +278,9 @@ class DenseNet(pl.LightningModule):
 
             out = self.hidden_representation(out)
             out = F.relu(out, inplace=True)
+            # if self.drop_rate > 0:
+            #     out = F.dropout(out, p=self.drop_rate,
+            #                     training=True)
             out = self.head_projection(out)
         elif self.mode == "decoder":
             out = F.relu(features, inplace=True)
