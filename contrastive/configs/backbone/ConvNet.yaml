@@ -5,4 +5,4 @@ encoder_depth: 3
 num_representation_features: 4
 num_outputs: 4
 projection_head_dims:
-drop_rate: 0.15
+drop_rate: 0.3

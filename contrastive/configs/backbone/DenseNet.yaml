@@ -6,3 +6,4 @@ block_config: [6, 16]
 num_init_features: 64
 num_representation_features: 4
 num_outputs: 4
+drop_rate: 0.2
