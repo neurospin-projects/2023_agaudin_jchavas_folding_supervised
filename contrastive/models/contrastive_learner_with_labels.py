@@ -74,7 +74,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def plot_scatter_matrices_with_labels(self, dataloader, key):
         """Plots scatter matrices with label values."""
         # Makes scatter matrix of output space
-        r = self.compute_outputs_skeletons(dataloader())
+        r = self.compute_outputs_skeletons(dataloader)
         X = r[0]  # First element of tuple
         labels = r[1]  # Second element of tuple
         # Makes scatter matrix of output space with label values
@@ -86,7 +86,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             self.current_epoch)
 
         # Makes scatter matrix of representation space with label values
-        r = self.compute_representations(dataloader())
+        r = self.compute_representations(dataloader)
         X = r[0]  # First element of tuple
         labels = r[1]  # Second element of tuple
         scatter_matrix_representations_with_labels = \
@@ -142,7 +142,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             self.sample_k = view3.cpu()
             self.sample_filenames = filenames
             self.sample_labels = labels
-            if self.config.environment == 'brainvisa':
+            if self.config.environment == 'brainvisa' and self.config.checking:
                 vol_file = f"{self.config.crop_dir}/{filenames[0]}{self.config.crop_file_suffix}"
                 vol = aims.read(vol_file)
                 self.sample_ref_0 = np.asarray(vol)
@@ -349,7 +349,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
                 # Plots scatter matrices with label values
                 self.plot_scatter_matrices_with_labels(
-                    self.sample_data.train_dataloader,
+                    self.sample_data.train_dataloader(),
                     "train")
         
         if self.current_epoch % 5 == 0 \
@@ -434,7 +434,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                     or self.current_epoch >= self.config.max_epochs:
             # Plots scatter matrices
                 self.plot_scatter_matrices_with_labels(
-                                                self.sample_data.val_dataloader,
+                                                self.sample_data.val_dataloader(),
                                                 "validation")
 
         # calculates average loss
