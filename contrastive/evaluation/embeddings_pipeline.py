@@ -7,27 +7,34 @@ from contrastive.evaluation.train_multiple_classifiers import train_classifiers
 
 
 
-def preprocess_config(sub_dir, dataset, verbose=False):
+def preprocess_config(sub_dir, dataset, classifier_name='svm', verbose=False):
     if verbose:
         print(os.getcwd())
     cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config.yaml')
-    # replace the possibly incorrect config parameters
-    cfg.model_path = sub_dir
-    cfg.embeddings_save_path = sub_dir + f"/{dataset}_embeddings"
-    cfg.training_embeddings = sub_dir + f"/{dataset}_embeddings/full_embeddings.csv"
-    cfg.classifier_name = "svm"
 
     # replace the dataset
     with open(f'./configs/dataset/{dataset}.yaml', 'r') as file:
         dataset_yaml = yaml.load(file, yaml.FullLoader)
     for key in dataset_yaml:
         cfg[key] = dataset_yaml[key]
+    
+    # get the right classifiers parameters
+    with open(f'./configs/classifier/{classifier_name}.yaml', 'r') as file:
+        dataset_yaml = yaml.load(file, yaml.FullLoader)
+    for key in dataset_yaml:
+        cfg[key] = dataset_yaml[key]
+
+    # replace the possibly incorrect config parameters
+    cfg.model_path = sub_dir
+    cfg.embeddings_save_path = sub_dir + f"/{dataset}_embeddings"
+    cfg.training_embeddings = sub_dir + f"/{dataset}_embeddings/full_embeddings.csv"
 
     return cfg
 
 
 
-def embeddings_pipeline(dir_path, dataset='cingulate_ACCpatterns', overwrite=False, verbose=False):
+def embeddings_pipeline(dir_path, dataset='cingulate_ACCpatterns', classifier_name='svm',
+                        overwrite=False, verbose=False):
     # walks recursivley through the subfolders
     for name in os.listdir(dir_path):
         sub_dir = dir_path + '/' + name
@@ -47,7 +54,7 @@ overwrite to True if you still want to compute them.")
                 else:
                     print("Start post processing")
                     # get the config and correct it to suit what is needed for classifiers
-                    cfg = preprocess_config(sub_dir, dataset)
+                    cfg = preprocess_config(sub_dir, dataset, classifier_name=classifier_name)
                     if verbose:
                         print("CONFIG FILE", type(cfg))
                         print(cfg)
@@ -68,5 +75,5 @@ overwrite to True if you still want to compute them.")
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/convnet",
-dataset='cingulate_ACCpatterns', overwrite=False)
+embeddings_pipeline("/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/densenet2",
+dataset='cingulate_ACCpatterns', classifier_name='svm', overwrite=False)
