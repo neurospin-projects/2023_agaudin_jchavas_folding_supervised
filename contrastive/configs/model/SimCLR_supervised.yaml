@@ -3,7 +3,7 @@ model: SimCLR_supervised
 with_labels: True
 input_size: (1, 18, 40, 38)
 temperature_initial: 0.5
-temperature: 0.5
+temperature: 0.1
 sigma_labels: 0.1
 sigma: 5
 proportion_pure_contrastive: 0.
