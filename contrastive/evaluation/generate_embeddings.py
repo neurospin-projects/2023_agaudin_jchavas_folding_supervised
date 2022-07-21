@@ -6,6 +6,7 @@ import glob
 
 from contrastive.utils.config import process_config
 from contrastive.models.contrastive_learner_visualization import ContrastiveLearner_Visualization
+from contrastive.models.contrastive_learner_with_labels import ContrastiveLearner_WithLabels
 from contrastive.data.datamodule import DataModule_Evaluation
 
 
@@ -37,7 +38,11 @@ def compute_embeddings(config):
     data_module = DataModule_Evaluation(config)
     data_module.setup(stage='validate')
 
-    model = ContrastiveLearner_Visualization(config,
+    if config.model == "SimCLR_supervised":
+        model = ContrastiveLearner_WithLabels(config,
+                               sample_data=data_module)
+    else:
+        model = ContrastiveLearner_Visualization(config,
                                sample_data=data_module)
 
     # fetch and load weights
@@ -47,6 +52,8 @@ def compute_embeddings(config):
     cpkt_path = files[0]
     checkpoint = torch.load(cpkt_path, map_location=torch.device(config.device))
 
+    print(config.model)
+    print(config.backbone_name)
     model.load_state_dict(checkpoint['state_dict'])
 
     # create folder where to save the embeddings
