@@ -74,7 +74,7 @@ def create_accessible_config(keys_to_keep, config_path):
         yaml.dump(partial_config, file)
 
 
-def get_config_diff(dir_path, whole_config=True, save=True, verbose=False):
+def get_config_diff(dir_path, whole_config=False, save=True, verbose=False):
     """Get the parameters in config (or only in the partial config) that changed between the models
     of the targeted folder. All the subdirectories (not files) are supposed to be containing models.
     /!\ Probably poorly optimised.
