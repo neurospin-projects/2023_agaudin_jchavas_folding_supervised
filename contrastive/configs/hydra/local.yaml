@@ -2,5 +2,7 @@
 hydra:
   run:
     dir: ../../Output/${now:%Y-%m-%d}/${now:%H-%M-%S}
-
+  sweep:
+    dir: ../../Output/${now:%Y-%m-%d}
+    subdir: ${now:%H-%M-%S}_${hydra.job.num}
 checkpoint_dir: ../../Output
