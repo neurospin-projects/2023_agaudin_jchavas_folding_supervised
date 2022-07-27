@@ -44,6 +44,7 @@ def compute_embeddings(config):
     else:
         model = ContrastiveLearner_Visualization(config,
                                sample_data=data_module)
+    model.eval()
 
     # fetch and load weights
     paths = config.model_path+"/logs/*/version_0/checkpoints"+r'/*.ckpt'

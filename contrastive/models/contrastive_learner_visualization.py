@@ -61,6 +61,7 @@ class ContrastiveLearner_Visualization(ContrastiveLearner):
         self.recording_done = False
         if self.config.environment == "brainvisa":
             self.visu_anatomist = Visu_Anatomist()
+        self.eval()
 
     def custom_histogram_adder(self):
 
