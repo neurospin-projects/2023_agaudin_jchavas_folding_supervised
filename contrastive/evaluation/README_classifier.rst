@@ -5,34 +5,63 @@ The classifier is a model put after the SimCLR model that is supposed to
 classify embeddings as representations of crops with or without paracingulate.
 
 
-There are two (+1) main python files used for that:
 
-generate_embeddings
--------------------
+Python files
+============
+
+There are three (+1) main python files used for that:
+
+generate_embeddings.py
+----------------------
 generate_embeddings creates the embeddings of crops with a chosen SimCLR. It
 requires you to set in the embeddings.yaml config file the path to the model
 folder (often ending by YYYY-MM-DD/hh-mm-ss) and the path where to store the
 embeddings (created if needed).
 
-train_multiple_classifiers
---------------------------
+train_multiple_classifiers.py
+-----------------------------
 train_multiple_classifiers creates classifiers, trains them on the chosen
 embeddings, and produce evaluation results (e.g. ROC curve). It is linked to
 the classifier config, where you have to provide the embeddings and labels
 paths to train the classifier on, embeddings you want to have the result on
 (if different), and parameters for the classifiers and the training.
 
-pca_embeddings
---------------
+pca_embeddings.py
+-----------------
 pca_embeddings creates embeddings of crops that can then also be given to 
 train_multiple_classifiers. You have to specify in the embeddings.yaml which 
 data to train on, what data you want to create the embeddings with, and the 
 dimension of the embeddings.
 
+embeddings_pipeline.py
+----------------------
+embeddings_pipeline is an automation of the entire process (embeddings generation
+and classifiers training), looped on a given directory. 
+/!\ You have to specify the treated folder directly in the python script. It
+requires no config modification, as the relevant information is either taken from
+the model config, or directly specified in the script.
 
-The config of these python files is stored in two yaml files: embeddings.yaml
-is for generate_embeddings and pca_embeddings, and binary_classifier.yaml is
-for train_multiple_classifiers.
+
+
+Yaml files
+==========
+
+The config of these python files is stored in several main yaml files: 
+embeddings.yaml is for generate_embeddings.py and pca_embeddings.py, 
+neural_network.yaml and svm.yaml are for train_multiple_classifiers.py.
+
+embeddings_pipeline.py doesn't require any config file, as the config is
+taken (and slightly modified) from the concerned models.
+
+
+* /!\ To use most of these programs, you have to set up the **config_no_save.yaml** file
+instead of config.yaml. (The reason is to avoid to save countless small networks, that
+can then be confused with the SimCLR.)
+
+* /!\ To use these programs, you have to have the same network as the one used during
+training. It means that you have to choose the right backbone in config_no_save.yaml, the
+same output and latent space sizes in the corresponding yaml file, and that you need to 
+have the same network structure (be on the right branch at a compatible commit).
 
 embeddings.yaml
 ---------------
@@ -47,8 +76,10 @@ pca_Xfit
 the embeddings for SimCLR is given by num_representation_features (in the 
 backbone config).
 
-binary_classifier.yaml
-----------------------
+neural_network.yaml
+-------------------
+- classifier_name (= neural_network): config parameter indicating the type
+of classifiers used.
 - training_embeddings: the embeddings to train the classifiers on.
 - embeddings_of_interest: the embeddings to apply the evaluations methods
 (ROC curves and UC, accuracy) to. If None, same as training_embeddings.
@@ -73,3 +104,16 @@ the same parameters.
 - classifier_seed: seed for the train/test split.
 - classifier_test_size: percentage of the data put in the test set. Can also
 be an int, in which case it is the absolute number of subjects in it.
+
+svm.yaml
+--------
+classifier_name (= svm): Same as in neural_network.yaml
+training_embeddings: Same as in neural_network.yaml
+embeddings_of_interest: Same as in neural_network.yaml
+results_save_path: Same as in neural_network.yaml
+training_labels: Same as in neural_network.yaml
+labels_of_interest: Same as in neural_network.yaml
+class_max_epochs: Max number of epochs the svm are allowed to train.
+n_repeat: Same as in neural_network.yaml
+classifier_seed: Same as in neural_network.yaml
+classifier_test_size: Same as in neural_network.yaml

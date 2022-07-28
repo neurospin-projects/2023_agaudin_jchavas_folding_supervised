@@ -5,8 +5,12 @@ import omegaconf
 from contrastive.evaluation.generate_embeddings import compute_embeddings
 from contrastive.evaluation.train_multiple_classifiers import train_classifiers
 
+from sklearn.utils._testing import ignore_warnings
+from sklearn.exceptions import ConvergenceWarning
 
 
+# Auxilary function used to process the config linked to the model.
+# For instance, change the embeddings save path to eing next to the model.
 def preprocess_config(sub_dir, dataset, classifier_name='svm', verbose=False):
     if verbose:
         print(os.getcwd())
@@ -32,10 +36,22 @@ def preprocess_config(sub_dir, dataset, classifier_name='svm', verbose=False):
     return cfg
 
 
-
+# main function
+# creates embeddings and train classifiers for all models contained in the folder
+@ignore_warnings(category=ConvergenceWarning)
 def embeddings_pipeline(dir_path, dataset='cingulate_ACCpatterns', classifier_name='svm',
                         overwrite=False, verbose=False):
-    # walks recursivley through the subfolders
+    """
+    - dir_path: path where to apply recursively the process.
+    - dataset: dataset the embeddings are generated from.
+    - classifier_name: parameter to select the desired classifer type (currently neural_network
+    or svm).
+    - overwrite: redo the process on models where embeddings already exist.
+    - verbose: verbose.
+    """
+
+    print("/!\ Convergence warnings are disabled")
+    # walks recursively through the subfolders
     for name in os.listdir(dir_path):
         sub_dir = dir_path + '/' + name
         # checks if directory
@@ -75,5 +91,5 @@ overwrite to True if you still want to compute them.")
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/supervised/joel",
+embeddings_pipeline("/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/densenet2",
 dataset='cingulate_ACCpatterns', classifier_name='svm', overwrite=False)
