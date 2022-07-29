@@ -64,7 +64,7 @@ def embeddings_pipeline(dir_path, dataset='cingulate_ACCpatterns', classifier_na
                 # if already computed and don't want to overwrite, then pass
                 # else apply the normal process
                 if os.path.exists(sub_dir + f"/{dataset}_embeddings") and (not overwrite):
-                    print("Model already treated (existing folder with embeddings and ROC). Set \
+                    print("Model already treated (existing folder with embeddings). Set \
 overwrite to True if you still want to compute them.")
 
                 else:
@@ -91,5 +91,5 @@ overwrite to True if you still want to compute them.")
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/densenet2",
-dataset='cingulate_ACCpatterns', classifier_name='svm', overwrite=False)
+embeddings_pipeline("/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/supervised/aymeric",
+dataset='cingulate_ACCpatterns', classifier_name='svm', overwrite=True)

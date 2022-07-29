@@ -38,11 +38,7 @@ def compute_embeddings(config):
     data_module = DataModule_Evaluation(config)
     data_module.setup(stage='validate')
 
-    if config.model == "SimCLR_supervised":
-        model = ContrastiveLearner_WithLabels(config,
-                               sample_data=data_module)
-    else:
-        model = ContrastiveLearner_Visualization(config,
+    model = ContrastiveLearner_Visualization(config,
                                sample_data=data_module)
     model.eval()
 
