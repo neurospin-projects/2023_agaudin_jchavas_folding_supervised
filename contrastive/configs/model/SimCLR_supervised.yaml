@@ -6,6 +6,6 @@ temperature_initial: 0.1
 temperature: 0.1
 sigma_labels: 0.1
 sigma: 5
-proportion_pure_contrastive: 0.9
+proportion_pure_contrastive: 1.0
 drop_rate: 0.
 depth_decoder: 3
