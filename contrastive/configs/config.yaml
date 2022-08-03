@@ -9,5 +9,5 @@ defaults:
   - backbone: ConvNet
   - platform: cuda_brainvisa
   - trainer: default
-  - classifier: binary_classifier
+  - classifier: svm
   - embeddings: embeddings

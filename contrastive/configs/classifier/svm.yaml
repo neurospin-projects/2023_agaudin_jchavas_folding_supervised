@@ -1,0 +1,12 @@
+# @package _global_
+# define path and parameters needed for the classifier on the latent space
+classifier_name: svm
+training_embeddings: /neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/pca/30/Run1/pca_embeddings.csv
+embeddings_of_interest:
+results_save_path:
+training_labels: /neurospin/dico/data/bv_databases/human/partially_labeled/ACCpatterns/all.csv
+labels_of_interest:
+class_max_epochs: 5000
+n_repeat: 250
+classifier_seed: 24
+classifier_test_size: 0.2

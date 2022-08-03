@@ -273,7 +273,7 @@ class ContrastiveDataset_WithFoldLabels():
             idx = idx.tolist()
 
         # Gets data corresponding to idx
-        log.info(f"length = {self.nb_train}")
+        log.debug(f"length = {self.nb_train}")
         sample = get_sample(self.arr, idx, 'float32')
         sample_foldlabel = get_sample(self.foldlabel_arr, idx, 'int32')
         filename = get_filename(self.filenames, idx)
