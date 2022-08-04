@@ -45,6 +45,7 @@ from toolz.itertoolz import first
 
 from contrastive.backbones.densenet import DenseNet
 from contrastive.backbones.convnet import ConvNet
+from contrastive.backbones.pointnet import PointNetCls
 from contrastive.losses import NTXenLoss
 from contrastive.losses import CrossEntropyLoss
 from contrastive.utils.plots.visualize_images import plot_bucket
@@ -95,6 +96,12 @@ class ContrastiveLearner(pl.LightningModule):
                 drop_rate=config.drop_rate,
                 mode=config.mode,
                 in_shape=config.input_size)
+        elif config.backbone_name == 'pointnet':
+            self.backbone = PointNetCls(
+                k=config.num_representation_features,
+                projection_head_dims=config.projection_head_dims,
+                drop_rate=config.drop_rate,
+                feature_transform=False)
         self.config = config
         self.sample_data = sample_data
         self.sample_i = np.array([])
