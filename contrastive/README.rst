@@ -69,23 +69,24 @@ python3 postprocessing_results.py test=True checkpoint_path="/host/volatile/jc22
 Tutorial: train a SimCLR model
 ==============================
 
-You first have to set up the config the right way. For that, you have to modify the
-configs/config.yaml file and set the fields to the right yaml file. 'mode' has to be
-'encoder'.
+You first have to set up the config the right way. For that, you have to modify the configs/config.yaml file and set the fields to the right yaml file. 'mode' has to be 'encoder'.
 
 Then run the command line:
 python3 train.py
 
 * For multiple trainings, use the following instead (example with varying temperature):
-python3 train.py temperature=0.1,0.5 --multirun   (training one after another)
-python3 train.py temperature=0.1,0.5 hydra/launcher=joblib --multirun   (training in parallel)
+
+.. code-block::
+
+    python3 train.py temperature=0.1,0.5 --multirun   (training one after another)
+
+    python3 train.py temperature=0.1,0.5 hydra/launcher=joblib --multirun   (training in parallel)
 
 /!\ When you use multirun, you have to take care about not modifying the config files, as the
 config used is the one at the start of the model training => if you change it during a multirun,
 all the models trained after will use the modified config.
 
-* The path where the results are stored is written in the configs/hydra/local.yaml. Section run
-is for normal run and sweep for multirun.
+* The path where the results are stored is written in the configs/hydra/local.yaml. Section run is for normal run and sweep for multirun.
 
 
 Tutorial: generate and rate embeddings
@@ -101,11 +102,6 @@ The python files involved are:
 More information about these programs and the related yaml files is available in the 
 **evaluation/README_classifier.rst**.
 
-* /!\ To use most of these programs, you have to set up the **config_no_save.yaml** file
-instead of config.yaml. (The reason is to avoid to save countless small networks, that
-can then be confused with the SimCLR.)
+* /!\ To use most of these programs, you have to set up the **config_no_save.yaml** file instead of config.yaml. (The reason is to avoid to save countless small networks, that  can then be confused with the SimCLR.)
 
-* /!\ To use these programs, you have to have the same network as the one used during
-training. It means that you have to choose the right backbone in config_no_save.yaml, the
-same output and latent space sizes in the corresponding yaml file, and that you need to 
-have the same network structure (be on the right branch at a compatible commit).
+* /!\ To use these programs, you have to have the same network as the one used during training. It means that you have to choose the right backbone in config_no_save.yaml, the same output and latent space sizes in the corresponding yaml file, and that you need to have the same network structure be on the right branch at a compatible commit).
