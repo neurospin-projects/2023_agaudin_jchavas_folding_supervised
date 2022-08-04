@@ -1,5 +1,5 @@
 # @package _global_
-# Characterization of the DenseNet model used
+# Characterization of the ConvNet model used
 backbone_name: convnet
 encoder_depth: 3
 num_representation_features: 4

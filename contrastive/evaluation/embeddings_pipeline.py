@@ -5,7 +5,7 @@ import omegaconf
 from contrastive.evaluation.generate_embeddings import compute_embeddings
 from contrastive.evaluation.train_multiple_classifiers import train_classifiers
 
-from sklearn.utils._testing import ignore_warnings
+from sklearn.utils.testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
 
 
@@ -17,13 +17,13 @@ def preprocess_config(sub_dir, dataset, classifier_name='svm', verbose=False):
     cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config.yaml')
 
     # replace the dataset
-    with open(f'./configs/dataset/{dataset}.yaml', 'r') as file:
+    with open(f'../configs/dataset/{dataset}.yaml', 'r') as file:
         dataset_yaml = yaml.load(file, yaml.FullLoader)
     for key in dataset_yaml:
         cfg[key] = dataset_yaml[key]
     
     # get the right classifiers parameters
-    with open(f'./configs/classifier/{classifier_name}.yaml', 'r') as file:
+    with open(f'../configs/classifier/{classifier_name}.yaml', 'r') as file:
         dataset_yaml = yaml.load(file, yaml.FullLoader)
     for key in dataset_yaml:
         cfg[key] = dataset_yaml[key]
@@ -91,5 +91,8 @@ overwrite to True if you still want to compute them.")
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/supervised/aymeric",
-dataset='cingulate_ACCpatterns', classifier_name='svm', overwrite=True)
+embeddings_pipeline(
+    "/home/jc225751/Runs/43_supervised_contrastive_ACCpatterns/Output/supervised/convnet",
+    dataset='cingulate_ACCpatterns',
+    classifier_name='svm',
+    overwrite=True)

@@ -353,7 +353,7 @@ def train_svm_classifiers(config):
     with open(results_save_path+"/values.json", 'w+') as file:
         json.dump(values, file)
 
-    plt.show()
+    # plt.show()
     plt.close('all')
 
 

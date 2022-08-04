@@ -4,11 +4,11 @@ defaults:
   - hydra/job_logging: disabled
   - hydra/hydra_logging: disabled
   - dataset: cingulate_ACCpatterns
-  - model: SimCLR
+  - model: SimCLR_supervised
   - mode: encoder
   - augmentations: foldlabel
-  - backbone: DenseNet
-  - platform: cuda_not_brainvisa
+  - backbone: ConvNet
+  - platform: cuda_brainvisa
   - trainer: default
   - classifier: svm
   - embeddings: embeddings
