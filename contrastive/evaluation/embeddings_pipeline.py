@@ -92,7 +92,7 @@ overwrite to True if you still want to compute them.")
 
 
 embeddings_pipeline(
-    "/home/jc225751/Runs/43_supervised_contrastive_ACCpatterns/Output/supervised/convnet",
+    "/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/supervised/hcp",
     dataset='cingulate_ACCpatterns',
     classifier_name='svm',
     overwrite=True)

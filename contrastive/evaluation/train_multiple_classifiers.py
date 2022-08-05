@@ -50,6 +50,7 @@ def load_embeddings(dir_path, labels_path, config):
     # /!\ use read_labels
     labels = read_labels(labels_path, config.subject_column_name, config.label_names)
     labels = pd.DataFrame(labels.values, columns=['Subject', 'label'])
+    labels = labels[labels.Subject.isin(embeddings.index)]
     labels.sort_values(by='Subject', inplace=True, ignore_index=True)
     print("sorted labels", labels.head())
     # /!\ multiple labels is not handled
@@ -295,7 +296,8 @@ def train_svm_classifiers(config):
 
     # set up load and save paths
     train_embs_path = config.training_embeddings
-    train_lab_paths = config.training_labels
+    test_embs_path = config.test_embeddings
+    train_lab_paths = config.training_labels #/!\ in fact all_labels (=train_val and test labels)
     # if not specified, the embeddings the results are created from are the ones used for training
 
     EoI_path = config.embeddings_of_interest if config.embeddings_of_interest else train_embs_path
@@ -312,11 +314,23 @@ def train_svm_classifiers(config):
     X = embeddings.loc[:, embeddings.columns != names_col]
     Y = labels.label
 
+    if test_embs_path:
+        test_embeddings, test_labels = load_embeddings(test_embs_path, train_lab_paths, config)
+        names_col = 'ID' if 'ID' in test_embeddings.columns else 'Subject'
+        X_test = test_embeddings.loc[:, test_embeddings.columns != names_col]
+        Y_test = test_labels.label
+
     # objects where the results are saved
     Curves = {'cross_val': []}
     aucs = {'cross_val': []}
     accuracies = {'cross_val': []}
     prediction_matrix = np.zeros((labels.shape[0], config.n_repeat))
+
+    if test_embs_path:
+        Curves['test'] = []
+        aucs['test'] = []
+        accuracies['test'] = []
+        prediction_matrix_test = np.zeros((test_labels.shape[0], config.n_repeat))
 
 
     for i in range(config.n_repeat):
@@ -339,6 +353,16 @@ def train_svm_classifiers(config):
         Curves['cross_val'].append(curves)
         aucs['cross_val'].append(roc_auc)
         accuracies['cross_val'].append(accuracy)
+
+        # Computes test ROC
+        if test_embs_path:
+            labels_pred_test = model.predict(X_test)
+            prediction_matrix_test[:,i] = labels_pred_test
+            curves, roc_auc, accuracy = compute_indicators(Y_test, labels_pred_test)
+            Curves['test'].append(curves)
+            aucs['test'].append(roc_auc)
+            accuracies['test'].append(accuracy)
+
     
     # add the predictions to the df where the true values are
     columns_names = ["predicted_"+str(i) for i in range(config.n_repeat)]
@@ -349,16 +373,23 @@ def train_svm_classifiers(config):
     values = {}
     mode = 'cross_val'
     post_processing_results(labels, Curves, aucs, accuracies, values, columns_names, mode, results_save_path)
-        
     with open(results_save_path+"/values.json", 'w+') as file:
         json.dump(values, file)
+
+    if test_embs_path:
+        values = {}
+        mode = 'test'
+        post_processing_results(test_labels, Curves, aucs, accuracies, values, columns_names, mode, results_save_path)
+        
+        with open(results_save_path+"/values_test.json", 'w+') as file:
+            json.dump(values, file)
 
     # plt.show()
     plt.close('all')
 
 
 
-# would highly benefit from paralellisation
+# would highly benefit from parallelisation
 @hydra.main(config_name='config_no_save', config_path="../configs")
 def train_classifiers(config):
     config = process_config(config)
