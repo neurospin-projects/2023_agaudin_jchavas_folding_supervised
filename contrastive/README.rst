@@ -76,7 +76,7 @@ python3 train.py
 
 * For multiple trainings, use the following instead (example with varying temperature):
 
-.. code-block::
+.. code-block:: shell
 
     python3 train.py temperature=0.1,0.5 --multirun   (training one after another)
 
