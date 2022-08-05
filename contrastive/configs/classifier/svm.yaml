@@ -1,7 +1,7 @@
 # @package _global_
 # define path and parameters needed for the classifier on the latent space
 classifier_name: svm
-training_embeddings: /neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/pca/30/Run1/pca_embeddings.csv
+training_embeddings: /neurospin/dico/agaudin/Runs/03_monkeys/Output/convnet_exploration/joel_30/cingulate_ACCpatterns_embeddings/full_embeddings.csv
 embeddings_of_interest:
 results_save_path:
 training_labels: /neurospin/dico/data/bv_databases/human/partially_labeled/ACCpatterns/all.csv

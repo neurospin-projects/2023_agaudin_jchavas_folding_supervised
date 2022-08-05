@@ -92,4 +92,4 @@ overwrite to True if you still want to compute them.")
 
 
 embeddings_pipeline("/neurospin/dico/agaudin/Runs/04_pointnet/Output/2022-08-04",
-dataset='cingulate_ACCpatterns', classifier_name='svm', overwrite=True)
+dataset='cingulate_ACCpatterns', classifier_name='svm', overwrite=False)
