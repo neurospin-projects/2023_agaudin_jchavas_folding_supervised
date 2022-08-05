@@ -7,7 +7,7 @@ defaults:
   - model: SimCLR_supervised
   - mode: encoder
   - augmentations: foldlabel
-  - backbone: ConvNet
+  - backbone: DenseNet
   - platform: cuda_brainvisa
   - trainer: default
   - classifier: svm

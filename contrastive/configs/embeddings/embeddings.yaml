@@ -1,7 +1,7 @@
 # @package _global_
 # define path and parameters needed for the classifier on the latent space
-model_path: /home/jc225751/Runs/43_supervised_contrastive_ACCpatterns/Output/supervised/convnet/tau-0.5_drop-0.15_percentage-variable-75_backbone-convnet
-embeddings_save_path: /home/jc225751/Runs/43_supervised_contrastive_ACCpatterns/Output/supervised/convnet/tau-0.5_drop-0.15_percentage-variable-75_backbone-convnet/cingulate_ACCpatterns_embeddings_manual
+model_path: /home/jc225751/Runs/43_supervised_contrastive_ACCpatterns/Output/supervised/densenet/tau-0.1_drop-0.3_variablebatch
+embeddings_save_path: /home/jc225751/Runs/43_supervised_contrastive_ACCpatterns/Output/supervised/densenet/tau-0.1_drop-0.3_variablebatch/cingulate_ACCpatterns_embeddings
 pca_Xfit: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton.npy
 pca_Xtransform: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/CINGULATE/mask/Rskeleton.npy
 n_pca: 4
