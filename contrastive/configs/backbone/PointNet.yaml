@@ -3,4 +3,4 @@
 backbone_name: pointnet
 num_representation_features: 30
 num_outputs: 30
-projection_head_dims:
+projection_head_hidden_layers:
