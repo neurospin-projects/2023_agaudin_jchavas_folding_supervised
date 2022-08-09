@@ -1,6 +1,7 @@
 # this file has been taken from the repository https://github.com/fxia22/pointnet.pytorch.git
 
 from __future__ import print_function
+from collections import OrderedDict
 import torch
 import torch.nn as nn
 import torch.nn.parallel
@@ -129,17 +130,30 @@ class PointNetfeat(nn.Module):
             return torch.cat([x, pointfeat], 1), trans, trans_feat
 
 class PointNetCls(nn.Module):
-    def __init__(self, k=2, feature_transform=False):
+    def __init__(self, k=2, projection_head_hidden_layers=[], drop_rate=0.15,
+                 feature_transform=False):
         super(PointNetCls, self).__init__()
         self.feature_transform = feature_transform
         self.feat = PointNetfeat(global_feat=True, feature_transform=feature_transform)
         self.fc1 = nn.Linear(1024, 512)
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, k)
-        self.dropout = nn.Dropout(p=0.3)
+        self.dropout = nn.Dropout(p=drop_rate)
         self.bn1 = nn.BatchNorm1d(512)
         self.bn2 = nn.BatchNorm1d(256)
         self.relu = nn.ReLU()
+
+        # projection head for SimCLR
+        projection_head = []
+        input_size = self.num_representation_features
+        for i, dim_i in enumerate(projection_head_hidden_layers):
+            output_size = dim_i
+            projection_head.append(('Linear%s' %i, nn.Linear(input_size, output_size)))
+            projection_head.append(('ReLU%s' %i, nn.ReLU()))
+            input_size = output_size
+        projection_head.append(('Output layer' ,nn.Linear(input_size,
+                                                            self.num_outputs)))
+        self.projection_head = nn.Sequential(OrderedDict(projection_head))
 
     def forward(self, x):
         x, trans, trans_feat = self.feat(x)

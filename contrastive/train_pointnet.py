@@ -47,7 +47,6 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 
-from contrastive.backbones.pointnet import PointNetCls
 from contrastive.data.datamodule import DataModule_Learning
 from contrastive.data.datamodule import DataModule_Evaluation
 from contrastive.models.contrastive_learner import ContrastiveLearner
@@ -73,7 +72,7 @@ We use the following definitions:
   The elements are called output vectors
 """
 
-@hydra.main(config_name='config_no_save', config_path="configs")
+@hydra.main(config_name='config', config_path="configs")
 def train(config):
     config = process_config(config)
     os.environ["NUMEXPR_MAX_THREADS"] = str(config.num_cpu_workers)
@@ -96,15 +95,16 @@ def train(config):
     #create_accessible_config(keys_to_keep, os.getcwd()+"/.hydra/config.yaml")
 
     # create a csv file where the parameters changing between runs are stored
-    #get_config_diff(os.getcwd()+'/..', whole_config=False, save=True)    
+    #get_config_diff(os.getcwd()+'/..', whole_config=False, save=True)
 
+    print(config.backbone_name)
 
     if config.mode == 'evaluation':
         data_module = DataModule_Evaluation(config)
     else:
         data_module = DataModule_Learning(config)
 
-    """ if config.mode == 'evaluation':
+    if config.mode == 'evaluation':
         model = ContrastiveLearner_Visualization(config,
                                sample_data=data_module)   
     elif config.model == "SimCLR_supervised":
@@ -112,13 +112,13 @@ def train(config):
                                sample_data=data_module)
     elif config.model == 'SimCLR':
         model = ContrastiveLearner(config,
-                               sample_data=data_module) 
+                               sample_data=data_module)
     else:
-        raise ValueError("Wrong combination of 'mode' and 'model'")"""
+        raise ValueError("Wrong combination of 'mode' and 'model'")
     
-    model = PointNetCls(k=config.num_representation_features)
+    print(model.sample_filenames)
 
-    summary(model, tuple(config.input_size), device="cpu")
+    summary(model, (3,250), device="cpu")
 
     early_stop_callback = EarlyStopping(monitor="val_loss",
          patience=config.early_stopping_patience)
@@ -131,9 +131,10 @@ def train(config):
         flush_logs_every_n_steps=config.nb_steps_per_flush_logs,
         log_every_n_steps=config.log_every_n_steps)
 
-    trainer.fit(model, data_module, ckpt_path=config.checkpoint_path)
+    #trainer.fit(model, data_module, ckpt_path=config.checkpoint_path)
     log.info("Fitting is done")
     log.info(f"Number of hooks: {len(model.save_output.outputs)}")
+    #log.info(f"Hooks: {model.save_output.outputs}")
 
 
 if __name__ == "__main__":

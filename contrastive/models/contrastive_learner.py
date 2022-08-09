@@ -45,6 +45,7 @@ from toolz.itertoolz import first
 
 from contrastive.backbones.densenet import DenseNet
 from contrastive.backbones.convnet import ConvNet
+from contrastive.backbones.pointnet import PointNetCls
 from contrastive.losses import NTXenLoss
 from contrastive.losses import CrossEntropyLoss
 from contrastive.utils.plots.visualize_images import plot_bucket
@@ -91,10 +92,16 @@ class ContrastiveLearner(pl.LightningModule):
                 encoder_depth=config.encoder_depth,
                 num_representation_features=config.num_representation_features,
                 num_outputs=config.num_outputs,
-                projection_head_dims=config.projection_head_dims,
+                projection_head_hidden_layers=config.projection_head_hidden_layers,
                 drop_rate=config.drop_rate,
                 mode=config.mode,
                 in_shape=config.input_size)
+        elif config.backbone_name == 'pointnet':
+            self.backbone = PointNetCls(
+                k=config.num_representation_features,
+                projection_head_hidden_layers=config.projection_head_hidden_layers,
+                drop_rate=config.drop_rate,
+                feature_transform=False)
         self.config = config
         self.sample_data = sample_data
         self.sample_i = np.array([])
@@ -113,9 +120,17 @@ class ContrastiveLearner(pl.LightningModule):
 
     def get_layers(self):
         for layer in self.modules():
-            if isinstance(layer, torch.nn.Linear):
-                handle = layer.register_forward_hook(self.save_output)
-                self.hook_handles.append(handle)
+            if self.config.backbone_name in ['densenet', 'convnet']:
+                if isinstance(layer, torch.nn.Linear):
+                    handle = layer.register_forward_hook(self.save_output)
+                    self.hook_handles.append(handle)
+            elif self.config.backbone_name == 'pointnet':
+                ## TODO
+                pass
+                if isinstance(layer, torch.nn.Linear):
+                        handle = layer.register_forward_hook(self.save_output)
+                        self.hook_handles.append(handle)
+
 
     def custom_histogram_adder(self):
         """Builds histogram for each model parameter.

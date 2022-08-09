@@ -2,7 +2,7 @@
 model: SimCLR
 with_labels: False
 input_size: (1, 17, 40, 38)
-temperature_initial: 0.5
-temperature: 0.5
+temperature_initial: 0.1
+temperature: 0.1
 sigma: 5
 depth_decoder: 3

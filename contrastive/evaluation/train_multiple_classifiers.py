@@ -286,7 +286,6 @@ def train_nn_classifiers(config):
     with open(results_save_path+"/values.json", 'w+') as file:
         json.dump(values, file)
 
-    plt.show()
     plt.close('all')
 
 
