@@ -278,9 +278,9 @@ class DenseNet(pl.LightningModule):
 
             out = self.hidden_representation(out)
             out = F.relu(out, inplace=True)
-            if self.drop_rate > 0:
-                out = F.dropout(out, p=self.drop_rate,
-                                training=True)
+            # if self.drop_rate > 0:
+            #     out = F.dropout(out, p=self.drop_rate,
+            #                     training=True)
             out = self.head_projection(out)
         elif self.mode == "decoder":
             out = F.relu(features, inplace=True)
