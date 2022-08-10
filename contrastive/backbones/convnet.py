@@ -242,9 +242,9 @@ class ConvNet(pl.LightningModule):
         out = self.encoder(x)
 
         if (self.mode == "encoder") or (self.mode == 'evaluation'):
-            if self.drop_rate > 0:
-                out = F.dropout(out, p=self.drop_rate,
-                                training=True)
+            # if self.drop_rate > 0:
+            #     out = F.dropout(out, p=self.drop_rate,
+            #                     training=True)
             out = self.projection_head(out)
 
         elif self.mode == "decoder":
