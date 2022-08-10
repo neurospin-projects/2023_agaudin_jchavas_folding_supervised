@@ -259,9 +259,11 @@ class RemoveRandomBranchTensor(object):
     """Removes randomly branches up to percent
     """
 
-    def __init__(self, sample_foldlabel, percentage, input_size, keep_bottom):
+    def __init__(self, sample_foldlabel,
+                 percentage, input_size, keep_bottom, variable_percentage):
         self.sample_foldlabel = sample_foldlabel
         self.percentage = percentage
+        self.variable_percentage = variable_percentage
         self.input_size = input_size
         self.keep_bottom = keep_bottom
 
@@ -275,8 +277,10 @@ class RemoveRandomBranchTensor(object):
         assert(arr_skel.shape==arr_foldlabel.shape)
         assert(self.percentage>=0)
 
-        percentage = np.random.uniform(0,self.percentage)
-        #percentage = self.percentage
+        if self.variable_percentage:
+            percentage = np.random.uniform(0,self.percentage)
+        else:
+            percentage = self.percentage
         log.debug(f"expected percentage (RemoveRandomBranchTensor) = {percentage}")
 
         arr_skel_without_branches = np.zeros(arr_skel.shape)

@@ -73,7 +73,8 @@ def transform_foldlabel(sample_foldlabel, percentage, config):
             RemoveRandomBranchTensor(sample_foldlabel=sample_foldlabel,
                                      percentage=percentage,
                                      input_size=config.input_size,
-                                     keep_bottom=config.keep_bottom),
+                                     keep_bottom=config.keep_bottom,
+                                     variable_percentage=config.variable_percentage),
             RotateTensor(max_angle=config.max_angle),
             BinarizeTensor()
         ])

@@ -5,3 +5,4 @@ max_angle: 6
 checkerboard_size: 4
 keep_bottom: True
 percentage: 40
+variable_percentage: False
