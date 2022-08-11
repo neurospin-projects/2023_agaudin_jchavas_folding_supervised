@@ -31,7 +31,7 @@ def preprocess_config(sub_dir, dataset, classifier_name='svm', verbose=False):
     # replace the possibly incorrect config parameters
     cfg.model_path = sub_dir
     cfg.embeddings_save_path = sub_dir + f"/{dataset}_embeddings"
-    cfg.training_embeddings = sub_dir + f"/{dataset}_embeddings/full_embeddings.csv"
+    cfg.training_embeddings = sub_dir + f"/{dataset}_embeddings/test_embeddings.csv"
 
     return cfg
 
@@ -92,7 +92,7 @@ overwrite to True if you still want to compute them.")
 
 
 embeddings_pipeline(
-    "/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/supervised/hcp",
+    "/volatile/jc225751/Runs/43_supervised_contrastive_ACCpatterns/Output/supervised/drop_output_0",
     dataset='cingulate_ACCpatterns',
     classifier_name='svm',
     overwrite=True)
