@@ -209,13 +209,15 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         N = len(z_i)
         assert N == len(labels), "Unexpected labels length: %i"%len(labels)
 
+        temperature_supervised = 0.5
+
         z_i = func.normalize(z_i, p=2, dim=-1) # dim [N, D]
         z_j = func.normalize(z_j, p=2, dim=-1) # dim [N, D]
-        sim_zii= (z_i @ z_i.T) / self.temperature # dim [N, N] 
+        sim_zii= (z_i @ z_i.T) / temperature_supervised # dim [N, N] 
                         # => Upper triangle contains incorrect pairs
-        sim_zjj = (z_j @ z_j.T) / self.temperature # dim [N, N] 
+        sim_zjj = (z_j @ z_j.T) / temperature_supervised # dim [N, N] 
                         # => Upper triangle contains incorrect pairs
-        sim_zij = (z_i @ z_j.T) / self.temperature # dim [N, N] 
+        sim_zij = (z_i @ z_j.T) / temperature_supervised # dim [N, N] 
                         # => the diag contains the correct pairs (i,j) 
                         #    (x transforms via T_i and T_j)
 
