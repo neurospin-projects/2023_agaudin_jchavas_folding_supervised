@@ -115,7 +115,12 @@ def train(config):
     else:
         raise ValueError("Wrong combination of 'mode' and 'model'")
 
-    summary(model, tuple(config.input_size), device="cpu")
+    print("LÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀ")
+
+    if config.backbone_name != 'pointnet':
+        summary(model, tuple(config.input_size), device="cpu")
+    else:
+        summary(model, device='cpu')
 
     early_stop_callback = EarlyStopping(monitor="val_loss",
          patience=config.early_stopping_patience)
@@ -130,7 +135,7 @@ def train(config):
 
     trainer.fit(model, data_module, ckpt_path=config.checkpoint_path)
     log.info("Fitting is done")
-    log.info(f"Number of hooks: {len(model.save_output.outputs)}")
+    log.info(f"Number of hooks: {len(model.save_output.outputs)} ; {len(model.hook_handles)}")
 
 
 if __name__ == "__main__":

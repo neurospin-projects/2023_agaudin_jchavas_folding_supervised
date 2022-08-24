@@ -46,8 +46,9 @@ from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
+from contrastive.data.create_datasets import create_sets_without_labels
 
-from contrastive.data.datamodule import DataModule_Learning
+from contrastive.data.datamodule import DataModule, DataModule_Learning
 from contrastive.data.datamodule import DataModule_Evaluation
 from contrastive.models.contrastive_learner import ContrastiveLearner
 from contrastive.models.contrastive_learner_with_labels import \
@@ -59,6 +60,12 @@ get_config_diff
 from contrastive.utils.logs import set_root_logger_level
 from contrastive.utils.logs import set_file_log_handler
 from contrastive.utils.logs import set_file_logger
+
+
+from contrastive.data.transforms import transform_no_foldlabel
+from contrastive.data.datasets import ContrastiveDataset, get_sample
+import torch
+
 
 tb_logger = pl_loggers.TensorBoardLogger('logs')
 writer = SummaryWriter()
@@ -116,7 +123,31 @@ def train(config):
     else:
         raise ValueError("Wrong combination of 'mode' and 'model'")
     
-    print(model.sample_filenames)
+
+    print("TRANSFORM NO FOLDLABEL", transform_no_foldlabel(True, config))
+    train_dataset, val_dataset, test_dataset, train_val_dataset = create_sets_without_labels(config)
+
+    print("BEFORE TRANSFORM", (train_val_dataset.arr.shape))
+
+    sample = get_sample(train_val_dataset.arr, 10, 'float32')
+
+    transform1 = transform_no_foldlabel(from_skeleton=True,
+                                                 config=config)
+    transform2 = transform_no_foldlabel(from_skeleton=False,
+                                                 config=config)
+
+    # Computes the views
+    view1 = transform1(sample)
+    view2 = transform2(sample)
+    views = torch.stack((view1, view2), dim=0)
+
+    print("AFTER TRANSFORM", view1.shape, view2.shape, views.shape)
+
+    print("DATAMODULE")
+    data_module.setup()
+    print(data_module.dataset_train.dataset.arr.shape)
+
+    """print(model.sample_filenames)
 
     summary(model, (3,250), device="cpu")
 
@@ -134,7 +165,8 @@ def train(config):
     #trainer.fit(model, data_module, ckpt_path=config.checkpoint_path)
     log.info("Fitting is done")
     log.info(f"Number of hooks: {len(model.save_output.outputs)}")
-    #log.info(f"Hooks: {model.save_output.outputs}")
+    log.info(f"Hooks: {model.save_output.outputs}")
+    log.info(f"self.look_handles: {model.hook_handles}")"""
 
 
 if __name__ == "__main__":

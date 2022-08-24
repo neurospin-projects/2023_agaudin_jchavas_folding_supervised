@@ -12,3 +12,4 @@ nb_subjects: -1
 #label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
 #label_names: ["NEOFAC_C"]
 #label_names: ["Gender"]
+n_max: 1024
