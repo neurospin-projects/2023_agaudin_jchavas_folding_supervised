@@ -90,7 +90,7 @@ def train(config):
     'mode', 'foldlabel', 'fill_value', 'patch_size', 'max_angle', 'checkerboard_size', 'keep_bottom',
     'growth_rate', 'block_config', 'num_init_features', 'num_representation_features', 'num_outputs',
     'environment', 'batch_size', 'pin_mem', 'partition', 'lr', 'weight_decay', 'max_epochs',
-    'early_stopping_patience', 'seed', 'backbone_name']
+    'early_stopping_patience', 'seed', 'backbone_name', 'n_max']
 
     create_accessible_config(keys_to_keep, os.getcwd()+"/.hydra/config.yaml")
 
@@ -115,7 +115,6 @@ def train(config):
     else:
         raise ValueError("Wrong combination of 'mode' and 'model'")
 
-    print("LÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀÀ")
 
     if config.backbone_name != 'pointnet':
         summary(model, tuple(config.input_size), device="cpu")

@@ -128,7 +128,7 @@ class NTXenLoss(nn.Module):
         # (x transforms via T_i and T_j)
         sim_zij = (z_i @ z_j.T) / self.temperature
 
-        print_info(z_i, z_j, sim_zij, sim_zii, sim_zjj, self.temperature)
+        #print_info(z_i, z_j, sim_zij, sim_zii, sim_zjj, self.temperature)
 
         # 'Remove' the diag terms by penalizing it (exp(-inf) = 0)
         sim_zii = sim_zii - self.INF * torch.eye(N, device=z_i.device)

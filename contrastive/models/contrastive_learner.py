@@ -250,7 +250,7 @@ class ContrastiveLearner(pl.LightningModule):
         (inputs, filenames) = train_batch
         if self.config.backbone_name == 'pointnet':
             inputs = torch.squeeze(inputs).to(torch.float)
-        print("TRAINING STEP", inputs.shape)
+        #print("TRAINING STEP", inputs.shape)
         input_i = inputs[:, 0, :]
         input_j = inputs[:, 1, :]
         z_i = self.forward(input_i)
@@ -362,31 +362,28 @@ class ContrastiveLearner(pl.LightningModule):
         # Initialization
         X = torch.zeros([0, self.config.num_representation_features]).cpu()
         filenames_list = []
-        transform = ToPointnetTensor()
 
         # Computes representation (without gradient computation)
         with torch.no_grad():
             for (inputs, filenames) in loader:
                 # First views of the whole batch
                 inputs = inputs.cuda()
+                if self.config.backbone_name == 'pointnet':
+                    inputs = torch.squeeze(inputs).to(torch.float)
                 model = self.cuda()
                 input_i = inputs[:, 0, :]
                 input_j = inputs[:, 1, :]
-                if self.config.backbone_name == 'pointnet':
-                    input_i = transform(input_i.cpu()).cuda().to(torch.float)
-                    input_j = transform(input_j.cpu()).cuda().to(torch.float)
                 model.forward(input_i)
                 X_i = first(self.save_output.outputs.values())
                 # Second views of the whole batch
                 model.forward(input_j)
                 X_j = first(self.save_output.outputs.values())
-                print("representations", X_i.shape, X_j.shape)
+                #print("representations", X_i.shape, X_j.shape)
                 # First views and second views are put side by side
                 X_reordered = torch.cat([X_i, X_j], dim=-1)
                 X_reordered = X_reordered.view(-1, X_i.shape[-1])
-                print("representations 2", X.shape, X_reordered.shape)
                 X = torch.cat((X, X_reordered.cpu()), dim=0)
-                print(f"filenames = {filenames}")
+                #print(f"filenames = {filenames}")
                 filenames_duplicate = [
                     item for item in filenames
                     for repetitions in range(2)]
@@ -443,7 +440,8 @@ class ContrastiveLearner(pl.LightningModule):
                 'histo_sim_zij', histogram_sim_zij, self.current_epoch)
 
         # Plots views
-        self.plot_views()
+        if self.config.backbone_name != 'pointnet':
+            self.plot_views()
 
         # calculates average loss
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
@@ -461,12 +459,11 @@ class ContrastiveLearner(pl.LightningModule):
         """Validation step"""
 
         (inputs, filenames) = val_batch
+        if self.config.backbone_name == 'pointnet':
+            inputs = torch.squeeze(inputs).to(torch.float)
         input_i = inputs[:, 0, :]
         input_j = inputs[:, 1, :]
-        if self.config.backbone_name == 'pointnet':
-            transform = ToPointnetTensor()
-            input_i = transform(input_i.cpu()).cuda().to(torch.float)
-            input_j = transform(input_j.cpu()).cuda().to(torch.float)
+        #print("INPUT I", input_i)
         z_i = self.forward(input_i)
         z_j = self.forward(input_j)
 

@@ -91,5 +91,5 @@ overwrite to True if you still want to compute them.")
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/04_pointnet/Output/2022-08-04",
-dataset='cingulate_ACCpatterns', classifier_name='svm', overwrite=False)
+embeddings_pipeline("/neurospin/dico/agaudin/Runs/04_pointnet/Output/2022-08-26",
+dataset='cingulate_ACCpatterns', verbose=True, classifier_name='svm', overwrite=False)
