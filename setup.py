@@ -29,6 +29,7 @@ setup(
                       'lightly',
                       'toolz',
 		              'ipykernel',
+                      'kaleido',
                       'pytorch_ssim',
                       'seaborn',
                       'statsmodels'
