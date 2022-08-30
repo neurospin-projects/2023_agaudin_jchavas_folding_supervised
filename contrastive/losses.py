@@ -152,6 +152,7 @@ class NTXenLoss(nn.Module):
 class GeneralizedSupervisedNTXenLoss(nn.Module):
     def __init__(self, kernel='rbf',
                  temperature=0.1,
+                 temperature_supervised=0.1,
                  return_logits=False,
                  sigma=1.0,
                  proportion_pure_contrastive=1.0):
@@ -176,6 +177,7 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
             assert hasattr(self.kernel, '__call__'), \
                    'kernel must be a callable'
         self.temperature = temperature
+        self.temperature_supervised = temperature_supervised
         self.proportion_pure_contrastive = proportion_pure_contrastive
         self.return_logits = return_logits
         self.INF = 1e8
@@ -209,15 +211,13 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         N = len(z_i)
         assert N == len(labels), "Unexpected labels length: %i"%len(labels)
 
-        temperature_supervised = self.temperature
-
         z_i = func.normalize(z_i, p=2, dim=-1) # dim [N, D]
         z_j = func.normalize(z_j, p=2, dim=-1) # dim [N, D]
-        sim_zii= (z_i @ z_i.T) / temperature_supervised # dim [N, N] 
+        sim_zii= (z_i @ z_i.T) / self.temperature_supervised # dim [N, N] 
                         # => Upper triangle contains incorrect pairs
-        sim_zjj = (z_j @ z_j.T) / temperature_supervised # dim [N, N] 
+        sim_zjj = (z_j @ z_j.T) / self.temperature_supervised # dim [N, N] 
                         # => Upper triangle contains incorrect pairs
-        sim_zij = (z_i @ z_j.T) / temperature_supervised # dim [N, N] 
+        sim_zij = (z_i @ z_j.T) / self.temperature_supervised # dim [N, N] 
                         # => the diag contains the correct pairs (i,j) 
                         #    (x transforms via T_i and T_j)
 

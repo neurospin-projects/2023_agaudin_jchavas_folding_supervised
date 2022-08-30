@@ -104,9 +104,11 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         #     - self.current_epoch/50.
         #     * (self.config.temperature_initial - self.config.temperature))
         temperature = self.config.temperature
+        temperature_supervised = self.config.temperature_supervised
 
         loss = GeneralizedSupervisedNTXenLoss(
             temperature=temperature,
+            temperature_supervised=temperature_supervised,
             sigma=self.config.sigma_labels,
             proportion_pure_contrastive=self.config.proportion_pure_contrastive,
             return_logits=True)
