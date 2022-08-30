@@ -209,7 +209,7 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         N = len(z_i)
         assert N == len(labels), "Unexpected labels length: %i"%len(labels)
 
-        temperature_supervised = 0.5
+        temperature_supervised = self.temperature
 
         z_i = func.normalize(z_i, p=2, dim=-1) # dim [N, D]
         z_j = func.normalize(z_j, p=2, dim=-1) # dim [N, D]
