@@ -152,7 +152,7 @@ class NTXenLoss(nn.Module):
 class GeneralizedSupervisedNTXenLoss(nn.Module):
     def __init__(self, kernel='rbf',
                  temperature=0.1,
-                 temperature_supervised=0.1,
+                 temperature_supervised=0.5,
                  return_logits=False,
                  sigma=1.0,
                  proportion_pure_contrastive=1.0):
