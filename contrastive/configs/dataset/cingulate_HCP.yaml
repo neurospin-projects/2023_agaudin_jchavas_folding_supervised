@@ -14,5 +14,5 @@ nb_subjects: -1
 subject_labels_file: /neurospin/dico/data/bv_databases/human/hcp/participants.csv
 subject_column_name: 'Subject'
 #label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
-label_names: ["NEOFAC_C"]
-#label_names: ["Gender"]
+#label_names: ["NEOFAC_C"]
+label_names: ["Gender"]
