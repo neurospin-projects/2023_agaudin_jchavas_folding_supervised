@@ -44,7 +44,7 @@ class _DenseLayer(nn.Sequential):
 
         if self.drop_rate > 0:
             new_features = F.dropout(new_features, p=self.drop_rate,
-                                     training=True)
+                                     training=self.training)
 
         return new_features
 
