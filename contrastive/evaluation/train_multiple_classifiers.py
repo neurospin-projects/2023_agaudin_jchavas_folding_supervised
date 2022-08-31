@@ -342,7 +342,7 @@ def train_svm_classifiers(config):
         model = LinearSVR(max_iter=config.class_max_epochs) # set the params here
 
         # train the model with cross validation and get the predictions
-        labels_pred = cross_val_predict(model, X, Y)
+        labels_pred = cross_val_predict(model, X, Y, cv=5)
 
         # store the predictions
         prediction_matrix[:,i] = labels_pred#.values
