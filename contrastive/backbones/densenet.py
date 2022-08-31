@@ -136,10 +136,11 @@ class DenseNet(pl.LightningModule):
 
         # First convolution
         self.features = nn.Sequential(OrderedDict([
-            ('conv0', nn.Conv3d(in_channels, num_init_features, kernel_size=3,
-                                stride=2, padding=1, bias=False)),
-            ('norm0', nn.BatchNorm3d(num_init_features, track_running_stats=False)),
+            ('conv0', nn.Conv3d(in_channels, num_init_features, kernel_size=7,
+                                stride=2, padding=3, bias=False)),
+            ('norm0', nn.BatchNorm3d(num_init_features)),
             ('relu0', nn.ReLU(inplace=True)),
+            ('pool0', nn.MaxPool3d(kernel_size=3, stride=2, padding=1)),
         ]))
 
         # Each denseblock
@@ -175,10 +176,10 @@ class DenseNet(pl.LightningModule):
                 num_features, self.num_representation_features)
 
             self.head_projection = nn.Sequential(
-                nn.Linear(self.num_representation_features,
-                            self.num_outputs),
-                nn.Linear(self.num_outputs,
-                            self.num_outputs))
+                          nn.Linear(self.num_representation_features,
+                                self.num_outputs),
+                          nn.Linear(self.num_outputs,
+                                self.num_outputs))
 
         elif self.mode == "decoder":
             self.hidden_representation = nn.Linear(
@@ -275,9 +276,6 @@ class DenseNet(pl.LightningModule):
 
             out = self.hidden_representation(out)
             out = F.relu(out, inplace=True)
-            # if self.drop_rate > 0:
-            #     out = F.dropout(out, p=self.drop_rate,
-            #                     training=True)
             out = self.head_projection(out)
         elif self.mode == "decoder":
             out = F.relu(features, inplace=True)
