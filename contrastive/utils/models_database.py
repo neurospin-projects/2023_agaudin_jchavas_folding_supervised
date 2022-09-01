@@ -1,8 +1,8 @@
 import os
-import pandas as pd
 import json
 import yaml
 
+from tensorflow.python.summary.summary_iterator import summary_iterator
 
 # functions to create a database containing all the models
 # These functions are used in the generate_bdd notebook
@@ -15,10 +15,57 @@ def get_subdirs(directory):
     return sub_dirs
 
 
+def get_path2logs(model_path):
+    # get the right templating for the log files
+    if os.path.exists(model_path + "/logs/default/version_0"):
+        path = model_path + "/logs/default/version_0"
+    elif os.path.exists(model_path + "/logs/lightning_logs/version_0"):
+        path = model_path + "/logs/lightning_logs/version_0"
+    else:
+        raise ValueError("No logs at this address OR different templating for the save path.")
+    return path
+
+
+def get_loss(model_path, save=False, verbose=False):
+
+    path = get_path2logs(model_path)
+    
+    # get the file
+    for file in os.listdir(path):
+        if 'events.out' in file:
+            full_path = os.path.join(path, file)
+            if verbose:
+                print("Treating", model_path)
+    
+    if full_path == None:
+        print(f"No corresponding logs for the model at {model_path}")
+    
+    loss_train = 0
+    loss_val = 0
+
+    for e in summary_iterator(full_path):
+        for v in e.summary.value:
+            if v.tag == 'Loss/Validation':
+                loss_val = v.simple_value
+            elif v.tag == 'Loss/Train':
+                loss_train = v.simple_value
+    
+    if save:
+        final_losses = {"train_loss": loss_train,
+                        "val_loss": loss_val}
+        with open(path+"/final_losses.json", 'w') as file:
+            json.dump(final_losses, file)
+        if verbose:
+            print(final_losses)
+    else:
+        return loss_train, loss_val
+
+
 def process_model(model_path, dataset='cingulate_ACCpatterns', verbose=True):
     # generate a dictionnary with the model's parameters and performances
     model_dict = {}
     model_dict['model_path'] = model_path
+
     # read performances
     with open(model_path + f"/{dataset}_embeddings/values.json", 'r') as file:
         values = json.load(file)
@@ -27,11 +74,24 @@ def process_model(model_path, dataset='cingulate_ACCpatterns', verbose=True):
                             'accuracy': values['cross_val_total_accuracy'][0],
                             'accuracy_std': values['cross_val_total_accuracy'][1]}
         model_dict.update(decomposed_values)
+    
     # read parameters
     with open(model_path+'/partial_config.yaml', 'r') as file2:
         partial_config = yaml.load(file2, Loader=yaml.FullLoader)
         model_dict.update(partial_config)
     
+    # compute losses if necessary
+    log_path = get_path2logs(model_path)
+    if not os.path.exists(os.path.join(log_path, "final_losses.json")):
+        if verbose:
+            print(f"Get the losses for {model_path}.")
+        get_loss(model_path, save=True, verbose=verbose)
+    
+    # get the final losses
+    with open(os.path.join(log_path, "final_losses.json"), 'r') as file3:
+        losses = json.load(file3)
+        model_dict.update(losses)
+
     return model_dict
 
 
@@ -98,6 +158,7 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
     bdd_models.drop_duplicates(inplace=True, ignore_index=True)
 
     # deal with '[' and ']'
+    # TODO
 
     # specify git branch
     if git_branch:
