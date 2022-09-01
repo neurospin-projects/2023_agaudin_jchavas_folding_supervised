@@ -4,6 +4,6 @@ backbone_name: densenet
 growth_rate: 32
 block_config: [6, 16]
 num_init_features: 64
-num_representation_features: 4
-num_outputs: 4
+num_representation_features: 30
+num_outputs: 30
 drop_rate: 0.15
