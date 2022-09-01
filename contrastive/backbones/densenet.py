@@ -136,11 +136,11 @@ class DenseNet(pl.LightningModule):
 
         # First convolution
         self.features = nn.Sequential(OrderedDict([
-            ('conv0', nn.Conv3d(in_channels, num_init_features, kernel_size=7,
-                                stride=2, padding=3, bias=False)),
+            ('conv0', nn.Conv3d(in_channels, num_init_features, kernel_size=3,
+                                stride=2, padding=1, bias=False)),
             ('norm0', nn.BatchNorm3d(num_init_features)),
             ('relu0', nn.ReLU(inplace=True)),
-            ('pool0', nn.MaxPool3d(kernel_size=3, stride=2, padding=1)),
+            # ('pool0', nn.MaxPool3d(kernel_size=3, stride=2, padding=1)),
         ]))
 
         # Each denseblock
