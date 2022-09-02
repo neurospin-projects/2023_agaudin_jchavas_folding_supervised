@@ -1,4 +1,3 @@
-# @package _group_
 defaults:
   - hydra: no_save
   - hydra/job_logging: disabled
