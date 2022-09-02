@@ -253,7 +253,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         Representation are before the projection head"""
 
         # Initialization
-        X = torch.zeros([0, self.config.num_representation_features]).cpu()
+        X = torch.zeros([0, self.config.num_outputs]).cpu()
         labels_all = torch.zeros([0, len(self.config.label_names)]).cpu()
         filenames_list = []
 
