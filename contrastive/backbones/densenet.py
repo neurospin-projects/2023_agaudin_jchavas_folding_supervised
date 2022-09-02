@@ -98,8 +98,11 @@ class DenseNet(pl.LightningModule):
         num_classes (int) - number of classification classes
             (if 'classifier' mode)
         in_channels (int) - number of input channels (1 for sMRI)
+        num_representation_features (int) - size of latent space
+        num_outputs (int) -  size of output space
+        projection_head_type (str) - Type of projection head (either "linear\" or "non-linear")
         mode (str) - specify in which mode DenseNet is trained on,
-            must be "encoder" or "classifier"
+            must be "encoder" or "classifier" or "decoder"
         memory_efficient (bool) - If True, uses checkpointing. Much more memory
             efficient, but slower. Default: *False*.
             See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
@@ -110,6 +113,7 @@ class DenseNet(pl.LightningModule):
                  num_classes=1000, in_channels=1,
                  num_representation_features=256,
                  num_outputs=64,
+                 projection_head_type="linear",
                  mode="encoder",
                  memory_efficient=False,
                  in_shape=None,
@@ -175,16 +179,26 @@ class DenseNet(pl.LightningModule):
             self.hidden_representation = nn.Linear(
                 num_features, self.num_representation_features)
 
-            projection_head = []
-            input_size = self.num_representation_features
-            output_size = self.num_outputs
-            i = 0
-            projection_head.append(('Linear%s' %i, nn.Linear(input_size, output_size)))
-            projection_head.append(('Norm%s' %i, nn.BatchNorm1d(output_size, track_running_stats=False)))
-            projection_head.append(('ReLU%s' %i, nn.ReLU()))
-            projection_head.append(('Linear Output', nn.Linear(input_size, output_size)))
-            projection_head.append(('Norm Output', nn.BatchNorm1d(output_size, track_running_stats=False)))   
-            self.head_projection = nn.Sequential(OrderedDict(projection_head))
+            if projection_head_type == "non-linear":
+                projection_head = []
+                input_size = self.num_representation_features
+                output_size = self.num_outputs
+                i = 0
+                projection_head.append(('Linear%s' %i, nn.Linear(input_size, output_size)))
+                projection_head.append(('Norm%s' %i, nn.BatchNorm1d(output_size, track_running_stats=False)))
+                projection_head.append(('ReLU%s' %i, nn.ReLU()))
+                projection_head.append(('Linear Output', nn.Linear(input_size, output_size)))
+                projection_head.append(('Norm Output', nn.BatchNorm1d(output_size, track_running_stats=False)))   
+                self.head_projection = nn.Sequential(OrderedDict(projection_head))
+            elif projection_head_type == "linear":
+                self.head_projection = nn.Sequential(
+                                        nn.Linear(self.num_representation_features,
+                                                  self.num_outputs),
+                                        nn.Linear(self.num_outputs,
+                                                  self.num_outputs))
+            else:
+                raise ValueError("projection_head_type must be either \"linear\" or \"non-linear\. "
+                                 f"You have set it to: {projection_head_type}")
 
         elif self.mode == "decoder":
             self.hidden_representation = nn.Linear(
