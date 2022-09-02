@@ -183,7 +183,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # Initialization
         X = torch.zeros([0, self.config.num_outputs]).cpu()
-        labels_all = torch.zeros([0, 1]).cpu()
+        labels_all = torch.zeros([0, len(self.config.label_names)]).cpu()
         filenames_list = []
 
         # Computes embeddings without computing gradient
@@ -254,7 +254,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # Initialization
         X = torch.zeros([0, self.config.num_representation_features]).cpu()
-        labels_all = torch.zeros([0, 1]).cpu()
+        labels_all = torch.zeros([0, len(self.config.label_names)]).cpu()
         filenames_list = []
 
         # Computes representation (without gradient computation)
