@@ -9,7 +9,7 @@ import json
 import os
 
 from torch.utils.data import DataLoader, TensorDataset
-from sklearn.metrics import roc_curve, roc_auc_score, accuracy_score
+from sklearn.metrics import auc, roc_curve, roc_auc_score, accuracy_score
 from sklearn.model_selection import cross_val_predict, train_test_split
 
 from contrastive.models.binary_classifier import BinaryClassifier 
@@ -289,6 +289,39 @@ def train_nn_classifiers(config):
     plt.close('all')
 
 
+def train_one_svm_classifier(config, inputs):
+
+    X = inputs['X']
+    Y = inputs['Y']
+    test_embs_path = inputs['test_embs_path']
+    if test_embs_path:
+        X_test = inputs['X_test']
+        Y_test = inputs['Y_test']
+    outputs = {}
+
+    model = LinearSVR(max_iter=config.class_max_epochs) # set the params here
+
+    # train the model with cross validation and get the predictions
+    labels_pred = cross_val_predict(model, X, Y, cv=5)
+
+    # compute the indicators and store th results
+    curves, roc_auc, accuracy = compute_indicators(Y, labels_pred)
+
+    # Sotres in outputs dict
+    outputs['labels_pred'] = labels_pred
+    outputs['curves'] = curves
+    outputs['roc_auc'] = roc_auc
+    outputs['accuracy'] = accuracy
+
+    if test_embs_path:
+        labels_pred_test = model.predict(X_test)
+        curves, roc_auc, accuracy = compute_indicators(Y_test, labels_pred_test)
+        outputs['curves_test'] = curves
+        outputs['roc_auc_test'] = roc_auc
+        outputs['accuracy_test'] = accuracy
+
+    return outputs
+
 
 def train_svm_classifiers(config):
     # import the data
@@ -319,7 +352,7 @@ def train_svm_classifiers(config):
         X_test = test_embeddings.loc[:, test_embeddings.columns != names_col]
         Y_test = test_labels.label
 
-    # objects where the results are saved
+    # Builds objects where the results are saved
     Curves = {'cross_val': []}
     aucs = {'cross_val': []}
     accuracies = {'cross_val': []}
@@ -331,33 +364,38 @@ def train_svm_classifiers(config):
         accuracies['test'] = []
         prediction_matrix_test = np.zeros((test_labels.shape[0], config.n_repeat))
 
+    # Configures loops
 
-    for i in range(config.n_repeat):
-        print("model number", i)
+    repeats = range(config.n_repeat)
 
-        if i == 0:
-            ## show the parameters
-            pass
+    inputs = {}
+    inputs['X'] = X
+    inputs['Y'] = Y
+    inputs['test_embs_path'] = test_embs_path
+    if test_embs_path:
+        inputs['X_test'] = X_test
+        inputs['Y_test'] = Y_test
+    outputs = []
 
-        model = LinearSVR(max_iter=config.class_max_epochs) # set the params here
+    # Actual loop done config.n_repeat times
+    for i in repeats:
+        outputs.append(train_one_svm_classifier(config, inputs))
 
-        # train the model with cross validation and get the predictions
-        labels_pred = cross_val_predict(model, X, Y, cv=5)
-
-        # store the predictions
-        prediction_matrix[:,i] = labels_pred#.values
-
-        # compute the indicators and store th results
-        curves, roc_auc, accuracy = compute_indicators(Y, labels_pred)
+    # Puts together the results
+    for i, o in enumerate(outputs):
+        labels_pred = o['labels_pred']
+        curves = o['curves']
+        roc_auc = o['roc_auc']
+        accuracy = o['accuracy']
+        prediction_matrix[:,i] = labels_pred
         Curves['cross_val'].append(curves)
         aucs['cross_val'].append(roc_auc)
         accuracies['cross_val'].append(accuracy)
 
-        # Computes test ROC
         if test_embs_path:
-            labels_pred_test = model.predict(X_test)
-            prediction_matrix_test[:,i] = labels_pred_test
-            curves, roc_auc, accuracy = compute_indicators(Y_test, labels_pred_test)
+            curves = o['curves_test']
+            roc_auc = o['roc_auc_test']
+            accuracy = o['accuracy_test']
             Curves['test'].append(curves)
             aucs['test'].append(roc_auc)
             accuracies['test'].append(accuracy)
