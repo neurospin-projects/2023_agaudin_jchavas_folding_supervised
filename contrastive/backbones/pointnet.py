@@ -240,7 +240,7 @@ if __name__ == '__main__':
     print('point feat', out.size())
 
     cls = PointNetCls(k = 5)
-    out, _, _ = cls(sim_data)
+    out = cls(sim_data)
     print('class', out.size())
 
     seg = PointNetDenseCls(k = 3)
