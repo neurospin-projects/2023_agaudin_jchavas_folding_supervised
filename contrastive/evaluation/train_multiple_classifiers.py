@@ -12,6 +12,10 @@ from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import auc, roc_curve, roc_auc_score, accuracy_score
 from sklearn.model_selection import cross_val_predict, train_test_split
 
+from pqdm.processes import pqdm
+from joblib import cpu_count
+from functools import partial
+
 from contrastive.models.binary_classifier import BinaryClassifier 
 from sklearn.svm import LinearSVR
 
@@ -20,7 +24,13 @@ from contrastive.data.utils import read_labels
 from contrastive.utils.config import process_config
 from contrastive.utils.logs import set_root_logger_level
 
+_parallel = True
 
+def define_njobs():
+    """Returns number of cpus used by main loop
+    """
+    nb_cpus = cpu_count()
+    return max(nb_cpus - 2, 1)
 
 # load the embeddings and the labels
 def load_embeddings(dir_path, labels_path, config):
@@ -289,7 +299,7 @@ def train_nn_classifiers(config):
     plt.close('all')
 
 
-def train_one_svm_classifier(config, inputs):
+def train_one_svm_classifier(config, inputs, i = 0):
 
     X = inputs['X']
     Y = inputs['Y']
@@ -299,7 +309,7 @@ def train_one_svm_classifier(config, inputs):
         Y_test = inputs['Y_test']
     outputs = {}
 
-    model = LinearSVR(max_iter=config.class_max_epochs) # set the params here
+    model = LinearSVR(max_iter=config.class_max_epochs, random_state=i) # set the params here
 
     # train the model with cross validation and get the predictions
     labels_pred = cross_val_predict(model, X, Y, cv=5)
@@ -375,11 +385,20 @@ def train_svm_classifiers(config):
     if test_embs_path:
         inputs['X_test'] = X_test
         inputs['Y_test'] = Y_test
-    outputs = []
+    
 
     # Actual loop done config.n_repeat times
-    for i in repeats:
-        outputs.append(train_one_svm_classifier(config, inputs))
+    if _parallel == True:
+        print(f"Computation done IN PARALLEL: {config.n_repeat} times")
+        func = partial(train_one_svm_classifier, config, inputs)
+        outputs = pqdm(repeats, func, n_jobs=define_njobs())
+    else:
+        outputs = []
+        print("Computation done SERIALLY")
+        for i in repeats:
+            print("model number", i)
+            outputs.append(train_one_svm_classifier(config, inputs, i))
+
 
     # Puts together the results
     for i, o in enumerate(outputs):
