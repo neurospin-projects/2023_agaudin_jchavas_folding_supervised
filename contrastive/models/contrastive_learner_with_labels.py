@@ -355,7 +355,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                     self.sample_data.train_dataloader(),
                     "train")
         
-        if self.current_epoch % 5 == 0 \
+        if self.current_epoch % 50 == 0 \
                 or self.current_epoch >= self.config.max_epochs:
             # Plots views
             self.plot_views()
@@ -433,7 +433,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                     image_TSNE,
                     self.current_epoch)
 
-            if self.current_epoch % 5 == 0 \
+            if self.current_epoch % 50 == 0 \
                     or self.current_epoch >= self.config.max_epochs:
             # Plots scatter matrices
                 self.plot_scatter_matrices_with_labels(
