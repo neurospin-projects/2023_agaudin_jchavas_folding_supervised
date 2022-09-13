@@ -310,8 +310,8 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
             self.compute_parameters_for_display(z_i, z_j)
 
         loss_combined = self.proportion_pure_contrastive*loss_pure_contrastive \
-                        + (1-self.proportion_pure_contrastive)*loss_supervised \
-                        + loss_L1
+                        + (1-self.proportion_pure_contrastive)*loss_supervised
+                        # + loss_L1
 
         if self.return_logits:
             return loss_combined, loss_supervised.detach(), \
