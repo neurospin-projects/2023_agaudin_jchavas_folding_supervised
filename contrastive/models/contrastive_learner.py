@@ -82,8 +82,9 @@ class ContrastiveLearner(pl.LightningModule):
                 growth_rate=config.growth_rate,
                 block_config=config.block_config,
                 num_init_features=config.num_init_features,
-                num_representation_features=config.num_representation_features,
+                num_representation_features=config.num_outputs,
                 num_outputs=config.num_outputs,
+                projection_head_type=config.projection_head_type,
                 mode=config.mode,
                 drop_rate=config.drop_rate,
                 in_shape=config.input_size,
@@ -91,7 +92,7 @@ class ContrastiveLearner(pl.LightningModule):
         elif config.backbone_name == "convnet":
             self.backbone = ConvNet(
                 encoder_depth=config.encoder_depth,
-                num_representation_features=config.num_representation_features,
+                num_representation_features=config.num_outputs,
                 num_outputs=config.num_outputs,
                 projection_head_hidden_layers=config.projection_head_hidden_layers,
                 drop_rate=config.drop_rate,
@@ -210,20 +211,19 @@ class ContrastiveLearner(pl.LightningModule):
             self.logger.experiment.add_image(
                 'input_ana_i: ',
                 image_input_i, self.current_epoch)
-            self.logger.experiment.add_text(
-                'filename: ',self.sample_filenames[0], self.current_epoch)
-            self.logger.experiment.add_text(
-                'label: ',str(self.sample_labels[0]), self.current_epoch)
+            # self.logger.experiment.add_text(
+            #     'filename: ',self.sample_filenames[0], self.current_epoch)
             image_input_j = self.visu_anatomist.plot_bucket(
                 self.sample_j, buffer=True)
             self.logger.experiment.add_image(
                 'input_ana_j: ',
                 image_input_j, self.current_epoch)
-            image_input_k = self.visu_anatomist.plot_bucket(
-                self.sample_k, buffer=True)
-            self.logger.experiment.add_image(
-                'input_ana_k: ',
-                image_input_k, self.current_epoch)
+            if len(self.sample_k) != 0:
+                image_input_k = self.visu_anatomist.plot_bucket(
+                    self.sample_k, buffer=True)
+                self.logger.experiment.add_image(
+                    'input_ana_k: ',
+                    image_input_k, self.current_epoch)
 
     def configure_optimizers(self):
         """Adam optimizer"""
@@ -360,7 +360,7 @@ class ContrastiveLearner(pl.LightningModule):
         Representation are before the projection head"""
 
         # Initialization
-        X = torch.zeros([0, self.config.num_representation_features]).cpu()
+        X = torch.zeros([0, self.config.num_outputs]).cpu()
         filenames_list = []
 
         # Computes representation (without gradient computation)

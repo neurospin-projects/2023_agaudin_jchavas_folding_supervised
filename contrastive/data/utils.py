@@ -148,6 +148,7 @@ def extract_test(normal_subjects, train_val_subjects, normal_data):
     Test subjects are all subjects from normal_subjects that are not listed
     in train_val_subjects.
     normal_data is a numpy array corresponding to normal_subjects."""
+
     test_subjects = normal_subjects[~normal_subjects.Subject.isin(
         train_val_subjects.Subject)]
     test_subjects_index = test_subjects.index
@@ -350,8 +351,9 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
         normal_subjects.Subject.isin(subject_labels.Subject)].index
     normal_subjects = normal_subjects.loc[normal_subjects_index]
     normal_data = normal_data[normal_subjects_index]
+    normal_subjects = normal_subjects.reset_index(drop=True)
 
-    if config.environment == "brainvisa":
+    if config.environment == "brainvisa" and config.checking:
         compare_array_aims_files(normal_subjects, normal_data, sample_dir)
 
     # Sort subject_labels according to normal_subjects
@@ -374,7 +376,7 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
         extract_train_val(normal_subjects, train_val_subjects, normal_data)
     train_val_labels = extract_labels(subject_labels, train_val_subjects)
 
-    if config.environment == "brainvisa":
+    if config.environment == "brainvisa" and config.checking:
         compare_array_aims_files(train_val_subjects, train_val_data, sample_dir)
         compare_array_aims_files(test_subjects, test_data, sample_dir)
 

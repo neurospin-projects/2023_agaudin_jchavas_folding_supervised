@@ -19,12 +19,12 @@ class _DenseLayer(nn.Sequential):
     def __init__(self, num_input_features, growth_rate, bn_size,
                  drop_rate, memory_efficient=False):
         super(_DenseLayer, self).__init__()
-        self.add_module('norm1', nn.BatchNorm3d(num_input_features)),
+        self.add_module('norm1', nn.BatchNorm3d(num_input_features, track_running_stats=False)),
         self.add_module('relu1', nn.ReLU(inplace=True)),
         self.add_module('conv1', nn.Conv3d(num_input_features, bn_size *
                                            growth_rate, kernel_size=1,
                                            stride=1, bias=False)),
-        self.add_module('norm2', nn.BatchNorm3d(bn_size * growth_rate)),
+        self.add_module('norm2', nn.BatchNorm3d(bn_size * growth_rate, track_running_stats=False)),
         self.add_module('relu2', nn.ReLU(inplace=True)),
         self.add_module('conv2', nn.Conv3d(bn_size * growth_rate, growth_rate,
                                            kernel_size=3, stride=1, padding=1,
@@ -74,7 +74,7 @@ class _DenseBlock(pl.LightningModule):
 class _Transition(nn.Sequential):
     def __init__(self, num_input_features, num_output_features):
         super(_Transition, self).__init__()
-        self.add_module('norm', nn.BatchNorm3d(num_input_features))
+        self.add_module('norm', nn.BatchNorm3d(num_input_features, track_running_stats=False))
         self.add_module('relu', nn.ReLU(inplace=True))
         self.add_module('conv', nn.Conv3d(num_input_features,
                                           num_output_features,
@@ -98,8 +98,11 @@ class DenseNet(pl.LightningModule):
         num_classes (int) - number of classification classes
             (if 'classifier' mode)
         in_channels (int) - number of input channels (1 for sMRI)
+        num_representation_features (int) - size of latent space
+        num_outputs (int) -  size of output space
+        projection_head_type (str) - Type of projection head (either "linear\" or "non-linear")
         mode (str) - specify in which mode DenseNet is trained on,
-            must be "encoder" or "classifier"
+            must be "encoder" or "classifier" or "decoder"
         memory_efficient (bool) - If True, uses checkpointing. Much more memory
             efficient, but slower. Default: *False*.
             See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
@@ -110,6 +113,7 @@ class DenseNet(pl.LightningModule):
                  num_classes=1000, in_channels=1,
                  num_representation_features=256,
                  num_outputs=64,
+                 projection_head_type="linear",
                  mode="encoder",
                  memory_efficient=False,
                  in_shape=None,
@@ -129,6 +133,7 @@ class DenseNet(pl.LightningModule):
         self.in_shape = in_shape
         c, h, w, d = in_shape
         self.depth = depth
+        self.drop_rate = drop_rate
         self.z_dim_h = h//2**self.depth # receptive field downsampled 2 times
         self.z_dim_w = w//2**self.depth
         self.z_dim_d = d//2**self.depth
@@ -173,11 +178,28 @@ class DenseNet(pl.LightningModule):
         elif (self.mode == "encoder") or (self.mode == 'evaluation'):
             self.hidden_representation = nn.Linear(
                 num_features, self.num_representation_features)
-            self.head_projection = nn.Sequential(
+
+            if projection_head_type == "non-linear":
+                projection_head = []
+                input_size = self.num_representation_features
+                output_size = self.num_outputs
+                i = 0
+                projection_head.append(('Linear%s' %i, nn.Linear(input_size, output_size)))
+                projection_head.append(('Norm%s' %i, nn.BatchNorm1d(output_size, track_running_stats=False)))
+                projection_head.append(('ReLU%s' %i, nn.ReLU()))
+                projection_head.append(('Linear Output', nn.Linear(input_size, output_size)))
+                projection_head.append(('Norm Output', nn.BatchNorm1d(output_size, track_running_stats=False)))   
+                self.head_projection = nn.Sequential(OrderedDict(projection_head))
+            elif projection_head_type == "linear":
+                self.head_projection = nn.Sequential(
                                         nn.Linear(self.num_representation_features,
                                                   self.num_outputs),
                                         nn.Linear(self.num_outputs,
                                                   self.num_outputs))
+            else:
+                raise ValueError("projection_head_type must be either \"linear\" or \"non-linear\. "
+                                 f"You have set it to: {projection_head_type}")
+
         elif self.mode == "decoder":
             self.hidden_representation = nn.Linear(
                 num_features, self.num_representation_features)
@@ -219,8 +241,11 @@ class DenseNet(pl.LightningModule):
             elif isinstance(m, nn.BatchNorm3d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm1d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.normal_(m.weight, 0, 0.5)
                 nn.init.constant_(m.bias, 0)
 
         

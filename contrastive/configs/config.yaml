@@ -1,9 +1,8 @@
-# @package _group_
 defaults:
   - hydra: local
   - hydra/job_logging: custom
   - dataset: cingulate_HCP
-  - model: SimCLR
+  - model: SimCLR_supervised
   - mode: encoder
   - augmentations: foldlabel
   - backbone: PointNet

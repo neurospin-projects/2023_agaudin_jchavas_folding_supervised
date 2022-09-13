@@ -216,20 +216,24 @@ class ContrastiveDataset_WithLabels():
                                                  config=self.config)
         self.transform2 = transform_no_foldlabel(from_skeleton=False,
                                                  config=self.config)
-        self.transform3 = transform_only_padding(self.config)
 
         # Computes the views
+        log.debug(f"sample shape = {sample.shape}")
         view1 = self.transform1(sample)
         view2 = self.transform2(sample)
 
         if self.config.mode == "decoder":
+            self.transform3 = transform_only_padding(self.config)
             view3 = self.transform3(sample)
             views = torch.stack((view1, view2, view3), dim=0)
+            tuple_with_path = (views, labels, filename)
+            return tuple_with_path
         else:
+            self.transform3 = transform_nothing_done()
+            view3 = self.transform3(sample)
             views = torch.stack((view1, view2), dim=0)
-
-        tuple_with_path = (views, labels, filename)
-        return tuple_with_path
+            tuple_with_path = (views, labels, filename, view3)
+            return tuple_with_path
 
 
 class ContrastiveDataset_WithFoldLabels():
