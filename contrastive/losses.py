@@ -128,7 +128,7 @@ class NTXenLoss(nn.Module):
         # (x transforms via T_i and T_j)
         sim_zij = (z_i @ z_j.T) / self.temperature
 
-        print_info(z_i, z_j, sim_zij, sim_zii, sim_zjj, self.temperature)
+        #print_info(z_i, z_j, sim_zij, sim_zii, sim_zjj, self.temperature)
 
         # 'Remove' the diag terms by penalizing it (exp(-inf) = 0)
         sim_zii = sim_zii - self.INF * torch.eye(N, device=z_i.device)
@@ -152,6 +152,7 @@ class NTXenLoss(nn.Module):
 class GeneralizedSupervisedNTXenLoss(nn.Module):
     def __init__(self, kernel='rbf',
                  temperature=0.1,
+                 temperature_supervised=0.5,
                  return_logits=False,
                  sigma=1.0,
                  proportion_pure_contrastive=1.0):
@@ -176,6 +177,7 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
             assert hasattr(self.kernel, '__call__'), \
                    'kernel must be a callable'
         self.temperature = temperature
+        self.temperature_supervised = temperature_supervised
         self.proportion_pure_contrastive = proportion_pure_contrastive
         self.return_logits = return_logits
         self.INF = 1e8
@@ -211,11 +213,11 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
 
         z_i = func.normalize(z_i, p=2, dim=-1) # dim [N, D]
         z_j = func.normalize(z_j, p=2, dim=-1) # dim [N, D]
-        sim_zii= (z_i @ z_i.T) / self.temperature # dim [N, N] 
+        sim_zii= (z_i @ z_i.T) / self.temperature_supervised # dim [N, N] 
                         # => Upper triangle contains incorrect pairs
-        sim_zjj = (z_j @ z_j.T) / self.temperature # dim [N, N] 
+        sim_zjj = (z_j @ z_j.T) / self.temperature_supervised # dim [N, N] 
                         # => Upper triangle contains incorrect pairs
-        sim_zij = (z_i @ z_j.T) / self.temperature # dim [N, N] 
+        sim_zij = (z_i @ z_j.T) / self.temperature_supervised # dim [N, N] 
                         # => the diag contains the correct pairs (i,j) 
                         #    (x transforms via T_i and T_j)
 
@@ -229,7 +231,9 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         weights = weights * (1 - np.eye(2*N)) # puts 0 on the diagonal
 
         # We normalize the weights
-        weights /= weights.sum(axis=1).reshape(2*N,1)
+        norm = weights.sum(axis=1).reshape(2*N,1)
+        weights /= norm
+        weights_norm = weights * np.log(norm)
 
         # if 'rbf' kernel and sigma->0, 
         # we retrieve the classical NTXenLoss (without labels)
@@ -239,10 +243,22 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         log_sim_Z = func.log_softmax(sim_Z, dim=1)
 
         weights = torch.from_numpy(weights)
+        weights_norm = torch.from_numpy(weights_norm)
         loss_label = -1./N * (weights.to(z_i.device) \
                         * log_sim_Z).sum()
+        loss_label += -1./N * (weights_norm.to(z_i.device)).sum()
 
         return loss_label, weights
+
+    def forward_L1(self, z_i, z_j):
+        N = len(z_i)
+        z_i = func.normalize(z_i, p=2, dim=-1) # dim [N, D]
+        z_j = func.normalize(z_j, p=2, dim=-1) # dim [N, D]
+
+        loss_i = torch.linalg.norm(z_i, ord=1, dim=-1).sum() / N
+        loss_j = torch.linalg.norm(z_j, ord=1, dim=-1).sum() / N
+
+        return loss_i+loss_j
 
     def compute_parameters_for_display(self, z_i, z_j):
         N = len(z_i)
@@ -285,12 +301,17 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
                                         z_j_supervised,
                                         labels)
 
+        # We compute the L1 norm to enforce sparsity
+        loss_L1 = self.forward_L1(z_i_supervised, z_j_supervised)
+
+
         # We compute matrices for tensorboard displays
         sim_zii, sim_zij, sim_zjj, correct_pairs = \
             self.compute_parameters_for_display(z_i, z_j)
 
         loss_combined = self.proportion_pure_contrastive*loss_pure_contrastive \
                         + (1-self.proportion_pure_contrastive)*loss_supervised
+                        # + loss_L1
 
         if self.return_logits:
             return loss_combined, loss_supervised.detach(), \

@@ -5,7 +5,7 @@ import omegaconf
 from contrastive.evaluation.generate_embeddings import compute_embeddings
 from contrastive.evaluation.train_multiple_classifiers import train_classifiers
 
-from sklearn.utils._testing import ignore_warnings
+from sklearn.utils.testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
 
 
@@ -17,13 +17,13 @@ def preprocess_config(sub_dir, dataset, classifier_name='svm', verbose=False):
     cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config.yaml')
 
     # replace the dataset
-    with open(f'./configs/dataset/{dataset}.yaml', 'r') as file:
+    with open(f'../configs/dataset/{dataset}.yaml', 'r') as file:
         dataset_yaml = yaml.load(file, yaml.FullLoader)
     for key in dataset_yaml:
         cfg[key] = dataset_yaml[key]
     
     # get the right classifiers parameters
-    with open(f'./configs/classifier/{classifier_name}.yaml', 'r') as file:
+    with open(f'../configs/classifier/{classifier_name}.yaml', 'r') as file:
         dataset_yaml = yaml.load(file, yaml.FullLoader)
     for key in dataset_yaml:
         cfg[key] = dataset_yaml[key]
@@ -81,8 +81,8 @@ overwrite to True if you still want to compute them.")
                     # apply the functions
                     compute_embeddings(cfg)
                     # reload it for train_classifiers to work properly
-                    cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config_classifiers.yaml')
-                    train_classifiers(cfg)
+                    #cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config_classifiers.yaml')
+                    #train_classifiers(cfg)
 
             else:
                 print(f"{sub_dir} not associated to a model. Continue")
@@ -91,5 +91,5 @@ overwrite to True if you still want to compute them.")
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/04_pointnet/Output/2022-08-04",
-dataset='cingulate_ACCpatterns', classifier_name='svm', overwrite=False)
+embeddings_pipeline("/neurospin/dico/agaudin/Runs/04_pointnet/Output/2022-09-01",
+dataset='cingulate_HCP', verbose=True, classifier_name='svm', overwrite=False)

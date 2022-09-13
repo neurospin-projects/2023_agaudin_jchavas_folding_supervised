@@ -1,6 +1,6 @@
 # @package _global_
 # Characterization of the DenseNet model used
 backbone_name: pointnet
-num_representation_features: 30
+num_representation_features: 30 # not used, set equal to num_outputs
 num_outputs: 30
 projection_head_hidden_layers:

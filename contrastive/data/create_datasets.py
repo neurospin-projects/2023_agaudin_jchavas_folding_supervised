@@ -151,7 +151,7 @@ def create_sets_with_labels(config):
                                  config.subject_column_name,
                                  config.label_names)
 
-    if config.environment == "brainvisa":
+    if config.environment == "brainvisa" and config.checking:
         compare_npy_file_aims_files(config.subjects_all, config.numpy_all, config.crop_dir)
 
     # Loads and separates in train_val/test skeleton crops
@@ -162,7 +162,7 @@ def create_sets_with_labels(config):
     check_if_skeleton(train_val_data, "train_val")
     check_if_skeleton(test_data, "test")
 
-    if config.environment == "brainvisa":
+    if config.environment == "brainvisa" and config.checking:
         compare_array_aims_files(train_val_subjects, train_val_data, config.crop_dir)
         compare_array_aims_files(test_subjects, test_data, config.crop_dir)
     
@@ -197,7 +197,7 @@ def create_sets_with_labels(config):
                             train_val_labels[['Subject']], "train_val labels")
         check_if_same_subjects(test_foldlabel_subjects,
                             test_labels[['Subject']], "test labels")
-        if config.environment == "brainvisa":
+        if config.environment == "brainvisa" and config.checking:
             compare_array_aims_files(train_val_foldlabel_subjects,
                                     train_val_foldlabel_data, config.foldlabel_dir)
             compare_array_aims_files(test_foldlabel_subjects,

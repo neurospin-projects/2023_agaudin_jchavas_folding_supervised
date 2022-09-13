@@ -1,4 +1,5 @@
 # @package _global_
+dataset_name: cingulate_HCP_1mm
 pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/1mm/CINGULATE/mask/Rskeleton.pkl
 numpy_all: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/1mm/CINGULATE/mask/Rskeleton.npy
 subjects_all: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/1mm/CINGULATE/mask/Rskeleton_subject.csv

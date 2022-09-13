@@ -41,6 +41,7 @@ from scipy.ndimage import rotate
 from sklearn.preprocessing import OneHotEncoder
 
 from contrastive.utils import logs
+from contrastive.data.utils import zero_padding, repeat_padding, pad
 
 log = logs.set_file_logger(__file__)
 
@@ -248,6 +249,7 @@ def remove_branches_up_to_percent(arr_foldlabel, arr_skel,
         log.debug(f"total_pixels_after (iteration) = {total_pixels_after}")
     log.debug(f"total_pixels_after (final) = {total_pixels_after}")
     percent_pixels_removed = (total_pixels-total_pixels_after)/total_pixels*100
+    log.debug(f"Minimum expected % removed pixels = {percentage}")
     log.debug(f"% removed pixels = {percent_pixels_removed}")
     assert(percent_pixels_removed >= percentage)
 
@@ -258,9 +260,11 @@ class RemoveRandomBranchTensor(object):
     """Removes randomly branches up to percent
     """
 
-    def __init__(self, sample_foldlabel, percentage, input_size, keep_bottom):
+    def __init__(self, sample_foldlabel,
+                 percentage, input_size, keep_bottom, variable_percentage):
         self.sample_foldlabel = sample_foldlabel
         self.percentage = percentage
+        self.variable_percentage = variable_percentage
         self.input_size = input_size
         self.keep_bottom = keep_bottom
 
@@ -272,6 +276,13 @@ class RemoveRandomBranchTensor(object):
         # log.debug(f"arr_skel.shape = {arr_skel.shape}")
         # log.debug(f"arr_foldlabel.shape = {arr_foldlabel.shape}")
         assert(arr_skel.shape==arr_foldlabel.shape)
+        assert(self.percentage>=0)
+
+        if self.variable_percentage:
+            percentage = np.random.uniform(0,self.percentage)
+        else:
+            percentage = self.percentage
+        log.debug(f"expected percentage (RemoveRandomBranchTensor) = {percentage}")
 
         arr_skel_without_branches = np.zeros(arr_skel.shape)
         log.debug(f"Shape of arr_skel before calling transform: {arr_skel_without_branches.shape}")
@@ -282,13 +293,13 @@ class RemoveRandomBranchTensor(object):
                 arr_skel_without_branches[num_img,...] = \
                     remove_branches_up_to_percent(arr_foldlabel[num_img,...],
                                                   arr_skel[num_img,...],
-                                                  self.percentage,
+                                                  percentage,
                                                   self.keep_bottom)
         elif len(arr_skel.shape) == len(self.input_size):
             arr_skel_without_branches = \
                 remove_branches_up_to_percent(arr_foldlabel,
                                               arr_skel,
-                                              self.percentage,
+                                              percentage,
                                               self.keep_bottom)
         else:
             raise RuntimeError(f"Unexpected skeleton shape."
@@ -588,6 +599,26 @@ class CutoutTensor(object):
             arr_cut = np.copy(arr)
             arr_cut[tuple(indexes)] = self.value
             return torch.from_numpy(arr_cut)
+
+
+class ToPointnetTensor(object):
+
+    def __init__(self, padding_method=repeat_padding, n_max=None):
+        self.padding_method = padding_method
+        self.n_max = n_max
+
+    def __call__(self, tensor):
+        arr = tensor.numpy()
+
+        clouds = []
+        for i in range(arr.shape[0]): # loop over batch elements
+            point_cloud = np.array(arr[i].nonzero()[:3])
+            clouds.append(point_cloud)
+        
+        padded_clouds = pad(clouds, padding_method=self.padding_method,
+                            n_max=self.n_max)
+        
+        return torch.from_numpy(padded_clouds)
 
 
 def interval(obj, lower=None):

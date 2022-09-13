@@ -1,11 +1,10 @@
-# @package _group_
 defaults:
   - hydra: local
   - hydra/job_logging: custom
   - dataset: cingulate_HCP
   - model: SimCLR
   - mode: encoder
-  - augmentations: no_foldlabel
+  - augmentations: foldlabel
   - backbone: PointNet
   - platform: cuda_not_brainvisa
   - trainer: default

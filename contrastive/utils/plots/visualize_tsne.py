@@ -105,6 +105,8 @@ def plot_tsne(X_tsne, buffer, labels=None, savepath=None, type=""):
     m = np.repeat(["o"], nb_points)
     if labels is None:
         c = np.tile(np.array(["b", "r"]), nb_points // 2)
+    elif len(labels.shape) == 2:
+        c = labels[:,0]
     else:
         c = labels
 

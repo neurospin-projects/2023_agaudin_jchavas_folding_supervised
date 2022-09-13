@@ -1,4 +1,3 @@
-import re
 import hydra
 import torch
 import numpy as np
@@ -9,8 +8,12 @@ import json
 import os
 
 from torch.utils.data import DataLoader, TensorDataset
-from sklearn.metrics import roc_curve, roc_auc_score, accuracy_score
+from sklearn.metrics import auc, roc_curve, roc_auc_score, accuracy_score
 from sklearn.model_selection import cross_val_predict, train_test_split
+
+from pqdm.processes import pqdm
+from joblib import cpu_count
+from functools import partial
 
 from contrastive.models.binary_classifier import BinaryClassifier 
 from sklearn.svm import LinearSVR
@@ -18,8 +21,15 @@ from sklearn.svm import LinearSVR
 from contrastive.data.utils import read_labels
 
 from contrastive.utils.config import process_config
-from contrastive.utils.logs import set_root_logger_level
+from contrastive.utils.logs import set_root_logger_level, set_file_logger
 
+_parallel = True
+
+def define_njobs():
+    """Returns number of cpus used by main loop
+    """
+    nb_cpus = cpu_count()
+    return max(nb_cpus - 2, 1)
 
 
 # load the embeddings and the labels
@@ -50,6 +60,7 @@ def load_embeddings(dir_path, labels_path, config):
     # /!\ use read_labels
     labels = read_labels(labels_path, config.subject_column_name, config.label_names)
     labels = pd.DataFrame(labels.values, columns=['Subject', 'label'])
+    labels = labels[labels.Subject.isin(embeddings.index)]
     labels.sort_values(by='Subject', inplace=True, ignore_index=True)
     print("sorted labels", labels.head())
     # /!\ multiple labels is not handled
@@ -99,9 +110,9 @@ def compute_indicators(Y, labels_pred):
 
 
 def compute_auc(column, label_col=None):
-    print("COMPUTE AUC")
-    print(label_col.head())
-    print(column.head())
+    log.debug("COMPUTE AUC")
+    log.debug(label_col.head())
+    log.debug(column.head())
     return roc_auc_score(label_col, column)
 
 
@@ -288,13 +299,47 @@ def train_nn_classifiers(config):
     plt.close('all')
 
 
+def train_one_svm_classifier(config, inputs, i = 0):
+
+    X = inputs['X']
+    Y = inputs['Y']
+    test_embs_path = inputs['test_embs_path']
+    if test_embs_path:
+        X_test = inputs['X_test']
+        Y_test = inputs['Y_test']
+    outputs = {}
+
+    model = LinearSVR(max_iter=config.class_max_epochs, random_state=i) # set the params here
+
+    # train the model with cross validation and get the predictions
+    labels_pred = cross_val_predict(model, X, Y, cv=5)
+
+    # compute the indicators and store th results
+    curves, roc_auc, accuracy = compute_indicators(Y, labels_pred)
+
+    # Sotres in outputs dict
+    outputs['labels_pred'] = labels_pred
+    outputs['curves'] = curves
+    outputs['roc_auc'] = roc_auc
+    outputs['accuracy'] = accuracy
+
+    if test_embs_path:
+        labels_pred_test = model.predict(X_test)
+        curves, roc_auc, accuracy = compute_indicators(Y_test, labels_pred_test)
+        outputs['curves_test'] = curves
+        outputs['roc_auc_test'] = roc_auc
+        outputs['accuracy_test'] = accuracy
+
+    return outputs
+
 
 def train_svm_classifiers(config):
     # import the data
 
     # set up load and save paths
     train_embs_path = config.training_embeddings
-    train_lab_paths = config.training_labels
+    test_embs_path = config.test_embeddings
+    train_lab_paths = config.training_labels #/!\ in fact all_labels (=train_val and test labels)
     # if not specified, the embeddings the results are created from are the ones used for training
 
     EoI_path = config.embeddings_of_interest if config.embeddings_of_interest else train_embs_path
@@ -311,33 +356,69 @@ def train_svm_classifiers(config):
     X = embeddings.loc[:, embeddings.columns != names_col]
     Y = labels.label
 
-    # objects where the results are saved
+    if test_embs_path:
+        test_embeddings, test_labels = load_embeddings(test_embs_path, train_lab_paths, config)
+        names_col = 'ID' if 'ID' in test_embeddings.columns else 'Subject'
+        X_test = test_embeddings.loc[:, test_embeddings.columns != names_col]
+        Y_test = test_labels.label
+
+    # Builds objects where the results are saved
     Curves = {'cross_val': []}
     aucs = {'cross_val': []}
     accuracies = {'cross_val': []}
     prediction_matrix = np.zeros((labels.shape[0], config.n_repeat))
 
+    if test_embs_path:
+        Curves['test'] = []
+        aucs['test'] = []
+        accuracies['test'] = []
+        prediction_matrix_test = np.zeros((test_labels.shape[0], config.n_repeat))
 
-    for i in range(config.n_repeat):
-        print("model number", i)
+    # Configures loops
 
-        if i == 0:
-            ## show the parameters
-            pass
+    repeats = range(config.n_repeat)
 
-        model = LinearSVR(max_iter=config.class_max_epochs) # set the params here
+    inputs = {}
+    inputs['X'] = X
+    inputs['Y'] = Y
+    inputs['test_embs_path'] = test_embs_path
+    if test_embs_path:
+        inputs['X_test'] = X_test
+        inputs['Y_test'] = Y_test
+    
 
-        # train the model with cross validation and get the predictions
-        labels_pred = cross_val_predict(model, X, Y)
+    # Actual loop done config.n_repeat times
+    if _parallel == True:
+        print(f"Computation done IN PARALLEL: {config.n_repeat} times")
+        func = partial(train_one_svm_classifier, config, inputs)
+        outputs = pqdm(repeats, func, n_jobs=define_njobs())
+    else:
+        outputs = []
+        print("Computation done SERIALLY")
+        for i in repeats:
+            print("model number", i)
+            outputs.append(train_one_svm_classifier(config, inputs, i))
 
-        # store the predictions
-        prediction_matrix[:,i] = labels_pred#.values
 
-        # compute the indicators and store th results
-        curves, roc_auc, accuracy = compute_indicators(Y, labels_pred)
+    # Puts together the results
+    for i, o in enumerate(outputs):
+        labels_pred = o['labels_pred']
+        curves = o['curves']
+        roc_auc = o['roc_auc']
+        accuracy = o['accuracy']
+        prediction_matrix[:,i] = labels_pred
         Curves['cross_val'].append(curves)
         aucs['cross_val'].append(roc_auc)
         accuracies['cross_val'].append(accuracy)
+
+        if test_embs_path:
+            curves = o['curves_test']
+            roc_auc = o['roc_auc_test']
+            accuracy = o['accuracy_test']
+            Curves['test'].append(curves)
+            aucs['test'].append(roc_auc)
+            accuracies['test'].append(accuracy)
+
     
     # add the predictions to the df where the true values are
     columns_names = ["predicted_"+str(i) for i in range(config.n_repeat)]
@@ -348,16 +429,23 @@ def train_svm_classifiers(config):
     values = {}
     mode = 'cross_val'
     post_processing_results(labels, Curves, aucs, accuracies, values, columns_names, mode, results_save_path)
-        
     with open(results_save_path+"/values.json", 'w+') as file:
         json.dump(values, file)
 
-    #plt.show()
+    if test_embs_path:
+        values = {}
+        mode = 'test'
+        post_processing_results(test_labels, Curves, aucs, accuracies, values, columns_names, mode, results_save_path)
+        
+        with open(results_save_path+"/values_test.json", 'w+') as file:
+            json.dump(values, file)
+
+    # plt.show()
     plt.close('all')
 
 
 
-# would highly benefit from paralellisation
+# would highly benefit from parallelisation
 @hydra.main(config_name='config_no_save', config_path="../configs")
 def train_classifiers(config):
     config = process_config(config)

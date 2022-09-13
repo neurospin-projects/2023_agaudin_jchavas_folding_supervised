@@ -1,8 +1,7 @@
 # @package _global_
-# Characterization of the DenseNet model used
+# Characterization of the ConvNet model used
 backbone_name: convnet
 encoder_depth: 3
-num_representation_features: 30
-num_outputs: 30
+num_representation_features: 4 # Not used, set identifcal to num_outputs
+num_outputs: 4
 projection_head_hidden_layers:
-drop_rate: 0.15

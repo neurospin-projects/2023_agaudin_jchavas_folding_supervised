@@ -76,7 +76,7 @@ def create_accessible_config(keys_to_keep, config_path):
 
 def get_config_diff(dir_path, whole_config=False, save=True, verbose=False):
     """Get the parameters in config (or only in the partial config) that changed between the models
-    of the targeted folder. All the subdirectories (not files) are supposed to be containing models.
+    of the targeted folder.
     /!\ Probably poorly optimised.
     Inputs:
         - dir_path: path to directory where models to compare are stored
@@ -85,8 +85,8 @@ def get_config_diff(dir_path, whole_config=False, save=True, verbose=False):
 
     # number of sub directories (excluding files)
     only_dirs = [name for name in os.listdir(dir_path) 
-                 if (not (os.path.isfile(dir_path+'/'+name))
-                 and (glob.glob(dir_path+'/'+name + r'/*config.yaml') != []))]
+                 if (not (os.path.isfile(dir_path+'/'+name))  # condition to be a folder
+                 and (glob.glob(dir_path+'/'+name + r'/*config.yaml') != []))] # condition to be a model
     n_subdir = len(only_dirs)
     if verbose:
         print(f'{n_subdir} subdirs:', only_dirs)

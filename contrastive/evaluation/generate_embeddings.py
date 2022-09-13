@@ -80,12 +80,19 @@ def compute_embeddings(config):
     test_embeddings_df = embeddings_to_pandas(test_embeddings)
     test_embeddings_df.to_csv(embeddings_path+"/test_embeddings.csv")
 
+    # same thing on the train_val dataset
+    print("TRAIN_VAL SET")
+    train_val_df = pd.concat([train_embeddings_df, val_embeddings_df],
+                         axis=0)
+    train_val_df.to_csv(embeddings_path+"/train_val_embeddings.csv")
+
     # same thing on the entire dataset
+    print("FULL SET")
     full_df = pd.concat([train_embeddings_df, val_embeddings_df, test_embeddings_df],
                          axis=0)
     full_df.to_csv(embeddings_path+"/full_embeddings.csv")
 
-
+    print("ALL EMBEDDINGS GENERATED: OK")
 
 if __name__ == "__main__":
     compute_embeddings()
