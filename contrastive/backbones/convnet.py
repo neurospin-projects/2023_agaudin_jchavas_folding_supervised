@@ -33,7 +33,7 @@ class ConvNet(pl.LightningModule):
 
     def __init__(self, in_channels=1, encoder_depth=3,
                  num_representation_features=256,
-                 num_outputs=64, projection_head_dims=None,
+                 num_outputs=64, projection_head_hidden_layers=None,
                  drop_rate=0.1, mode="encoder",
                  memory_efficient=False,
                  in_shape=None):
@@ -47,10 +47,10 @@ class ConvNet(pl.LightningModule):
         self.mode = mode
         self.num_representation_features = num_representation_features
         self.num_outputs = num_outputs
-        if projection_head_dims:
-            self.projection_head_dims = projection_head_dims
+        if projection_head_hidden_layers:
+            self.projection_head_hidden_layers = projection_head_hidden_layers
         else:
-            self.projection_head_dims = [num_outputs]
+            self.projection_head_hidden_layers = [num_outputs]
         self.drop_rate = drop_rate
 
         # Decoder part
@@ -88,7 +88,7 @@ class ConvNet(pl.LightningModule):
             # build a projection head
             projection_head = []
             input_size = self.num_representation_features
-            for i, dim_i in enumerate(self.projection_head_dims):
+            for i, dim_i in enumerate(self.projection_head_hidden_layers):
                 output_size = dim_i
                 projection_head.append(('Linear%s' %i, nn.Linear(input_size, output_size)))
                 projection_head.append(('ReLU%s' %i, nn.ReLU()))

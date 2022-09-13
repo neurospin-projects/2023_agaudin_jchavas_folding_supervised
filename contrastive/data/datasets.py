@@ -420,8 +420,8 @@ class ContrastiveDataset_Visualization():
             idx = idx.tolist(self.nb_train)
 
         # Gets the data corresponding to idx
-        log.info(f"length = {self.nb_train}")
-        log.info(f"filenames = {self.filenames}")
+        log.debug(f"length = {self.nb_train}")
+        log.debug(f"filenames = {self.filenames}")
         sample = get_sample(self.arr, idx, 'float32')
         filename = get_filename(self.filenames, idx)
 

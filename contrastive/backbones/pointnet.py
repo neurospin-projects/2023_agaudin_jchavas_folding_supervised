@@ -1,6 +1,8 @@
 # this file has been taken from the repository https://github.com/fxia22/pointnet.pytorch.git
+# some modifcations have been added to match the project
 
 from __future__ import print_function
+from collections import OrderedDict
 import torch
 import torch.nn as nn
 import torch.nn.parallel
@@ -30,6 +32,7 @@ class STN3d(nn.Module):
 
     def forward(self, x):
         batchsize = x.size()[0]
+        #print("forward STN3d", x.size())
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
@@ -129,24 +132,54 @@ class PointNetfeat(nn.Module):
             return torch.cat([x, pointfeat], 1), trans, trans_feat
 
 class PointNetCls(nn.Module):
-    def __init__(self, k=2, feature_transform=False):
+    def __init__(self, k=2, num_outputs=None,
+                 projection_head_hidden_layers=None, drop_rate=0.15,
+                 feature_transform=False):
         super(PointNetCls, self).__init__()
         self.feature_transform = feature_transform
         self.feat = PointNetfeat(global_feat=True, feature_transform=feature_transform)
         self.fc1 = nn.Linear(1024, 512)
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, k)
-        self.dropout = nn.Dropout(p=0.3)
+        self.dropout = nn.Dropout(p=drop_rate)
         self.bn1 = nn.BatchNorm1d(512)
         self.bn2 = nn.BatchNorm1d(256)
         self.relu = nn.ReLU()
 
-    def forward(self, x):
+        self.drop_rate = drop_rate
+        if num_outputs == None:
+            num_outputs = k
+        if projection_head_hidden_layers:
+            self.projection_head_hidden_layers = projection_head_hidden_layers
+        else:
+            self.projection_head_hidden_layers = [num_outputs]
+
+        # projection head for SimCLR
+        projection_head = []
+        input_size = k
+        for i, dim_i in enumerate(self.projection_head_hidden_layers):
+            output_size = dim_i
+            projection_head.append(('Linear%s' %i, nn.Linear(input_size, output_size)))
+            projection_head.append(('ReLU%s' %i, nn.ReLU()))
+            input_size = output_size
+        projection_head.append(('Output layer' ,nn.Linear(input_size,
+                                                          num_outputs)))
+        self.projection_head = nn.Sequential(OrderedDict(projection_head))
+
+    def forward(self, x, return_features=False):
         x, trans, trans_feat = self.feat(x)
         x = F.relu(self.bn1(self.fc1(x)))
         x = F.relu(self.bn2(self.dropout(self.fc2(x))))
         x = self.fc3(x)
-        return F.log_softmax(x, dim=1), trans, trans_feat
+        x = F.log_softmax(x, dim=1)
+        if self.drop_rate > 0:
+            x = F.dropout(x, p=self.drop_rate,
+                          training=self.training)
+        x = self.projection_head(x)
+        if return_features:
+            return x, trans, trans_feat
+        else:
+            return x
 
 
 class PointNetDenseCls(nn.Module):
@@ -207,7 +240,7 @@ if __name__ == '__main__':
     print('point feat', out.size())
 
     cls = PointNetCls(k = 5)
-    out, _, _ = cls(sim_data)
+    out = cls(sim_data)
     print('class', out.size())
 
     seg = PointNetDenseCls(k = 3)

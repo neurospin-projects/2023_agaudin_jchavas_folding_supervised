@@ -1,4 +1,3 @@
-import re
 import hydra
 import torch
 import numpy as np
@@ -18,8 +17,10 @@ from sklearn.svm import LinearSVR
 from contrastive.data.utils import read_labels
 
 from contrastive.utils.config import process_config
-from contrastive.utils.logs import set_root_logger_level
+from contrastive.utils.logs import set_root_logger_level, set_file_logger
 
+
+log = set_file_logger(__file__)
 
 
 # load the embeddings and the labels
@@ -99,9 +100,9 @@ def compute_indicators(Y, labels_pred):
 
 
 def compute_auc(column, label_col=None):
-    print("COMPUTE AUC")
-    print(label_col.head())
-    print(column.head())
+    log.debug("COMPUTE AUC")
+    log.debug(label_col.head())
+    log.debug(column.head())
     return roc_auc_score(label_col, column)
 
 
@@ -285,7 +286,6 @@ def train_nn_classifiers(config):
     with open(results_save_path+"/values.json", 'w+') as file:
         json.dump(values, file)
 
-    plt.show()
     plt.close('all')
 
 
@@ -353,7 +353,7 @@ def train_svm_classifiers(config):
     with open(results_save_path+"/values.json", 'w+') as file:
         json.dump(values, file)
 
-    plt.show()
+    #plt.show()
     plt.close('all')
 
 

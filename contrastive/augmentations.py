@@ -41,6 +41,7 @@ from scipy.ndimage import rotate
 from sklearn.preprocessing import OneHotEncoder
 
 from contrastive.utils import logs
+from contrastive.data.utils import zero_padding, repeat_padding, pad
 
 log = logs.set_file_logger(__file__)
 
@@ -588,6 +589,26 @@ class CutoutTensor(object):
             arr_cut = np.copy(arr)
             arr_cut[tuple(indexes)] = self.value
             return torch.from_numpy(arr_cut)
+
+
+class ToPointnetTensor(object):
+
+    def __init__(self, padding_method=repeat_padding, n_max=None):
+        self.padding_method = padding_method
+        self.n_max = n_max
+
+    def __call__(self, tensor):
+        arr = tensor.numpy()
+
+        clouds = []
+        for i in range(arr.shape[0]): # loop over batch elements
+            point_cloud = np.array(arr[i].nonzero()[:3])
+            clouds.append(point_cloud)
+        
+        padded_clouds = pad(clouds, padding_method=self.padding_method,
+                            n_max=self.n_max)
+        
+        return torch.from_numpy(padded_clouds)
 
 
 def interval(obj, lower=None):

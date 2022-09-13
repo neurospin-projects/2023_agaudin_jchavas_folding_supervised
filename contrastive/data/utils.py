@@ -42,7 +42,7 @@ import pandas as pd
 import torch
 
 from contrastive.utils.logs import set_file_logger
-from contrastive.data.transforms import transform_foldlabel
+#from contrastive.data.transforms import transform_foldlabel
 # only if foldlabel == True
 try:
     from deep_folding.brainvisa.utils.save_data import compare_array_aims_files
@@ -384,4 +384,25 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
 
 
 
+# auxilary functions for ToPointnetTensor
+def zero_padding(cloud, n_max, shuffle=False):
+    return np.pad(cloud, ((0,0),(0,n_max-cloud.shape[1])))
 
+def repeat_padding(cloud, n_max, replace=False):
+    while n_max - cloud.shape[1] > 0: # loop in case len(cloud) < n_max/2
+        n = min(n_max - cloud.shape[1], cloud.shape[1])
+        if n < 0:
+            raise ValueError("the vector is too long compared to the desired vector size")
+        
+        idx = np.random.choice(cloud.shape[1], size=n, replace=replace)
+        padded_part = cloud[:, idx]
+
+        cloud = np.concatenate([cloud, padded_part], axis=1)
+    
+    return cloud
+
+def pad(clouds, padding_method=zero_padding, n_max=None):
+    if not n_max:
+        n_max = np.max([clouds[i].shape[1] for i in range(len(clouds))]) # max length of a sequence
+    padded_clouds = np.array([padding_method(cloud, n_max) for cloud in clouds])
+    return padded_clouds
