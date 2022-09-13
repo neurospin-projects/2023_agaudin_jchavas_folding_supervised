@@ -149,12 +149,12 @@ class ConvNet(pl.LightningModule):
             for i, dim_i in enumerate(self.projection_head_hidden_layers):
                 output_size = dim_i
                 projection_head.append(('Linear%s' %i, nn.Linear(input_size, output_size)))
-                projection_head.append(('Norm%s' %i, nn.BatchNorm1d(output_size)))
+                #projection_head.append(('Norm%s' %i, nn.BatchNorm1d(output_size)))
                 projection_head.append(('ReLU%s' %i, nn.ReLU()))
                 input_size = output_size
             projection_head.append(('Output layer' ,nn.Linear(input_size,
                                                              self.num_outputs)))
-            projection_head.append(('Norm layer', nn.BatchNorm1d(self.num_outputs)))
+            #projection_head.append(('Norm layer', nn.BatchNorm1d(self.num_outputs)))
             self.projection_head = nn.Sequential(OrderedDict(projection_head))
 
         elif self.mode == "decoder":
@@ -182,7 +182,7 @@ class ConvNet(pl.LightningModule):
             self.decoder = nn.Sequential(OrderedDict(modules_decoder))
 
 
-        # Init. with kaiming
+        """# Init. with kaiming
         for m in self.encoder:
             if isinstance(m, nn.Conv3d):
                 nn.init.kaiming_normal_(m.weight)
@@ -203,7 +203,7 @@ class ConvNet(pl.LightningModule):
                 nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, 0, 0.5)
-                nn.init.constant_(m.bias, 0)
+                nn.init.constant_(m.bias, 0)"""
 
         
         if self.mode == "decoder":

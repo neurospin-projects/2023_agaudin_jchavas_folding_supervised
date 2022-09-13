@@ -185,10 +185,10 @@ class DenseNet(pl.LightningModule):
                 output_size = self.num_outputs
                 i = 0
                 projection_head.append(('Linear%s' %i, nn.Linear(input_size, output_size)))
-                projection_head.append(('Norm%s' %i, nn.BatchNorm1d(output_size, track_running_stats=False)))
+                #projection_head.append(('Norm%s' %i, nn.BatchNorm1d(output_size, track_running_stats=False)))
                 projection_head.append(('ReLU%s' %i, nn.ReLU()))
                 projection_head.append(('Linear Output', nn.Linear(input_size, output_size)))
-                projection_head.append(('Norm Output', nn.BatchNorm1d(output_size, track_running_stats=False)))   
+                #projection_head.append(('Norm Output', nn.BatchNorm1d(output_size, track_running_stats=False)))   
                 self.head_projection = nn.Sequential(OrderedDict(projection_head))
             elif projection_head_type == "linear":
                 self.head_projection = nn.Sequential(
@@ -225,7 +225,7 @@ class DenseNet(pl.LightningModule):
             self.decoder = nn.Sequential(OrderedDict(modules_decoder))
 
 
-        # Init. with kaiming
+        """# Init. with kaiming
         for m in self.modules():
             if isinstance(m, nn.Conv3d):
                 nn.init.kaiming_normal_(m.weight)
@@ -246,7 +246,7 @@ class DenseNet(pl.LightningModule):
                 nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, 0, 0.5)
-                nn.init.constant_(m.bias, 0)
+                nn.init.constant_(m.bias, 0)"""
 
         
         if self.mode == "decoder":
