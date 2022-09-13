@@ -6,5 +6,4 @@ block_config: [6, 16]
 num_init_features: 64
 num_representation_features: 30 # Not used, identical to num_outputs
 num_outputs: 30
-drop_rate: 0.05
 projection_head_type: non-linear
