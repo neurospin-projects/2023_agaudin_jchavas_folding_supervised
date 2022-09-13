@@ -25,6 +25,8 @@ from contrastive.utils.logs import set_root_logger_level, set_file_logger
 
 _parallel = True
 
+log = set_file_logger(__file__)
+
 def define_njobs():
     """Returns number of cpus used by main loop
     """
