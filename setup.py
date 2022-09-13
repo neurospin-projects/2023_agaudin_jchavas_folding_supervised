@@ -32,7 +32,8 @@ setup(
                       'kaleido',
                       'pytorch_ssim',
                       'seaborn',
-                      'statsmodels'
+                      'statsmodels',
+                      'umap-learn'
                       ],
     extras_require={"anatomist": ['deep_folding @ \
                         git+https://git@github.com/neurospin/deep_folding',
