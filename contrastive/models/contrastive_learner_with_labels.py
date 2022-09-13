@@ -323,13 +323,28 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         # Returns tsne embeddings
         return X_tsne, labels
 
+    def plotting_now(self):
+        if self.config.nb_epochs_per_tSNE <= 0:
+            return False
+        elif self.current_epoch % self.config.nb_epochs_per_tSNE == 0 \
+                    or self.current_epoch >= self.config.max_epochs:
+            return True
+        else:
+            return False
+
+    def plotting_matrices_now(self):
+        if  self.current_epoch % 50 == 0 \
+                    or self.current_epoch >= self.config.max_epochs:
+            return True
+        else:
+            return False
+
     def training_epoch_end(self, outputs):
         """Computation done at the end of the epoch"""
 
         if self.config.mode == "encoder":
             # Computes t-SNE both in representation and output space
-            if self.current_epoch % self.config.nb_epochs_per_tSNE == 0 \
-                    or self.current_epoch >= self.config.max_epochs:
+            if self.plotting_now():
                 X_tsne, labels = self.compute_tsne(
                     self.sample_data.train_dataloader(), "output")
                 image_TSNE = plot_tsne(X_tsne, labels=labels, buffer=True)
@@ -341,8 +356,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 self.logger.experiment.add_image(
                     'TSNE representation image', image_TSNE, self.current_epoch)
 
-            if self.current_epoch % 5 == 0 \
-                    or self.current_epoch >= self.config.max_epochs:
+            if self.plotting_matrices_now():
                 # Plots scatter matrices
                 # Plots zxx and weights histograms
                 self.plot_histograms()
@@ -355,8 +369,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                     self.sample_data.train_dataloader(),
                     "train")
         
-        if self.current_epoch % 50 == 0 \
-                or self.current_epoch >= self.config.max_epochs:
+        if self.plotting_matrices_now():
             # Plots views
             self.plot_views()
 
@@ -417,8 +430,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # Computes t-SNE
         if self.config.mode == "encoder":
-            if self.current_epoch % self.config.nb_epochs_per_tSNE == 0 \
-                    or self.current_epoch >= self.config.max_epochs:
+            if self.plotting_now():
                 X_tsne, labels = self.compute_tsne(
                     self.sample_data.val_dataloader(), "output")
                 image_TSNE = plot_tsne(X_tsne, labels=labels, buffer=True)
@@ -433,8 +445,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                     image_TSNE,
                     self.current_epoch)
 
-            if self.current_epoch % 50 == 0 \
-                    or self.current_epoch >= self.config.max_epochs:
+            if self.plotting_matrices_now():
             # Plots scatter matrices
                 self.plot_scatter_matrices_with_labels(
                                                 self.sample_data.val_dataloader(),
