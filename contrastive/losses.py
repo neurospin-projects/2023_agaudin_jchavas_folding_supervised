@@ -250,6 +250,16 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
 
         return loss_label, weights
 
+    def forward_L1(self, z_i, z_j):
+        N = len(z_i)
+        z_i = func.normalize(z_i, p=2, dim=-1) # dim [N, D]
+        z_j = func.normalize(z_j, p=2, dim=-1) # dim [N, D]
+
+        loss_i = torch.linalg.norm(z_i, ord=1, dim=-1).sum() / N
+        loss_j = torch.linalg.norm(z_j, ord=1, dim=-1).sum() / N
+
+        return loss_i+loss_j
+
     def compute_parameters_for_display(self, z_i, z_j):
         N = len(z_i)
         z_i = func.normalize(z_i, p=2, dim=-1) # dim [N, D]
@@ -291,12 +301,17 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
                                         z_j_supervised,
                                         labels)
 
+        # We compute the L1 norm to enforce sparsity
+        loss_L1 = self.forward_L1(z_i_supervised, z_j_supervised)
+
+
         # We compute matrices for tensorboard displays
         sim_zii, sim_zij, sim_zjj, correct_pairs = \
             self.compute_parameters_for_display(z_i, z_j)
 
         loss_combined = self.proportion_pure_contrastive*loss_pure_contrastive \
-                        + (1-self.proportion_pure_contrastive)*loss_supervised
+                        + (1-self.proportion_pure_contrastive)*loss_supervised \
+                        + loss_L1
 
         if self.return_logits:
             return loss_combined, loss_supervised.detach(), \
