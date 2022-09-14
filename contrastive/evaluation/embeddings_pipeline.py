@@ -86,7 +86,8 @@ overwrite to True if you still want to compute them.")
 
             else:
                 print(f"{sub_dir} not associated to a model. Continue")
-                embeddings_pipeline(sub_dir)
+                embeddings_pipeline(sub_dir,  dataset=dataset, classifier_name=classifier_name,
+                                    overwrite=overwrite, verbose=verbose)
         else:
             print(f"{sub_dir} is a file. Continue.")
 
