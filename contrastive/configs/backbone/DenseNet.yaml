@@ -4,6 +4,6 @@ backbone_name: densenet
 growth_rate: 32
 block_config: [6, 16]
 num_init_features: 64
-num_representation_features: 30 # Not used, identical to num_outputs
+num_representation_features: 30
 num_outputs: 30
-projection_head_type: non-linear
+projection_head_type: linear

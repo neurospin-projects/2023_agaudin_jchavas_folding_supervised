@@ -19,12 +19,12 @@ class _DenseLayer(nn.Sequential):
     def __init__(self, num_input_features, growth_rate, bn_size,
                  drop_rate, memory_efficient=False):
         super(_DenseLayer, self).__init__()
-        self.add_module('norm1', nn.BatchNorm3d(num_input_features, track_running_stats=False)),
+        self.add_module('norm1', nn.BatchNorm3d(num_input_features, track_running_stats=True)),
         self.add_module('relu1', nn.ReLU(inplace=True)),
         self.add_module('conv1', nn.Conv3d(num_input_features, bn_size *
                                            growth_rate, kernel_size=1,
                                            stride=1, bias=False)),
-        self.add_module('norm2', nn.BatchNorm3d(bn_size * growth_rate, track_running_stats=False)),
+        self.add_module('norm2', nn.BatchNorm3d(bn_size * growth_rate, track_running_stats=True)),
         self.add_module('relu2', nn.ReLU(inplace=True)),
         self.add_module('conv2', nn.Conv3d(bn_size * growth_rate, growth_rate,
                                            kernel_size=3, stride=1, padding=1,
@@ -74,7 +74,7 @@ class _DenseBlock(pl.LightningModule):
 class _Transition(nn.Sequential):
     def __init__(self, num_input_features, num_output_features):
         super(_Transition, self).__init__()
-        self.add_module('norm', nn.BatchNorm3d(num_input_features, track_running_stats=False))
+        self.add_module('norm', nn.BatchNorm3d(num_input_features, track_running_stats=True))
         self.add_module('relu', nn.ReLU(inplace=True))
         self.add_module('conv', nn.Conv3d(num_input_features,
                                           num_output_features,
@@ -185,10 +185,10 @@ class DenseNet(pl.LightningModule):
                 output_size = self.num_outputs
                 i = 0
                 projection_head.append(('Linear%s' %i, nn.Linear(input_size, output_size)))
-                #projection_head.append(('Norm%s' %i, nn.BatchNorm1d(output_size, track_running_stats=False)))
+                projection_head.append(('Norm%s' %i, nn.BatchNorm1d(output_size, track_running_stats=False)))
                 projection_head.append(('ReLU%s' %i, nn.ReLU()))
                 projection_head.append(('Linear Output', nn.Linear(input_size, output_size)))
-                #projection_head.append(('Norm Output', nn.BatchNorm1d(output_size, track_running_stats=False)))   
+                projection_head.append(('Norm Output', nn.BatchNorm1d(output_size, track_running_stats=False)))   
                 self.head_projection = nn.Sequential(OrderedDict(projection_head))
             elif projection_head_type == "linear":
                 self.head_projection = nn.Sequential(
@@ -225,7 +225,7 @@ class DenseNet(pl.LightningModule):
             self.decoder = nn.Sequential(OrderedDict(modules_decoder))
 
 
-        """# Init. with kaiming
+        # Init. with kaiming
         for m in self.modules():
             if isinstance(m, nn.Conv3d):
                 nn.init.kaiming_normal_(m.weight)
@@ -246,7 +246,7 @@ class DenseNet(pl.LightningModule):
                 nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, 0, 0.5)
-                nn.init.constant_(m.bias, 0)"""
+                nn.init.constant_(m.bias, 0)
 
         
         if self.mode == "decoder":
