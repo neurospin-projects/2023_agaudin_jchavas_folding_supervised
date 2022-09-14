@@ -91,6 +91,17 @@ def process_model(model_path, dataset='cingulate_ACCpatterns', verbose=True):
     with open(os.path.join(log_path, "final_losses.json"), 'r') as file3:
         losses = json.load(file3)
         model_dict.update(losses)
+    
+    # get bad learning exclusion criteria
+    if os.path.exists(model_path + f"/cingulate_HCP_embeddings/good_model.json.json"):
+        with open(model_path + f"/cingulate_HCP_embeddings/good_model.json.json", 'r') as file4:
+            good_model_dict = json.load(file4)
+            if good_model_dict['exclude'] == True:
+                model_dict['exclude'] = 'bad_learning'
+            else:
+                model_dict['exclude'] = False
+    else:
+        model_dict['exclude'] = False
 
     return model_dict
 
@@ -165,6 +176,9 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
         bdd_models['git_branch'] = ['Run_03_aymeric' for i in range(bdd_models.shape[0])]
         bdd_models.loc[bdd_models.backbone_name.isna(), 'git_branch'] = 'Run_43_joel'
         bdd_models.loc[bdd_models.backbone_name == 'pointnet', 'git_branch'] = 'pointnet'
+    
+    # add sigmoid exclusion reason
+    bdd_models['exclude'].mask(bdd_models.model_path.str.contains('sigmoid'), 'sigmoid', inplace=True)
 
 
     # remove columns where the values never change
