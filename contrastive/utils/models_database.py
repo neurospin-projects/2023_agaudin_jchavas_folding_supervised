@@ -93,13 +93,16 @@ def process_model(model_path, dataset='cingulate_ACCpatterns', verbose=True):
         model_dict.update(losses)
     
     # get bad learning exclusion criteria
-    if os.path.exists(model_path + f"/cingulate_HCP_embeddings/good_model.json.json"):
-        with open(model_path + f"/cingulate_HCP_embeddings/good_model.json.json", 'r') as file4:
+    if os.path.exists(model_path + f"/cingulate_HCP_embeddings/good_model.json"):
+        with open(model_path + f"/cingulate_HCP_embeddings/good_model.json", 'r') as file4:
             good_model_dict = json.load(file4)
-            if good_model_dict['exclude'] == True:
+            #if good_model_dict['exclude'] == True:
+            if good_model_dict['quantile'] >= 0.95:
                 model_dict['exclude'] = 'bad_learning'
             else:
                 model_dict['exclude'] = False
+            
+            model_dict[f"{good_model_dict['quantile-percentage']}_quantile"] = good_model_dict['quantile']
     else:
         model_dict['exclude'] = False
 
@@ -179,6 +182,12 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
     
     # add sigmoid exclusion reason
     bdd_models['exclude'].mask(bdd_models.model_path.str.contains('sigmoid'), 'sigmoid', inplace=True)
+
+    # add mismatch exclusion reason (not the same dimension for latent space and output)
+    bdd_models.loc[(bdd_models.num_representation_features != bdd_models.num_outputs),'exclude'] = 'mismatch'
+
+    # exclude models with a different structure
+    bdd_models['exclude'].mask(bdd_models.git_branch.str.contains('joel'), 'structure', inplace=True)
 
 
     # remove columns where the values never change

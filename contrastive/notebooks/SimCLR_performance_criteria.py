@@ -36,6 +36,10 @@ def preprocess_config(sub_dir, dataset, classifier_name='svm', verbose=False):
     cfg.embeddings_save_path = sub_dir + f"/{dataset}_embeddings"
     cfg.training_embeddings = sub_dir + f"/{dataset}_embeddings/full_embeddings.csv"
 
+    # add possibly missing config parameters
+    if 'projection_head_hidden_layers' not in cfg.keys():
+        cfg.projection_head_hidden_layers = None
+    
     return cfg
 
 
@@ -54,7 +58,7 @@ def compute_hist_sim_zij(model_path, emb_types=['val'], q=0.1, threshold=0.90, s
         # plot them
         x = [sims[i,j] for i in range(embs.shape[0]) for j in range(embs.shape[0]) if i < j]
         if verbose:
-            print("check size (should be the same two numbers:", len(x), np.sum(range(embs.shape[0])))
+            print("check size (should be the same two numbers):", len(x), np.sum(range(embs.shape[0])))
 
         if save:
             x = np.array(x)
@@ -137,5 +141,5 @@ overwrite to True if you still want to compute them.")
             print(f"{sub_dir} is a file. Continue.")
 
 
-control_sim_zij("/neurospin/dico/agaudin/Runs/04_pointnet/Output/pointnet",
-dataset='cingulate_HCP', verbose=True, emb_types=['val'], overwrite=False)
+control_sim_zij("/neurospin/dico/agaudin/Runs/03_monkeys/Output/convnet_exploration",
+dataset='cingulate_HCP', verbose=False, emb_types=['val'], overwrite=False)
