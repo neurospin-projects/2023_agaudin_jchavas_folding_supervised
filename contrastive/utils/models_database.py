@@ -1,6 +1,7 @@
 import os
 import json
 import yaml
+import pandas as pd
 
 from tensorflow.python.summary.summary_iterator import summary_iterator
 
@@ -93,6 +94,7 @@ def process_model(model_path, dataset='cingulate_ACCpatterns', verbose=True):
         model_dict.update(losses)
     
     # get bad learning exclusion criteria
+    # compute this criteria thanks to SimCLR_performance_criteria.py
     if os.path.exists(model_path + f"/cingulate_HCP_embeddings/good_model.json"):
         with open(model_path + f"/cingulate_HCP_embeddings/good_model.json", 'r') as file4:
             good_model_dict = json.load(file4)
@@ -203,3 +205,42 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
 
 
     return bdd_models
+
+
+# just to import the database when it is done
+def import_bdd(path=None, verbose=False):
+    if path == None:
+        path = "/neurospin/dico/agaudin/Runs/new_bdd_models.csv"
+    if verbose:
+        print("path", path)
+    
+    bdd = pd.read_csv(path, index_col=0)
+    bdd.sort_values(by='auc', ascending=False, inplace=True)
+
+    clean_bdd = bdd[bdd.exclude == 'False']
+    
+    if verbose:
+        print(f"{bdd[bdd.exclude == 'bad_learning'].shape[0]} have been removed for bad learning")
+
+    return clean_bdd
+
+
+
+def load_model_embs(model_path, embs='full', verbose=False):
+    path = model_path+f'/cingulate_ACCpatterns_embeddings/{embs}_embeddings.csv'
+    if not os.path.exists(path):
+        raise ValueError("Chosen path not linked to a model or no embeddings computed.")
+    model_embs = pd.read_csv(path, index_col=0)
+    model_embs.sort_index(inplace=True)
+
+    return model_embs
+
+
+def load_model_preds(model_path, verbose=False):
+    path = model_path+f'/cingulate_ACCpatterns_embeddings/cross_val_predicted_labels.csv'
+    if not os.path.exists(path):
+        raise ValueError("Chosen path not linked to a model or no predictions computed.")
+    model_preds = pd.read_csv(path, index_col=0)
+    model_preds.sort_index(inplace=True)
+
+    return model_preds
