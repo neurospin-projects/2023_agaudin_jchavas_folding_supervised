@@ -1,12 +1,10 @@
-import os
 import pandas as pd
-import json
-import yaml
-import numpy as np
 from datetime import datetime
 
 from contrastive.utils.models_database import *
 
+
+dataset = 'cingulate_ACCpatterns'
 
 # construct the database
 folders = ["/neurospin/dico/agaudin/Runs/04_pointnet/Output", "/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/convnet",
@@ -14,7 +12,7 @@ folders = ["/neurospin/dico/agaudin/Runs/04_pointnet/Output", "/neurospin/dico/a
 bdd = []
 visited = []
 
-generate_bdd_models(folders, bdd, visited, verbose=False)
+generate_bdd_models(folders, bdd, visited, verbose=False, dataset=dataset)
 
 bdd = pd.DataFrame(bdd)
 print("Number of subjects:", bdd.shape[0])

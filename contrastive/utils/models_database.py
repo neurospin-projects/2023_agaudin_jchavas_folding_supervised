@@ -134,7 +134,7 @@ def generate_bdd_models(folders, bdd_models, visited, dataset='cingulate_ACCpatt
                     print("Treating", dir_path)
                     # check if values and parameters computed for the model
                     if os.path.exists(dir_path + f"/{dataset}_embeddings/values.json"):
-                        model_dict = process_model(dir_path)
+                        model_dict = process_model(dir_path, dataset=dataset)
                         bdd_models.append(model_dict)
                         if verbose:
                             print("End model", len(folders), len(bdd_models))
