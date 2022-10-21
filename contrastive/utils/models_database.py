@@ -210,7 +210,7 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
 # just to import the database when it is done
 def import_bdd(path=None, verbose=False):
     if path == None:
-        path = "/neurospin/dico/agaudin/Runs/new_bdd_models.csv"
+        path = "/neurospin/dico/agaudin/Runs/new_bdd_models_0.csv"
     if verbose:
         print("path", path)
     
@@ -226,8 +226,8 @@ def import_bdd(path=None, verbose=False):
 
 
 
-def load_model_embs(model_path, embs='full', verbose=False):
-    path = model_path+f'/cingulate_ACCpatterns_embeddings/{embs}_embeddings.csv'
+def load_model_embs(model_path, embs='full', dataset="cingulate_ACCpatterns", verbose=False):
+    path = model_path+f'/{dataset}_embeddings/{embs}_embeddings.csv'
     if not os.path.exists(path):
         raise ValueError("Chosen path not linked to a model or no embeddings computed.")
     model_embs = pd.read_csv(path, index_col=0)
@@ -236,8 +236,8 @@ def load_model_embs(model_path, embs='full', verbose=False):
     return model_embs
 
 
-def load_model_preds(model_path, verbose=False):
-    path = model_path+f'/cingulate_ACCpatterns_embeddings/cross_val_predicted_labels.csv'
+def load_model_preds(model_path, dataset="cingulate_ACCpatterns", verbose=False):
+    path = model_path+f'/{dataset}_embeddings/cross_val_predicted_labels.csv'
     if not os.path.exists(path):
         raise ValueError("Chosen path not linked to a model or no predictions computed.")
     model_preds = pd.read_csv(path, index_col=0)

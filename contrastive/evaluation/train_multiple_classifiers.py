@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import auc, roc_curve, roc_auc_score, accuracy_score
 from sklearn.model_selection import cross_val_predict, train_test_split
 
-#from pqdm.processes import pqdm
+from pqdm.processes import pqdm
 from joblib import cpu_count
 from functools import partial
 
@@ -23,7 +23,7 @@ from contrastive.data.utils import read_labels
 from contrastive.utils.config import process_config
 from contrastive.utils.logs import set_root_logger_level, set_file_logger
 
-_parallel = False
+_parallel = True
 
 log = set_file_logger(__file__)
 
