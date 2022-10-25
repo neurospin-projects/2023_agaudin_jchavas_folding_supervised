@@ -1,9 +1,16 @@
 (*) notebooks are the important ones, either by the results they contain or by 
 the fact that they implement methods used by other programs.
 
-- classifier_results
+- anatomist_visualisation_model_selection
+Notebook to get the extreme predictions' subject name for a given classifier.
+
+- beta-VAE_analysis
+Notebook to preprocess and siplay classifiers results for the beta-VAEs computed
+by Louise.
+
+- classifier_results (*)
 Notebook where to plot the curves and display the performance of all models in 
-a define folder. It is also where to conduct the performance analysis about the
+a chosen folder. It is also where to conduct the performance analysis about the
 models database.
 
 - consistency_analysis
@@ -13,7 +20,7 @@ all analysis meant to know about a model consistency in its embeddings generatio
 - generate_bdd (*)
 Notebook to generate the model database. You have to specify the folders with the
 models you want to include, and then the database will be generated at the specified 
-address.
+address. An analog python file is in evaluation.
 
 - generate_pointnet_data
 Test notebook to know how to process pointnet data (padding and apply transforms).
@@ -22,7 +29,8 @@ Test notebook to know how to process pointnet data (padding and apply transforms
 Notebook with methods to plot the embeddings (umap) and do some clustering.
 
 - linear_classifier
-Test notebook for the implementation and interpretation of the classifiers.
+Test notebook for the implementation and interpretation of the classifiers. Also
+used for plotting ROC curves without mean and median agregated models.
 
 - nearest_neighbours_extended
 Notebook to compute the nn distance between latent spaces.
@@ -31,10 +39,11 @@ Notebook to compute the nn distance between latent spaces.
 Test notebook for the nn distance. Contains the old version of the distance.
 
 - pca_analysis
-Notebook to compare PCA and other dimension reduction methods to SimCLR.
+Notebook to generate PCA embeddings and to compare PCA and other dimension 
+reduction methods to SimCLR.
+
+- SimCLR_performance_criteria (*)
+Notebook to compute the exclusion criteria based on the trivial minimum.
 
 - test_switch_to_numpy
 Test notebook to transition from pickle datasets to numpy.
-
-- vanilla_pointnet
-Test notebook to implement Pointnet outside of a SimCLR paradigm. Unfinished.
