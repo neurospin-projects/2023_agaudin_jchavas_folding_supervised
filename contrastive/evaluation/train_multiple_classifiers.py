@@ -23,6 +23,11 @@ from contrastive.data.utils import read_labels
 from contrastive.utils.config import process_config
 from contrastive.utils.logs import set_root_logger_level, set_file_logger
 
+from sklearn.utils._testing import ignore_warnings
+from sklearn.exceptions import ConvergenceWarning
+
+
+
 _parallel = True
 
 log = set_file_logger(__file__)
@@ -58,7 +63,7 @@ def load_embeddings(dir_path, labels_path, config):
     embeddings.sort_index(inplace=True)
     print("sorted embeddings:", embeddings.head())
 
-    # get the labels (0 = no paracingulate, 1 = paracingulate)
+    # get the labels (0 = no paracingulate, 1 = paracingulate) and match them to the embeddings
     # /!\ use read_labels
     labels = read_labels(labels_path, config.subject_column_name, config.label_names)
     labels = pd.DataFrame(labels.values, columns=['Subject', 'label'])
@@ -301,7 +306,7 @@ def train_nn_classifiers(config):
     plt.close('all')
 
 
-def train_one_svm_classifier(config, inputs, i = 0):
+def train_one_svm_classifier(config, inputs, i=0):
 
     X = inputs['X']
     Y = inputs['Y']
@@ -316,10 +321,10 @@ def train_one_svm_classifier(config, inputs, i = 0):
     # train the model with cross validation and get the predictions
     labels_pred = cross_val_predict(model, X, Y, cv=5)
 
-    # compute the indicators and store th results
+    # compute the indicators and store the results
     curves, roc_auc, accuracy = compute_indicators(Y, labels_pred)
 
-    # Sotres in outputs dict
+    # Stores in outputs dict
     outputs['labels_pred'] = labels_pred
     outputs['curves'] = curves
     outputs['roc_auc'] = roc_auc
@@ -335,6 +340,7 @@ def train_one_svm_classifier(config, inputs, i = 0):
     return outputs
 
 
+@ignore_warnings(category=ConvergenceWarning)
 def train_svm_classifiers(config):
     # import the data
 
@@ -447,7 +453,6 @@ def train_svm_classifiers(config):
 
 
 
-# would highly benefit from parallelisation
 @hydra.main(config_name='config_no_save', config_path="../configs")
 def train_classifiers(config):
     config = process_config(config)

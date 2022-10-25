@@ -1,7 +1,7 @@
 # @package _global_
 # define path and parameters needed for the classifier on the latent space
-model_path: /home/jc225751/Runs/43_supervised_contrastive_ACCpatterns/Output/supervised/densenet/tau-0.1_drop-0.3_variablebatch
-embeddings_save_path: /home/jc225751/Runs/43_supervised_contrastive_ACCpatterns/Output/supervised/densenet/tau-0.1_drop-0.3_variablebatch/cingulate_ACCpatterns_embeddings
+model_path: /neurospin/dico/agaudin/Runs/04_pointnet/Output/2022-10-07/09-22-42_1
+embeddings_save_path: /neurospin/dico/agaudin/Runs/04_pointnet/Output/PCA
 pca_Xfit: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton.npy
-pca_Xtransform: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/CINGULATE/mask/Rskeleton.npy
-n_pca: 4
+pca_Xtransform: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/ACCpatterns_0.npy
+n_pca: 30
