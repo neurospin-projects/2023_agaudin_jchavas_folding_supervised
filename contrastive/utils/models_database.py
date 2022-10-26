@@ -206,6 +206,7 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
 
     # exclude models with a different structure
     bdd_models['exclude'].mask(bdd_models.git_branch.str.contains('joel'), 'structure', inplace=True)
+    bdd_models.loc[(bdd_models.model_path.str.contains('#')),'exclude'] = 'structure'
 
 
     # remove columns where the values never change
@@ -228,7 +229,7 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
 # remove excluded models
 def import_bdd(path=None, verbose=False):
     if path == None:
-        path = "/neurospin/dico/agaudin/Runs/new_bdd_models_0.csv"
+        path = "/neurospin/dico/agaudin/Runs/new_bdd_models.csv"
     if verbose:
         print("path", path)
     
