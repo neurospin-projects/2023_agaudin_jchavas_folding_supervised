@@ -5,10 +5,12 @@ import pandas as pd
 
 from tensorflow.python.summary.summary_iterator import summary_iterator
 
-# functions to create a database containing all the models
-# These functions are used in the generate_bdd notebook
+"""
+This file contains functions to create a database containing all the models.
+These functions are used in the generate_bdd notebook and python file"""
 
 
+# get all the subdirectories (not files) of a given directory
 def get_subdirs(directory):
     sub_dirs = os.listdir(directory)
     sub_dirs = [os.path.join(directory, name) for name in sub_dirs]
@@ -16,6 +18,7 @@ def get_subdirs(directory):
     return sub_dirs
 
 
+# get logs of a given model. They have to follow the hydra templating
 def get_path2logs(model_path):
     # get the right templating for the log files
     if os.path.exists(model_path + "/logs/default/version_0"):
@@ -27,6 +30,8 @@ def get_path2logs(model_path):
     return path
 
 
+# get the train and validation losses of a model
+# it must follow the hydra templating
 def get_loss(model_path, save=False, verbose=False):
 
     path = get_path2logs(model_path)
@@ -62,6 +67,11 @@ def get_loss(model_path, save=False, verbose=False):
         return loss_train, loss_val
 
 
+# get the relevant information from a model, i.e. losses, performances (classifiers' accuracy 
+# and auc for a given dataset) and config parameters
+# Also computes an exclusion criteria (being locked in a trivial minimum) based on the histogram
+# of outputs similarities
+# Returns a dictionary containing this information
 def process_model(model_path, dataset='cingulate_ACCpatterns', verbose=True):
     # generate a dictionnary with the model's parameters and performances
     model_dict = {}
@@ -111,8 +121,8 @@ def process_model(model_path, dataset='cingulate_ACCpatterns', verbose=True):
     return model_dict
 
 
+# fill the dictionnary bdd_models with the parameters and performances of all the bdd models
 def generate_bdd_models(folders, bdd_models, visited, dataset='cingulate_ACCpatterns', verbose=True):
-    # fill the dictionnary bdd_models with the parameters and performances of all the bdd models
     # depth first exploration of folders to treat all the models in it
     
     if verbose:
@@ -161,6 +171,12 @@ they are done with another database than {dataset}")
 
 
 def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
+    """
+    - bdd_models: pandas dataframe containing the models path, performances, and parameters. Created by
+    generate_bdd_models.
+    - hard_remove: list of columns to remove from the dataframe
+    - git_branch: bool to add a column indicating the branch/Run/author the models were generated with."""
+    
     # specify dataset if not done
     if "dataset_name" in bdd_models.columns:
         bdd_models.numpy_all.fillna(value="osef", inplace=True)
@@ -207,7 +223,9 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
     return bdd_models
 
 
-# just to import the database when it is done
+
+# import the last database (new_bdd), sorted by decreasing auc
+# remove excluded models
 def import_bdd(path=None, verbose=False):
     if path == None:
         path = "/neurospin/dico/agaudin/Runs/new_bdd_models_0.csv"
@@ -226,6 +244,7 @@ def import_bdd(path=None, verbose=False):
 
 
 
+# load and sort embeddings from a given model
 def load_model_embs(model_path, embs='full', dataset="cingulate_ACCpatterns", verbose=False):
     path = model_path+f'/{dataset}_embeddings/{embs}_embeddings.csv'
     if not os.path.exists(path):
@@ -236,6 +255,7 @@ def load_model_embs(model_path, embs='full', dataset="cingulate_ACCpatterns", ve
     return model_embs
 
 
+# load and sort predictions of a given model's svm
 def load_model_preds(model_path, dataset="cingulate_ACCpatterns", verbose=False):
     path = model_path+f'/{dataset}_embeddings/cross_val_predicted_labels.csv'
     if not os.path.exists(path):

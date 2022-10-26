@@ -42,8 +42,5 @@ Test notebook for the nn distance. Contains the old version of the distance.
 Notebook to generate PCA embeddings and to compare PCA and other dimension 
 reduction methods to SimCLR.
 
-- SimCLR_performance_criteria (*)
-Notebook to compute the exclusion criteria based on the trivial minimum.
-
 - test_switch_to_numpy
 Test notebook to transition from pickle datasets to numpy.

@@ -307,6 +307,11 @@ def train_nn_classifiers(config):
 
 
 def train_one_svm_classifier(config, inputs, i=0):
+    """
+    - config: config file
+    - inputs: dictionary containing the input data, with X key containing embeddings
+    and Y key labels. If a test set is defined, also contains X and Y for the test set.
+    - i: seed for the SVM. Is automatically changed in each call of train_svm_classifiers."""
 
     X = inputs['X']
     Y = inputs['Y']
@@ -408,7 +413,7 @@ def train_svm_classifiers(config):
             outputs.append(train_one_svm_classifier(config, inputs, i))
 
 
-    # Puts together the results
+    # Put together the results
     for i, o in enumerate(outputs):
         labels_pred = o['labels_pred']
         curves = o['curves']
@@ -468,7 +473,7 @@ def train_classifiers(config):
 
     else:
         raise ValueError(f"The classifer type {config.classifier_name} you are asking for is not implemented. \
-Please change the config.classifier you are calling to solve the problem.")
+Please change the config.classifier used in the config file you are calling to solve the problem.")
     
 
 
