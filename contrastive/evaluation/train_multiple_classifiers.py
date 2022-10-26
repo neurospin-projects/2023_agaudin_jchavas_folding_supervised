@@ -403,6 +403,7 @@ def train_svm_classifiers(config):
     # Actual loop done config.n_repeat times
     if _parallel == True:
         print(f"Computation done IN PARALLEL: {config.n_repeat} times")
+        print(f"Number of subjects used by the SVM: {len(inputs['X'])}")
         func = partial(train_one_svm_classifier, config, inputs)
         outputs = pqdm(repeats, func, n_jobs=define_njobs())
     else:

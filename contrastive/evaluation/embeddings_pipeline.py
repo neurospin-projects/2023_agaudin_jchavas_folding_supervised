@@ -67,6 +67,9 @@ def embeddings_pipeline(dir_path, dataset='cingulate_ACCpatterns', classifier_na
                     print("Model already treated (existing folder with embeddings). Set \
 overwrite to True if you still want to compute them.")
 
+                elif '#' in sub_dir:
+                    print("Model with an incompatible structure with the current one. Pass.")
+
                 else:
                     print("Start post processing")
                     # get the config and correct it to suit what is needed for classifiers
@@ -93,4 +96,4 @@ overwrite to True if you still want to compute them.")
 
 
 embeddings_pipeline("/neurospin/dico/agaudin/Runs/04_pointnet/Output",
-dataset='cingulate_ACCpatterns_0', verbose=True, classifier_name='svm', overwrite=False)
+dataset='cingulate_ACCpatterns_0', verbose=True, classifier_name='svm', overwrite=True)
