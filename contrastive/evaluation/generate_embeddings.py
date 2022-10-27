@@ -28,6 +28,15 @@ def embeddings_to_pandas(embeddings, csv_path=None, verbose=False):
         return df_embeddings
 
 
+"""The way this function works is that it creates a SimCLR structure based on the provided config,
+then loads the weights of the target model (in the config). Once this is done, generate the embeddings
+of the target dataset (in the config) in inference mode.
+This generation methods is highly dependent of the parameters config, so I suggest either to run it right
+after the training is complete, or to use evaluation/embeddings_pipeline.py to generate the embeddings (it
+handles the needed modifications in order to load the right model).
+This method is also relying on the current DataModule and ContrastiveLearner implementations, which means
+its retro compatibility leaves a lot to be desired. 
+"""
 @hydra.main(config_name='config_no_save', config_path="../configs")
 def compute_embeddings(config):
     config = process_config(config)
@@ -93,6 +102,7 @@ def compute_embeddings(config):
     full_df.to_csv(embeddings_path+"/full_embeddings.csv")
 
     print("ALL EMBEDDINGS GENERATED: OK")
+
 
 if __name__ == "__main__":
     compute_embeddings()

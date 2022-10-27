@@ -5,7 +5,7 @@ the fact that they implement methods used by other programs.
 Notebook to get the extreme predictions' subject name for a given classifier.
 
 - beta-VAE_analysis
-Notebook to preprocess and siplay classifiers results for the beta-VAEs computed
+Notebook to preprocess and display classifiers results for the beta-VAEs computed
 by Louise.
 
 - classifier_results (*)
@@ -16,11 +16,6 @@ models database.
 - consistency_analysis
 Notebook where the nn distance is correlated to the auc_std. Should be used for
 all analysis meant to know about a model consistency in its embeddings generation.
-
-- generate_bdd (*)
-Notebook to generate the model database. You have to specify the folders with the
-models you want to include, and then the database will be generated at the specified 
-address. An analog python file is in evaluation.
 
 - generate_pointnet_data
 Test notebook to know how to process pointnet data (padding and apply transforms).
