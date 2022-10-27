@@ -4,7 +4,7 @@ the fact that they implement methods used by other programs.
 - anatomist_visualisation_model_selection
 Notebook to get the extreme predictions' subject name for a given classifier.
 
-- beta-VAE_analysis
+- beta-VAE_analysis (*)
 Notebook to preprocess and display classifiers results for the beta-VAEs computed
 by Louise.
 

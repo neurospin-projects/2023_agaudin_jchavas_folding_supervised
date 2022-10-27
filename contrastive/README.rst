@@ -31,7 +31,7 @@ Model definitions, for instance SimCLR, supervised or not.
 notebooks
 ---------
 Notebooks. Mainly used for tests or visualisation, but some are doing more relevant
-tasks.
+tasks. A README explains more about each one in the notebooks section.
 
 preprocessing
 -------------
@@ -49,13 +49,14 @@ losses.py
 ---------
 File containing loss functions
 
+synthesize_results.py
+---------------------
+Python script to synthesize the results.
+
 train.py
 --------
 Python script to launch the training
 
-synthesize_results.py
----------------------
-Python script to synthesize the results.
 
 
 Tutorial: generate the whole pipeline (deprecated?)
