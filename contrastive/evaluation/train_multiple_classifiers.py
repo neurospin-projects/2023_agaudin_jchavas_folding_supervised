@@ -70,6 +70,11 @@ def load_embeddings(dir_path, labels_path, config):
     labels = labels[labels.Subject.isin(embeddings.index)]
     labels.sort_values(by='Subject', inplace=True, ignore_index=True)
     print("sorted labels", labels.head())
+
+    embeddings = embeddings[embeddings.index.isin(labels.Subject)]
+    embeddings.sort_index(inplace=True)
+    print("sorted embeddings:", embeddings.head())
+
     # /!\ multiple labels is not handled
     
     return embeddings, labels
@@ -354,6 +359,7 @@ def train_svm_classifiers(config):
     test_embs_path = config.test_embeddings
     train_lab_paths = config.training_labels #/!\ in fact all_labels (=train_val and test labels)
     # if not specified, the embeddings the results are created from are the ones used for training
+    log.info(f"training_labels file in train_svm_classifiers = {train_lab_paths}")
 
     EoI_path = config.embeddings_of_interest if config.embeddings_of_interest else train_embs_path
     LoI_path = config.labels_of_interest if config.labels_of_interest else train_lab_paths
@@ -462,6 +468,8 @@ def train_svm_classifiers(config):
 @hydra.main(config_name='config_no_save', config_path="../configs")
 def train_classifiers(config):
     config = process_config(config)
+
+    print(f"\nIn train_classifiers, after process_config, training_labels = {config['training_labels']}\n")
 
     set_root_logger_level(config.verbose)
 

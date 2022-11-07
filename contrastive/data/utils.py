@@ -281,6 +281,7 @@ def read_labels(subject_labels_file, subject_column_name, label_names):
     # Loads labels file
     subject_labels_file = subject_labels_file
     subject_labels = pd.read_csv(subject_labels_file)
+    log.info(f"Subject_labels_file = {subject_labels_file}")
     log.debug(f"Subject_labels head just when loaded = {subject_labels.head()}")
     log.info(f"Labels to keep = {label_names} "
              f"of type {type(label_names)}")
@@ -289,6 +290,7 @@ def read_labels(subject_labels_file, subject_column_name, label_names):
     subject_column_name = subject_column_name
     desired_columns = [subject_column_name,]
     desired_columns.extend(label_names)
+    log.info(f"columns in subject_labels = {subject_labels.columns}")
     subject_labels = subject_labels[desired_columns]
     subject_labels = subject_labels.rename({subject_column_name: 'Subject'},
                                             axis = 'columns')
