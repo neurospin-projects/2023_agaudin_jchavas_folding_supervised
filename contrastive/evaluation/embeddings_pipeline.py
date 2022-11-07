@@ -5,7 +5,7 @@ import omegaconf
 from contrastive.evaluation.generate_embeddings import compute_embeddings
 from contrastive.evaluation.train_multiple_classifiers import train_classifiers
 
-from sklearn.utils.testing import ignore_warnings
+from sklearn.utils._testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
 
 
@@ -17,18 +17,19 @@ def preprocess_config(sub_dir, dataset, classifier_name='svm', verbose=False):
     cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config.yaml')
 
     # replace the dataset
-    with open(f'../configs/dataset/{dataset}.yaml', 'r') as file:
+    with open(f'./configs/dataset/{dataset}.yaml', 'r') as file:
         dataset_yaml = yaml.load(file, yaml.FullLoader)
     for key in dataset_yaml:
         cfg[key] = dataset_yaml[key]
     
     # get the right classifiers parameters
-    with open(f'../configs/classifier/{classifier_name}.yaml', 'r') as file:
+    with open(f'./configs/classifier/{classifier_name}.yaml', 'r') as file:
         dataset_yaml = yaml.load(file, yaml.FullLoader)
     for key in dataset_yaml:
         cfg[key] = dataset_yaml[key]
 
     # replace the possibly incorrect config parameters
+    cfg.training_labels = cfg['subject_labels_file']
     cfg.model_path = sub_dir
     cfg.embeddings_save_path = sub_dir + f"/{dataset}_embeddings"
     cfg.training_embeddings = sub_dir + f"/{dataset}_embeddings/full_embeddings.csv"
@@ -67,6 +68,9 @@ def embeddings_pipeline(dir_path, dataset='cingulate_ACCpatterns', classifier_na
                     print("Model already treated (existing folder with embeddings). Set \
 overwrite to True if you still want to compute them.")
 
+                elif '#' in sub_dir:
+                    print("Model with an incompatible structure with the current one. Pass.")
+
                 else:
                     print("Start post processing")
                     # get the config and correct it to suit what is needed for classifiers
@@ -78,18 +82,25 @@ overwrite to True if you still want to compute them.")
                     with open(sub_dir+'/.hydra/config_classifiers.yaml', 'w') as file:
                         yaml.dump(omegaconf.OmegaConf.to_yaml(cfg), file)
                     
+                    print(f"\nbefore compute_embeddings: training_labels = {cfg.training_labels}\n")
+
                     # apply the functions
                     compute_embeddings(cfg)
-                    # reload it for train_classifiers to work properly
+                    # reload config for train_classifiers to work properly
                     cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config_classifiers.yaml')
+                    print(f"\nbefore train_classifiers: training_labels = {cfg.training_labels}\n")
                     train_classifiers(cfg)
 
             else:
                 print(f"{sub_dir} not associated to a model. Continue")
-                embeddings_pipeline(sub_dir)
+                embeddings_pipeline(sub_dir,  dataset=dataset, classifier_name=classifier_name,
+                                    overwrite=overwrite, verbose=verbose)
         else:
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/04_pointnet/Output/2022-09-01",
-dataset='cingulate_ACCpatterns', verbose=True, classifier_name='svm', overwrite=False)
+# embeddings_pipeline("/neurospin/dico/agaudin/Runs/04_pointnet/Output",
+embeddings_pipeline("/volatile/jc225751/Runs/48_aymeric/Program/Output/gridsearch",
+dataset='cingulate_ACCpatterns_0', verbose=True, classifier_name='svm', overwrite=False)
+#label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
+#label_names: ["NEOFAC_C"]

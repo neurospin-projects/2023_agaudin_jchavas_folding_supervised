@@ -23,6 +23,11 @@ from contrastive.data.utils import read_labels
 from contrastive.utils.config import process_config
 from contrastive.utils.logs import set_root_logger_level, set_file_logger
 
+from sklearn.utils._testing import ignore_warnings
+from sklearn.exceptions import ConvergenceWarning
+
+
+
 _parallel = True
 
 log = set_file_logger(__file__)
@@ -58,13 +63,18 @@ def load_embeddings(dir_path, labels_path, config):
     embeddings.sort_index(inplace=True)
     print("sorted embeddings:", embeddings.head())
 
-    # get the labels (0 = no paracingulate, 1 = paracingulate)
+    # get the labels (0 = no paracingulate, 1 = paracingulate) and match them to the embeddings
     # /!\ use read_labels
     labels = read_labels(labels_path, config.subject_column_name, config.label_names)
     labels = pd.DataFrame(labels.values, columns=['Subject', 'label'])
     labels = labels[labels.Subject.isin(embeddings.index)]
     labels.sort_values(by='Subject', inplace=True, ignore_index=True)
     print("sorted labels", labels.head())
+
+    embeddings = embeddings[embeddings.index.isin(labels.Subject)]
+    embeddings.sort_index(inplace=True)
+    print("sorted embeddings:", embeddings.head())
+
     # /!\ multiple labels is not handled
     
     return embeddings, labels
@@ -301,7 +311,12 @@ def train_nn_classifiers(config):
     plt.close('all')
 
 
-def train_one_svm_classifier(config, inputs, i = 0):
+def train_one_svm_classifier(config, inputs, i=0):
+    """
+    - config: config file
+    - inputs: dictionary containing the input data, with X key containing embeddings
+    and Y key labels. If a test set is defined, also contains X and Y for the test set.
+    - i: seed for the SVM. Is automatically changed in each call of train_svm_classifiers."""
 
     X = inputs['X']
     Y = inputs['Y']
@@ -316,10 +331,10 @@ def train_one_svm_classifier(config, inputs, i = 0):
     # train the model with cross validation and get the predictions
     labels_pred = cross_val_predict(model, X, Y, cv=5)
 
-    # compute the indicators and store th results
+    # compute the indicators and store the results
     curves, roc_auc, accuracy = compute_indicators(Y, labels_pred)
 
-    # Sotres in outputs dict
+    # Stores in outputs dict
     outputs['labels_pred'] = labels_pred
     outputs['curves'] = curves
     outputs['roc_auc'] = roc_auc
@@ -335,6 +350,7 @@ def train_one_svm_classifier(config, inputs, i = 0):
     return outputs
 
 
+@ignore_warnings(category=ConvergenceWarning)
 def train_svm_classifiers(config):
     # import the data
 
@@ -343,6 +359,7 @@ def train_svm_classifiers(config):
     test_embs_path = config.test_embeddings
     train_lab_paths = config.training_labels #/!\ in fact all_labels (=train_val and test labels)
     # if not specified, the embeddings the results are created from are the ones used for training
+    log.info(f"training_labels file in train_svm_classifiers = {train_lab_paths}")
 
     EoI_path = config.embeddings_of_interest if config.embeddings_of_interest else train_embs_path
     LoI_path = config.labels_of_interest if config.labels_of_interest else train_lab_paths
@@ -392,6 +409,7 @@ def train_svm_classifiers(config):
     # Actual loop done config.n_repeat times
     if _parallel == True:
         print(f"Computation done IN PARALLEL: {config.n_repeat} times")
+        print(f"Number of subjects used by the SVM: {len(inputs['X'])}")
         func = partial(train_one_svm_classifier, config, inputs)
         outputs = pqdm(repeats, func, n_jobs=define_njobs())
     else:
@@ -402,7 +420,7 @@ def train_svm_classifiers(config):
             outputs.append(train_one_svm_classifier(config, inputs, i))
 
 
-    # Puts together the results
+    # Put together the results
     for i, o in enumerate(outputs):
         labels_pred = o['labels_pred']
         curves = o['curves']
@@ -447,10 +465,11 @@ def train_svm_classifiers(config):
 
 
 
-# would highly benefit from parallelisation
 @hydra.main(config_name='config_no_save', config_path="../configs")
 def train_classifiers(config):
     config = process_config(config)
+
+    print(f"\nIn train_classifiers, after process_config, training_labels = {config['training_labels']}\n")
 
     set_root_logger_level(config.verbose)
 
@@ -463,7 +482,7 @@ def train_classifiers(config):
 
     else:
         raise ValueError(f"The classifer type {config.classifier_name} you are asking for is not implemented. \
-Please change the config.classifier you are calling to solve the problem.")
+Please change the config.classifier used in the config file you are calling to solve the problem.")
     
 
 

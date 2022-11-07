@@ -1,13 +1,16 @@
 import os
 import json
 import yaml
+import pandas as pd
 
 from tensorflow.python.summary.summary_iterator import summary_iterator
 
-# functions to create a database containing all the models
-# These functions are used in the generate_bdd notebook
+"""
+This file contains functions to create a database containing all the models.
+These functions are used in the generate_bdd notebook and python file"""
 
 
+# get all the subdirectories (not files) of a given directory
 def get_subdirs(directory):
     sub_dirs = os.listdir(directory)
     sub_dirs = [os.path.join(directory, name) for name in sub_dirs]
@@ -15,6 +18,7 @@ def get_subdirs(directory):
     return sub_dirs
 
 
+# get logs of a given model. They have to follow the hydra templating
 def get_path2logs(model_path):
     # get the right templating for the log files
     if os.path.exists(model_path + "/logs/default/version_0"):
@@ -26,6 +30,8 @@ def get_path2logs(model_path):
     return path
 
 
+# get the train and validation losses of a model
+# it must follow the hydra templating
 def get_loss(model_path, save=False, verbose=False):
 
     path = get_path2logs(model_path)
@@ -61,6 +67,11 @@ def get_loss(model_path, save=False, verbose=False):
         return loss_train, loss_val
 
 
+# get the relevant information from a model, i.e. losses, performances (classifiers' accuracy 
+# and auc for a given dataset) and config parameters
+# Also computes an exclusion criteria (being locked in a trivial minimum) based on the histogram
+# of outputs similarities
+# Returns a dictionary containing this information
 def process_model(model_path, dataset='cingulate_ACCpatterns', verbose=True):
     # generate a dictionnary with the model's parameters and performances
     model_dict = {}
@@ -91,12 +102,27 @@ def process_model(model_path, dataset='cingulate_ACCpatterns', verbose=True):
     with open(os.path.join(log_path, "final_losses.json"), 'r') as file3:
         losses = json.load(file3)
         model_dict.update(losses)
+    
+    # get bad learning exclusion criteria
+    # compute this criteria thanks to SimCLR_performance_criteria.py
+    if os.path.exists(model_path + f"/cingulate_HCP_embeddings/good_model.json"):
+        with open(model_path + f"/cingulate_HCP_embeddings/good_model.json", 'r') as file4:
+            good_model_dict = json.load(file4)
+            #if good_model_dict['exclude'] == True:
+            if good_model_dict['quantile'] >= 0.95:
+                model_dict['exclude'] = 'bad_learning'
+            else:
+                model_dict['exclude'] = False
+            
+            model_dict[f"{good_model_dict['quantile-percentage']}_quantile"] = good_model_dict['quantile']
+    else:
+        model_dict['exclude'] = False
 
     return model_dict
 
 
+# fill the dictionnary bdd_models with the parameters and performances of all the bdd models
 def generate_bdd_models(folders, bdd_models, visited, dataset='cingulate_ACCpatterns', verbose=True):
-    # fill the dictionnary bdd_models with the parameters and performances of all the bdd models
     # depth first exploration of folders to treat all the models in it
     
     if verbose:
@@ -118,7 +144,7 @@ def generate_bdd_models(folders, bdd_models, visited, dataset='cingulate_ACCpatt
                     print("Treating", dir_path)
                     # check if values and parameters computed for the model
                     if os.path.exists(dir_path + f"/{dataset}_embeddings/values.json"):
-                        model_dict = process_model(dir_path)
+                        model_dict = process_model(dir_path, dataset=dataset)
                         bdd_models.append(model_dict)
                         if verbose:
                             print("End model", len(folders), len(bdd_models))
@@ -145,6 +171,12 @@ they are done with another database than {dataset}")
 
 
 def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
+    """
+    - bdd_models: pandas dataframe containing the models path, performances, and parameters. Created by
+    generate_bdd_models.
+    - hard_remove: list of columns to remove from the dataframe
+    - git_branch: bool to add a column indicating the branch/Run/author the models were generated with."""
+    
     # specify dataset if not done
     if "dataset_name" in bdd_models.columns:
         bdd_models.numpy_all.fillna(value="osef", inplace=True)
@@ -165,6 +197,16 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
         bdd_models['git_branch'] = ['Run_03_aymeric' for i in range(bdd_models.shape[0])]
         bdd_models.loc[bdd_models.backbone_name.isna(), 'git_branch'] = 'Run_43_joel'
         bdd_models.loc[bdd_models.backbone_name == 'pointnet', 'git_branch'] = 'pointnet'
+    
+    # add sigmoid exclusion reason
+    bdd_models['exclude'].mask(bdd_models.model_path.str.contains('sigmoid'), 'sigmoid', inplace=True)
+
+    # add mismatch exclusion reason (not the same dimension for latent space and output)
+    bdd_models.loc[(bdd_models.num_representation_features != bdd_models.num_outputs),'exclude'] = 'mismatch'
+
+    # exclude models with a different structure
+    bdd_models['exclude'].mask(bdd_models.git_branch.str.contains('joel'), 'structure', inplace=True)
+    bdd_models.loc[(bdd_models.model_path.str.contains('#')),'exclude'] = 'structure'
 
 
     # remove columns where the values never change
@@ -180,3 +222,46 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
 
 
     return bdd_models
+
+
+
+# import the last database (new_bdd), sorted by decreasing auc
+# remove excluded models
+def import_bdd(path=None, verbose=False):
+    if path == None:
+        path = "/neurospin/dico/agaudin/Runs/new_bdd_models.csv"
+    if verbose:
+        print("path", path)
+    
+    bdd = pd.read_csv(path, index_col=0)
+    bdd.sort_values(by='auc', ascending=False, inplace=True)
+
+    clean_bdd = bdd[bdd.exclude == 'False']
+    
+    if verbose:
+        print(f"{bdd[bdd.exclude == 'bad_learning'].shape[0]} have been removed for bad learning")
+
+    return clean_bdd
+
+
+
+# load and sort embeddings from a given model
+def load_model_embs(model_path, embs='full', dataset="cingulate_ACCpatterns", verbose=False):
+    path = model_path+f'/{dataset}_embeddings/{embs}_embeddings.csv'
+    if not os.path.exists(path):
+        raise ValueError("Chosen path not linked to a model or no embeddings computed.")
+    model_embs = pd.read_csv(path, index_col=0)
+    model_embs.sort_index(inplace=True)
+
+    return model_embs
+
+
+# load and sort predictions of a given model's svm
+def load_model_preds(model_path, dataset="cingulate_ACCpatterns", verbose=False):
+    path = model_path+f'/{dataset}_embeddings/cross_val_predicted_labels.csv'
+    if not os.path.exists(path):
+        raise ValueError("Chosen path not linked to a model or no predictions computed.")
+    model_preds = pd.read_csv(path, index_col=0)
+    model_preds.sort_index(inplace=True)
+
+    return model_preds

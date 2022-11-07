@@ -4,8 +4,8 @@ defaults:
   - dataset: cingulate_HCP
   - model: SimCLR
   - mode: encoder
-  - augmentations: foldlabel
-  - backbone: PointNet
+  - augmentations: no_foldlabel
+  - backbone: ConvNet
   - platform: cuda_not_brainvisa
   - trainer: default
   - classifier: svm

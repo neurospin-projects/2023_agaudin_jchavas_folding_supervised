@@ -127,12 +127,12 @@ class ConvNet(pl.LightningModule):
                     kernel_size=3, stride=1, padding=1)))
             modules_encoder.append(('norm%s' %step, nn.BatchNorm3d(out_channels)))
             modules_encoder.append(('LeakyReLU%s' %step, nn.LeakyReLU()))
-            modules_encoder.append(('DropOut%s' %step, Dropout3d_always(p=drop_rate)))
+            modules_encoder.append(('DropOut%s' %step, nn.Dropout3d(p=drop_rate)))
             modules_encoder.append(('conv%sa' %step, nn.Conv3d(out_channels, out_channels,
                     kernel_size=4, stride=2, padding=1)))
             modules_encoder.append(('norm%sa' %step, nn.BatchNorm3d(out_channels)))
             modules_encoder.append(('LeakyReLU%sa' %step, nn.LeakyReLU()))
-            modules_encoder.append(('DropOut%sa' %step, Dropout3d_always(p=drop_rate)))
+            modules_encoder.append(('DropOut%sa' %step, nn.Dropout3d(p=drop_rate)))
             self.num_features = out_channels
         # flatten and reduce to the desired dimension
         modules_encoder.append(('Flatten', nn.Flatten()))
@@ -149,12 +149,12 @@ class ConvNet(pl.LightningModule):
             for i, dim_i in enumerate(self.projection_head_hidden_layers):
                 output_size = dim_i
                 projection_head.append(('Linear%s' %i, nn.Linear(input_size, output_size)))
-                projection_head.append(('Norm%s' %i, nn.BatchNorm1d(output_size)))
+                #projection_head.append(('Norm%s' %i, nn.BatchNorm1d(output_size)))
                 projection_head.append(('ReLU%s' %i, nn.ReLU()))
                 input_size = output_size
             projection_head.append(('Output layer' ,nn.Linear(input_size,
                                                              self.num_outputs)))
-            projection_head.append(('Norm layer', nn.BatchNorm1d(self.num_outputs)))
+            #projection_head.append(('Norm layer', nn.BatchNorm1d(self.num_outputs)))
             self.projection_head = nn.Sequential(OrderedDict(projection_head))
 
         elif self.mode == "decoder":
@@ -182,7 +182,7 @@ class ConvNet(pl.LightningModule):
             self.decoder = nn.Sequential(OrderedDict(modules_decoder))
 
 
-        # Init. with kaiming
+        """# Init. with kaiming
         for m in self.encoder:
             if isinstance(m, nn.Conv3d):
                 nn.init.kaiming_normal_(m.weight)
@@ -203,7 +203,7 @@ class ConvNet(pl.LightningModule):
                 nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, 0, 0.5)
-                nn.init.constant_(m.bias, 0)
+                nn.init.constant_(m.bias, 0)"""
 
         
         if self.mode == "decoder":

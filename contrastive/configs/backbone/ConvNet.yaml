@@ -2,6 +2,6 @@
 # Characterization of the ConvNet model used
 backbone_name: convnet
 encoder_depth: 3
-num_representation_features: 4 # Not used, set identifcal to num_outputs
-num_outputs: 4
+num_representation_features: 10
+num_outputs: 10
 projection_head_hidden_layers:

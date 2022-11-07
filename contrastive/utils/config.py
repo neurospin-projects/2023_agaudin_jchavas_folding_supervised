@@ -70,7 +70,9 @@ def create_accessible_config(keys_to_keep, config_path):
         if key in keys_to_keep:
             partial_config[key] = config_dict[key]
     
-    with open(os.getcwd()+'/partial_config.yaml', 'w') as file:
+    save_path = '/' + os.path.join(*config_path.split("/")[:-2])
+    print(save_path)
+    with open(save_path+'/partial_config.yaml', 'w') as file:
         yaml.dump(partial_config, file)
 
 
