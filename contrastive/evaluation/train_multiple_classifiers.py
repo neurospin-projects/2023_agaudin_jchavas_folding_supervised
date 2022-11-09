@@ -449,6 +449,7 @@ def train_svm_classifiers(config):
     values = {}
     mode = 'cross_val'
     post_processing_results(labels, Curves, aucs, accuracies, values, columns_names, mode, results_save_path)
+    print(f"results_save_path = {results_save_path}")
     with open(results_save_path+"/values.json", 'w+') as file:
         json.dump(values, file)
 

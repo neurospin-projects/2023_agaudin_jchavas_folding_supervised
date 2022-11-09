@@ -2,7 +2,7 @@ defaults:
   - hydra: no_save
   - hydra/job_logging: disabled
   - hydra/hydra_logging: disabled
-  - dataset: cingulate_HCP
+  - dataset: cingulate_ACCpatterns_1
   - model: SimCLR
   - mode: encoder
   - augmentations: foldlabel

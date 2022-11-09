@@ -4,7 +4,7 @@ from datetime import datetime
 from contrastive.utils.models_database import *
 
 
-dataset = 'cingulate_ACCpatterns_0'
+dataset = 'cingulate_ACCpatterns_1'
 
 ## construct the database
 # folders to look for the models in
@@ -24,12 +24,12 @@ bdd = post_process_bdd_models(bdd, hard_remove=["partition", "patch_size", "bloc
 
 
 # save the database
-save_path = "/neurospin/dico/agaudin/Runs/new_bdd_models_0.csv"
+save_path = "/neurospin/dico/agaudin/Runs/new_bdd_models_1.csv"
 bdd.to_csv(save_path, index=True)
 
 
 # write the little readme
-with open("/neurospin/dico/agaudin/Runs/new_readme_bdd_0.txt", 'w') as file:
+with open("/neurospin/dico/agaudin/Runs/new_readme_bdd_1.txt", 'w') as file:
     file.write("Contient les paramètres de tous les modèles d'intérêt (dossiers précisés en-dessous). La base est faite en sorte que \
 seuls les paramètres qui changent entre les modèles soient enregistrés.\n")
     file.write("\n")

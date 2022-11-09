@@ -4,4 +4,4 @@ fill_value: 0
 patch_size: [1, 9, 22, 21]
 max_angle: 10
 checkerboard_size: 4
-keep_bottom: False
+keep_bottom: True
