@@ -180,31 +180,6 @@ class ConvNet(pl.LightningModule):
                             stride=2, padding=0)))
             modules_decoder.append(('conv_final', nn.Conv3d(1, 2, kernel_size=1, stride=1)))
             self.decoder = nn.Sequential(OrderedDict(modules_decoder))
-
-
-        """# Init. with kaiming
-        for m in self.encoder:
-            if isinstance(m, nn.Conv3d):
-                nn.init.kaiming_normal_(m.weight)
-            elif isinstance(m, nn.BatchNorm3d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0, 0.5)
-                nn.init.constant_(m.bias, 0)
-        for m in self.projection_head:
-            if isinstance(m, nn.Conv3d):
-                nn.init.kaiming_normal_(m.weight)
-            elif isinstance(m, nn.BatchNorm3d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.BatchNorm1d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0, 0.5)
-                nn.init.constant_(m.bias, 0)"""
-
         
         if self.mode == "decoder":
 
@@ -242,9 +217,6 @@ class ConvNet(pl.LightningModule):
         out = self.encoder(x)
 
         if (self.mode == "encoder") or (self.mode == 'evaluation'):
-            # if self.drop_rate > 0:
-            #     out = F.dropout(out, p=self.drop_rate,
-            #                     training=True)
             out = self.projection_head(out)
 
         elif self.mode == "decoder":

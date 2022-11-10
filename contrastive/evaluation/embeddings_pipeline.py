@@ -100,7 +100,7 @@ overwrite to True if you still want to compute them.")
 
 
 # embeddings_pipeline("/neurospin/dico/agaudin/Runs/04_pointnet/Output",
-embeddings_pipeline("/volatile/jc225751/Runs/48_aymeric/Program/Output/testing",
-dataset='cingulate_ACCpatterns_0', verbose=True, classifier_name='svm', overwrite=False)
+embeddings_pipeline("/volatile/jc225751/Runs/48_aymeric/Program/Output/training-different-n/training-on-whole-hcp",
+dataset='cingulate_ACCpatterns', verbose=True, classifier_name='svm', overwrite=False)
 #label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
 #label_names: ["NEOFAC_C"]
