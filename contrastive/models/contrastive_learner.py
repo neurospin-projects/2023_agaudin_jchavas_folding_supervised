@@ -83,7 +83,7 @@ class ContrastiveLearner(pl.LightningModule):
                 block_config=config.block_config,
                 num_init_features=config.num_init_features,
                 num_representation_features=config.num_representation_features,
-                num_outputs=config.num_outputs,
+                num_outputs=config.num_representation_features,
                 #projection_head_type=config.projection_head_type,
                 mode=config.mode,
                 drop_rate=config.drop_rate,
@@ -93,7 +93,7 @@ class ContrastiveLearner(pl.LightningModule):
             self.backbone = ConvNet(
                 encoder_depth=config.encoder_depth,
                 num_representation_features=config.num_representation_features,
-                num_outputs=config.num_outputs,
+                num_outputs=config.num_representation_features,
                 projection_head_hidden_layers=config.projection_head_hidden_layers,
                 drop_rate=config.drop_rate,
                 mode=config.mode,
@@ -101,7 +101,7 @@ class ContrastiveLearner(pl.LightningModule):
         elif config.backbone_name == 'pointnet':
             self.backbone = PointNetCls(
                 k=config.num_representation_features,
-                num_outputs=config.num_outputs,
+                num_outputs=config.num_representation_features,
                 projection_head_hidden_layers=config.projection_head_hidden_layers,
                 drop_rate=config.drop_rate,
                 feature_transform=False)
@@ -296,7 +296,7 @@ class ContrastiveLearner(pl.LightningModule):
         This includes the projection head"""
 
         # Initialization
-        X = torch.zeros([0, self.config.num_outputs]).cpu()
+        X = torch.zeros([0, self.config.num_representation_features]).cpu()
         filenames_list = []
         transform = ToPointnetTensor()
 
@@ -360,7 +360,7 @@ class ContrastiveLearner(pl.LightningModule):
         Representation are before the projection head"""
 
         # Initialization
-        X = torch.zeros([0, self.config.num_outputs]).cpu()
+        X = torch.zeros([0, self.config.num_representation_features]).cpu()
         filenames_list = []
 
         # Computes representation (without gradient computation)
