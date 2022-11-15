@@ -10,7 +10,7 @@ foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/2mm/
 subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/2mm/CINGULATE/mask/Rlabel_subject.csv
 crop_file_suffix: _cropped_skeleton.nii.gz
 pickle_benchmark: 
-train_val_csv_file: /neurospin/dico/data/deep_folding/papers/midl2022/HCP_half_2.csv
+train_val_csv_file: /neurospin/dico/data/deep_folding/papers/ipmi2023/inputs/HCP_half_2.csv
 nb_subjects: -1
 subject_labels_file: /neurospin/dico/data/bv_databases/human/hcp/participants.csv
 # subject_labels_file: /neurospin/dico/jchavas/Runs/45_forcing_with_betaVAE_latents/Input/latent_bvae.csv
