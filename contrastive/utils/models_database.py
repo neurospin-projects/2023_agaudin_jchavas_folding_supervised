@@ -188,6 +188,7 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
 
     # remove duplicates (normally not needed)
     bdd_models.drop_duplicates(inplace=True, ignore_index=True)
+    # bdd_models = bdd_models.iloc[bdd_models.astype(str).drop_duplicates().index]
 
     # deal with '[' and ']'
     # TODO
@@ -198,11 +199,12 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
         bdd_models.loc[bdd_models.backbone_name.isna(), 'git_branch'] = 'Run_43_joel'
         bdd_models.loc[bdd_models.backbone_name == 'pointnet', 'git_branch'] = 'pointnet'
     
+    # add mismatch exclusion reason (not the same dimension for latent space and output)
+    bdd_models['exclude'] = 'False'
+
     # add sigmoid exclusion reason
     bdd_models['exclude'].mask(bdd_models.model_path.str.contains('sigmoid'), 'sigmoid', inplace=True)
 
-    # add mismatch exclusion reason (not the same dimension for latent space and output)
-    bdd_models.loc[(bdd_models.num_representation_features != bdd_models.num_outputs),'exclude'] = 'mismatch'
 
     # exclude models with a different structure
     bdd_models['exclude'].mask(bdd_models.git_branch.str.contains('joel'), 'structure', inplace=True)
@@ -236,7 +238,11 @@ def import_bdd(path=None, verbose=False):
     bdd = pd.read_csv(path, index_col=0)
     bdd.sort_values(by='auc', ascending=False, inplace=True)
 
-    clean_bdd = bdd[bdd.exclude == 'False']
+    if "exclude" in bdd.columns:
+        clean_bdd = bdd[bdd.exclude == 'False']
+    else:
+        clean_bdd = bdd
+        clean_bdd["exclude"] = 'False'
     
     if verbose:
         print(f"{bdd[bdd.exclude == 'bad_learning'].shape[0]} have been removed for bad learning")

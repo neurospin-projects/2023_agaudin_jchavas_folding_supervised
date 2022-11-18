@@ -4,13 +4,14 @@ from datetime import datetime
 from contrastive.utils.models_database import *
 
 
-dataset = 'cingulate_ACCpatterns_0'
+dataset = 'cingulate_ACCpatterns_1'
 
 ## construct the database
 # folders to look for the models in
 # folders = ["/neurospin/dico/agaudin/Runs/04_pointnet/Output", "/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/convnet",
 # "/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/densenet2", "/neurospin/dico/agaudin/Runs/03_monkeys/Output/convnet_exploration"]
-folders = ["/neurospin/dico/data/deep_folding/papers/ipmi2023/models/contrastive/trained_on_HCP_half_1/gridearch"]
+folders = ["/neurospin/dico/data/deep_folding/papers/ipmi2023/models/contrastive/trained_on_HCP_half_2/training-different-n",
+           "/neurospin/dico/data/deep_folding/papers/ipmi2023/models/contrastive/trained_on_ACCpatterns_0/unsupervised"]
 bdd = []
 visited = []
 
@@ -20,16 +21,16 @@ bdd = pd.DataFrame(bdd)
 print("Number of subjects:", bdd.shape[0])
 
 # remove useless columns
-bdd = post_process_bdd_models(bdd, hard_remove=["partition", "patch_size", "block_config", "numpy_all"], git_branch=True)
+bdd = post_process_bdd_models(bdd, hard_remove=["partition", "numpy_all"], git_branch=True)
 
 
 # save the database
-save_path = "/neurospin/dico/data/deep_folding/papers/ipmi2023/models/contrastive/new_bdd_models_0.csv"
+save_path = "/neurospin/dico/data/deep_folding/papers/ipmi2023/models/contrastive/summary/bdd_HCP-half-2-different-n_evaluation-ACCpatterns-1.csv"
 bdd.to_csv(save_path, index=True)
 
 
 # write the little readme
-with open("/neurospin/dico/data/deep_folding/papers/ipmi2023/models/contrastive/new_readme_bdd_0.txt", 'w') as file:
+with open("/neurospin/dico/data/deep_folding/papers/ipmi2023/models/contrastive/summary/README_HCP-half-2-different-n_evaluation-ACCpatterns-1.txt", 'w') as file:
     file.write("Contient les paramètres de tous les modèles d'intérêt (dossiers précisés en-dessous). La base est faite en sorte que \
 seuls les paramètres qui changent entre les modèles soient enregistrés.\n")
     file.write("\n")
