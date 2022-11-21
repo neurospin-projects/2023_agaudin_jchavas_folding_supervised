@@ -2,7 +2,7 @@ defaults:
   - hydra: local
   - hydra/job_logging: custom
   - dataset: cingulate_HCP_half_2
-  - model: SimCLR
+  - model: SimCLR_supervised
   - mode: encoder
   - augmentations: foldlabel
   - backbone: ConvNet
