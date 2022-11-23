@@ -1,7 +1,7 @@
 defaults:
   - hydra: local
   - hydra/job_logging: custom
-  - dataset: test_cingulate_ACCpatterns
+  - dataset: cingulate_HCP_half_2
   - model: SimCLR_supervised
   - mode: encoder
   - augmentations: foldlabel

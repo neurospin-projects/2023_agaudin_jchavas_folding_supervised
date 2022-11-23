@@ -4,9 +4,9 @@ with_labels: True
 input_size: (1, 17, 40, 38)
 temperature_initial: 0.1
 temperature: 0.1
-temperature_supervised: 0.5
-sigma_labels: 0.01
+temperature_supervised: 0.1
+sigma_labels: 0.5
 sigma: 5
 drop_rate: 0.05
-proportion_pure_contrastive: 0.0
+proportion_pure_contrastive: 0.9
 depth_decoder: 3
