@@ -180,7 +180,18 @@ class ConvNet(pl.LightningModule):
                             stride=2, padding=0)))
             modules_decoder.append(('conv_final', nn.Conv3d(1, 2, kernel_size=1, stride=1)))
             self.decoder = nn.Sequential(OrderedDict(modules_decoder))
-        
+
+        if self.mode == "encoder":
+            # This loads pretrained weight
+            path = "/neurospin/dico/data/deep_folding/papers/ipmi2023/models/contrastive/trained_on_HCP_half_1/gridsearch/joel/convnet-10/23-11-12_2/logs/default/version_0/checkpoints/epoch=250-step=7780.ckpt"
+            pretrained = torch.load(path)
+            model_dict = self.state_dict()
+            for n, p in pretrained['state_dict'].items():
+                print(n)
+                if n in model_dict:
+                    model_dict[n] = p
+            self.load_state_dict(model_dict)
+
         if self.mode == "decoder":
 
             # This loads pretrained weight
