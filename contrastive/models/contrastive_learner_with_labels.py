@@ -333,7 +333,9 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             return False
 
     def plotting_matrices_now(self):
-        if  self.current_epoch % 50 == 0 \
+        if self.config.nb_epochs_per_matrix_plot <= 0:
+            return False
+        elif self.current_epoch % self.config.nb_epochs_per_matrix_plot == 0 \
                     or self.current_epoch >= self.config.max_epochs:
             return True
         else:

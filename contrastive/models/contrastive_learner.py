@@ -97,7 +97,8 @@ class ContrastiveLearner(pl.LightningModule):
                 projection_head_hidden_layers=config.projection_head_hidden_layers,
                 drop_rate=config.drop_rate,
                 mode=config.mode,
-                in_shape=config.input_size)
+                in_shape=config.input_size,
+                pretrained_model_path=config.pretrained_model_path)
         elif config.backbone_name == 'pointnet':
             self.backbone = PointNetCls(
                 k=config.num_representation_features,

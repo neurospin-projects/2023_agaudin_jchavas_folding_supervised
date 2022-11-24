@@ -93,7 +93,8 @@ class ConvNet(pl.LightningModule):
                  num_outputs=64, projection_head_hidden_layers=None,
                  drop_rate=0.1, mode="encoder",
                  memory_efficient=False,
-                 in_shape=None):
+                 in_shape=None,
+                 pretrained_model_path=None):
 
         super(ConvNet, self).__init__()
 
@@ -182,15 +183,16 @@ class ConvNet(pl.LightningModule):
             self.decoder = nn.Sequential(OrderedDict(modules_decoder))
 
         if self.mode == "encoder":
-            # This loads pretrained weight
-            path = "/neurospin/dico/data/deep_folding/papers/ipmi2023/models/contrastive/trained_on_HCP_half_1/gridsearch/joel/convnet-10/23-11-12_2/logs/default/version_0/checkpoints/epoch=250-step=7780.ckpt"
-            pretrained = torch.load(path)
-            model_dict = self.state_dict()
-            for n, p in pretrained['state_dict'].items():
-                print(n)
-                if n in model_dict:
-                    model_dict[n] = p
-            self.load_state_dict(model_dict)
+            # This loads pretrained weight if present
+            if pretrained_model_path:
+                path = "/neurospin/dico/data/deep_folding/papers/ipmi2023/models/contrastive/trained_on_HCP_half_1/gridsearch/joel/convnet-10/23-11-12_2/logs/default/version_0/checkpoints/epoch=250-step=7780.ckpt"
+                pretrained = torch.load(path)
+                model_dict = self.state_dict()
+                for n, p in pretrained['state_dict'].items():
+                    print(n)
+                    if n in model_dict:
+                        model_dict[n] = p
+                self.load_state_dict(model_dict)
 
         if self.mode == "decoder":
 
