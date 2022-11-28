@@ -380,7 +380,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         avg_label_loss = torch.stack([x['label_loss'] for x in outputs]).mean()
 
         # logs histograms
-        # self.custom_histogram_adder()
+        self.custom_histogram_adder()
 
         # logging using tensorboard logger
         self.logger.experiment.add_scalar(
