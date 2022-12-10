@@ -185,7 +185,7 @@ class ConvNet(pl.LightningModule):
         if self.mode == "encoder":
             # This loads pretrained weight if present
             if pretrained_model_path:
-                path = "/neurospin/dico/data/deep_folding/papers/ipmi2023/models/contrastive/trained_on_HCP_half_1/gridsearch/joel/convnet-10/23-11-12_2/logs/default/version_0/checkpoints/epoch=250-step=7780.ckpt"
+                path = pretrained_model_path
                 pretrained = torch.load(path)
                 model_dict = self.state_dict()
                 for n, p in pretrained['state_dict'].items():
@@ -197,7 +197,7 @@ class ConvNet(pl.LightningModule):
         if self.mode == "decoder":
 
             # This loads pretrained weight
-            path = "/host/volatile/jc225751/Runs/33_MIDL_2022_reviews/Output/t-0.1/n-004_o-4/logs/default/version_0/checkpoints/epoch=299-step=8399.ckpt"
+            # path = "/host/volatile/jc225751/Runs/33_MIDL_2022_reviews/Output/t-0.1/n-004_o-4/logs/default/version_0/checkpoints/epoch=299-step=8399.ckpt"
             pretrained = torch.load(path)
             model_dict = self.state_dict()
             for n, p in pretrained['state_dict'].items():

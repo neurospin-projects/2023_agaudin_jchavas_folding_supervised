@@ -99,9 +99,9 @@ def process_model(model_path, dataset='cingulate_ACCpatterns', verbose=True):
         get_loss(model_path, save=True, verbose=verbose)
     
     # get the final losses
-    with open(os.path.join(log_path, "final_losses.json"), 'r') as file3:
-        losses = json.load(file3)
-        model_dict.update(losses)
+    # with open(os.path.join(log_path, "final_losses.json"), 'r') as file3:
+    #     losses = json.load(file3)
+    #     model_dict.update(losses)
     
     # get bad learning exclusion criteria
     # compute this criteria thanks to SimCLR_performance_criteria.py
@@ -187,7 +187,7 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
     bdd_models = bdd_models.drop(columns=hard_remove)
 
     # remove duplicates (normally not needed)
-    bdd_models.drop_duplicates(inplace=True, ignore_index=True)
+    # bdd_models.drop_duplicates(inplace=True, ignore_index=True)
     # bdd_models = bdd_models.iloc[bdd_models.astype(str).drop_duplicates().index]
 
     # deal with '[' and ']'
@@ -208,12 +208,13 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
 
     # exclude models with a different structure
     bdd_models['exclude'].mask(bdd_models.git_branch.str.contains('joel'), 'structure', inplace=True)
-    bdd_models.loc[(bdd_models.model_path.str.contains('#')),'exclude'] = 'structure'
+    # bdd_models.loc[(bdd_models.model_path.str.contains('#')),'exclude'] = 'structure'
 
 
     # remove columns where the values never change
     remove = []
     for col in bdd_models.columns:
+        print(f"column = {col}")
         col_values = bdd_models[col].dropna().unique()
         if len(col_values) <= 1:
             remove.append(col)
