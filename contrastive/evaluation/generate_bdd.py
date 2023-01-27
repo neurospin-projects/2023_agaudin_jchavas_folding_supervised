@@ -10,8 +10,7 @@ dataset = 'cingulate_ACCpatterns_1'
 # folders to look for the models in
 # folders = ["/neurospin/dico/agaudin/Runs/04_pointnet/Output", "/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/convnet",
 # "/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/densenet2", "/neurospin/dico/agaudin/Runs/03_monkeys/Output/convnet_exploration"]
-folders = ["/neurospin/dico/data/deep_folding/papers/ipmi2023/models/contrastive/trained_on_HCP_half_2/training-different-n",
-           "/neurospin/dico/data/deep_folding/papers/ipmi2023/models/contrastive/trained_on_ACCpatterns_0/unsupervised"]
+folders = ["/volatile/jc225751/Runs/52_ukbiobank/Output/different-n"]
 # folders = ["/neurospin/dico/data/deep_folding/papers/ipmi2023/models/beta-VAE"]
 bdd = []
 visited = []
@@ -23,19 +22,19 @@ print("Number of subjects:", bdd.shape[0])
 
 # remove useless columns
 # bdd = post_process_bdd_models(bdd, hard_remove=["partition", "numpy_all", "block_config", "patch_size"], git_branch=True)
-bdd = post_process_bdd_models(bdd, hard_remove=["partition", "numpy_all"], git_branch=True)
+# bdd = post_process_bdd_models(bdd, hard_remove=["partition", "numpy_all"], git_branch=True)
 
 # bdd = post_process_bdd_models(bdd, hard_remove=[], git_branch=True)
 
 
 # save the database
-name = "HCP-half-2-different-n_evaluation-ACCpatterns-1"
-save_path = f"/neurospin/dico/data/deep_folding/papers/ipmi2023/models/contrastive/summary/bdd_{name}.csv"
+name = "HCP-UkBioBank_different-n_evaluation-ACCpatterns-1"
+save_path = f"/volatile/jc225751/Runs/52_ukbiobank/Output/summary/bdd_{name}.csv"
 bdd.to_csv(save_path, index=True)
 
 
 # write the little readme
-with open(f"/neurospin/dico/data/deep_folding/papers/ipmi2023/models/contrastive/summary/README_{name}.txt", 'w') as file:
+with open(f"/volatile/jc225751/Runs/52_ukbiobank/Output/README_{name}.txt", 'w') as file:
     file.write("Contient les paramètres de tous les modèles d'intérêt (dossiers précisés en-dessous). La base est faite en sorte que \
 seuls les paramètres qui changent entre les modèles soient enregistrés.\n")
     file.write("\n")
