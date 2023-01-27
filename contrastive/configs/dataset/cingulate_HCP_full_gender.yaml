@@ -12,7 +12,7 @@ crop_file_suffix: _cropped_skeleton.nii.gz
 pickle_benchmark: 
 train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton_subject_full.csv
 nb_subjects: -1
-subject_labels_file: /neurospin/dico/data/bv_databases/human/hcp/participants.csv
+subject_labels_file: /neurospin/dico/data/bv_databases/human/not_labeled/hcp/participants.csv
 subject_column_name: 'Subject'
 # subject_labels_file: /host/home/jc225751/Runs/38_cingulate_with_foldlabels/Input/participants.csv
 #label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
