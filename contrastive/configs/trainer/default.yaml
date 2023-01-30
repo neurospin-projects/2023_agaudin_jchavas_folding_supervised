@@ -1,5 +1,5 @@
 # @package _global_
-batch_size: 512
+batch_size: 16
 pin_mem: True
 partition: [0.9, 0.1]
 lr: 4e-4
