@@ -302,7 +302,7 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
                                         labels)
 
         # We compute the L1 norm to enforce sparsity
-        loss_L1 = self.forward_L1(z_i_supervised, z_j_supervised)
+        # loss_L1 = self.forward_L1(z_i_supervised, z_j_supervised)
 
 
         # We compute matrices for tensorboard displays

@@ -216,6 +216,9 @@ def extract_data(npy_file_path, config):
     normal_data, normal_subjects = \
         read_numpy_data_and_subject_csv(npy_file_path, config.subjects_all)
 
+    if config.environment == "brainvisa" and config.checking:
+        compare_array_aims_files(normal_subjects, normal_data, config.crop_dir)
+
     # Gets train_val subjects as dataframe from csv file
     train_val_subjects = read_train_val_csv(config.train_val_csv_file)
 
@@ -229,6 +232,10 @@ def extract_data(npy_file_path, config):
     # Extracts train_val from normal_data
     train_val_subjects, train_val_data = \
         extract_train_val(normal_subjects, train_val_subjects, normal_data)
+
+    if config.environment == "brainvisa" and config.checking:
+        compare_array_aims_files(train_val_subjects, train_val_data, config.crop_dir)
+        compare_array_aims_files(test_subjects, test_data, config.crop_dir)
 
     return train_val_subjects, train_val_data, test_subjects, test_data
 
@@ -281,6 +288,7 @@ def read_labels(subject_labels_file, subject_column_name, label_names):
     # Loads labels file
     subject_labels_file = subject_labels_file
     subject_labels = pd.read_csv(subject_labels_file)
+    log.info(f"Subject_labels_file = {subject_labels_file}")
     log.debug(f"Subject_labels head just when loaded = {subject_labels.head()}")
     log.info(f"Labels to keep = {label_names} "
              f"of type {type(label_names)}")
@@ -289,6 +297,7 @@ def read_labels(subject_labels_file, subject_column_name, label_names):
     subject_column_name = subject_column_name
     desired_columns = [subject_column_name,]
     desired_columns.extend(label_names)
+    log.info(f"columns in subject_labels = {subject_labels.columns}")
     subject_labels = subject_labels[desired_columns]
     subject_labels = subject_labels.rename({subject_column_name: 'Subject'},
                                             axis = 'columns')

@@ -53,6 +53,8 @@ def process_config(config) -> DictConfig:
     log.info("Working directory : {}".format(os.getcwd()))
     config.input_size = eval(config.input_size)
     log.info("config type: {}".format(type(config)))
+    if "pretrained_model_path" not in config:
+        config.pretrained_model_path = None
     return config
 
 

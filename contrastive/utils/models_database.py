@@ -99,9 +99,9 @@ def process_model(model_path, dataset='cingulate_ACCpatterns', verbose=True):
         get_loss(model_path, save=True, verbose=verbose)
     
     # get the final losses
-    with open(os.path.join(log_path, "final_losses.json"), 'r') as file3:
-        losses = json.load(file3)
-        model_dict.update(losses)
+    # with open(os.path.join(log_path, "final_losses.json"), 'r') as file3:
+    #     losses = json.load(file3)
+    #     model_dict.update(losses)
     
     # get bad learning exclusion criteria
     # compute this criteria thanks to SimCLR_performance_criteria.py
@@ -187,7 +187,8 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
     bdd_models = bdd_models.drop(columns=hard_remove)
 
     # remove duplicates (normally not needed)
-    bdd_models.drop_duplicates(inplace=True, ignore_index=True)
+    # bdd_models.drop_duplicates(inplace=True, ignore_index=True)
+    # bdd_models = bdd_models.iloc[bdd_models.astype(str).drop_duplicates().index]
 
     # deal with '[' and ']'
     # TODO
@@ -198,20 +199,22 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
         bdd_models.loc[bdd_models.backbone_name.isna(), 'git_branch'] = 'Run_43_joel'
         bdd_models.loc[bdd_models.backbone_name == 'pointnet', 'git_branch'] = 'pointnet'
     
+    # add mismatch exclusion reason (not the same dimension for latent space and output)
+    bdd_models['exclude'] = 'False'
+
     # add sigmoid exclusion reason
     bdd_models['exclude'].mask(bdd_models.model_path.str.contains('sigmoid'), 'sigmoid', inplace=True)
 
-    # add mismatch exclusion reason (not the same dimension for latent space and output)
-    bdd_models.loc[(bdd_models.num_representation_features != bdd_models.num_outputs),'exclude'] = 'mismatch'
 
     # exclude models with a different structure
     bdd_models['exclude'].mask(bdd_models.git_branch.str.contains('joel'), 'structure', inplace=True)
-    bdd_models.loc[(bdd_models.model_path.str.contains('#')),'exclude'] = 'structure'
+    # bdd_models.loc[(bdd_models.model_path.str.contains('#')),'exclude'] = 'structure'
 
 
     # remove columns where the values never change
     remove = []
     for col in bdd_models.columns:
+        print(f"column = {col}")
         col_values = bdd_models[col].dropna().unique()
         if len(col_values) <= 1:
             remove.append(col)
@@ -236,7 +239,11 @@ def import_bdd(path=None, verbose=False):
     bdd = pd.read_csv(path, index_col=0)
     bdd.sort_values(by='auc', ascending=False, inplace=True)
 
-    clean_bdd = bdd[bdd.exclude == 'False']
+    if "exclude" in bdd.columns:
+        clean_bdd = bdd[bdd.exclude == 'False']
+    else:
+        clean_bdd = bdd
+        clean_bdd["exclude"] = 'False'
     
     if verbose:
         print(f"{bdd[bdd.exclude == 'bad_learning'].shape[0]} have been removed for bad learning")

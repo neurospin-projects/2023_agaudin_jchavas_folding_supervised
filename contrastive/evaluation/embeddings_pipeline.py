@@ -29,6 +29,7 @@ def preprocess_config(sub_dir, dataset, classifier_name='svm', verbose=False):
         cfg[key] = dataset_yaml[key]
 
     # replace the possibly incorrect config parameters
+    cfg.training_labels = cfg['subject_labels_file']
     cfg.model_path = sub_dir
     cfg.embeddings_save_path = sub_dir + f"/{dataset}_embeddings"
     cfg.training_embeddings = sub_dir + f"/{dataset}_embeddings/full_embeddings.csv"
@@ -81,10 +82,13 @@ overwrite to True if you still want to compute them.")
                     with open(sub_dir+'/.hydra/config_classifiers.yaml', 'w') as file:
                         yaml.dump(omegaconf.OmegaConf.to_yaml(cfg), file)
                     
+                    print(f"\nbefore compute_embeddings: training_labels = {cfg.training_labels}\n")
+
                     # apply the functions
                     compute_embeddings(cfg)
                     # reload config for train_classifiers to work properly
                     cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config_classifiers.yaml')
+                    print(f"\nbefore train_classifiers: training_labels = {cfg.training_labels}\n")
                     train_classifiers(cfg)
 
             else:
@@ -95,5 +99,6 @@ overwrite to True if you still want to compute them.")
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/05_rigourous/Output",
-dataset='cingulate_ACCpatterns_0', verbose=True, classifier_name='svm', overwrite=False)
+embeddings_pipeline("/neurospin/dico/data/deep_folding/papers/ipmi2023/models/contrastive/trained_on_all_HCP/all/",
+dataset='cingulate_ACCpatterns_1', verbose=True, classifier_name='svm', overwrite=True)
+# embeddings_pipeline("/neurospin/dico/agaudin/Runs/04_pointnet/Output",

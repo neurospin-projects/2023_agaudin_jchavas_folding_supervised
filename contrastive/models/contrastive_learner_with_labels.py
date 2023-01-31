@@ -182,7 +182,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         This includes the projection head"""
 
         # Initialization
-        X = torch.zeros([0, self.config.num_outputs]).cpu()
+        X = torch.zeros([0, self.config.num_representation_features]).cpu()
         labels_all = torch.zeros([0, len(self.config.label_names)]).cpu()
         filenames_list = []
 
@@ -253,7 +253,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         Representation are before the projection head"""
 
         # Initialization
-        X = torch.zeros([0, self.config.num_outputs]).cpu()
+        X = torch.zeros([0, self.config.num_representation_features]).cpu()
         labels_all = torch.zeros([0, len(self.config.label_names)]).cpu()
         filenames_list = []
 
@@ -333,7 +333,9 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             return False
 
     def plotting_matrices_now(self):
-        if  self.current_epoch % 50 == 0 \
+        if self.config.nb_epochs_per_matrix_plot <= 0:
+            return False
+        elif self.current_epoch % self.config.nb_epochs_per_matrix_plot == 0 \
                     or self.current_epoch >= self.config.max_epochs:
             return True
         else:
@@ -378,7 +380,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         avg_label_loss = torch.stack([x['label_loss'] for x in outputs]).mean()
 
         # logs histograms
-        # self.custom_histogram_adder()
+        self.custom_histogram_adder()
 
         # logging using tensorboard logger
         self.logger.experiment.add_scalar(

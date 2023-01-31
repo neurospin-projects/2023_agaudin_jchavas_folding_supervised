@@ -1,11 +1,11 @@
 defaults:
   - hydra: local
   - hydra/job_logging: custom
-  - dataset: cingulate_HCP
-  - model: SimCLR
+  - dataset: cingulate_HCP_half_2_n=64
+  - model: SimCLR_supervised
   - mode: encoder
-  - augmentations: no_foldlabel
-  - backbone: PointNet
+  - augmentations: foldlabel
+  - backbone: ConvNet
   - platform: cuda_not_brainvisa
   - trainer: default
   - classifier: svm

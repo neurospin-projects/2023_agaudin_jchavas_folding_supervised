@@ -91,7 +91,10 @@ def train(config):
     'mode', 'foldlabel', 'fill_value', 'patch_size', 'max_angle', 'checkerboard_size', 'keep_bottom',
     'growth_rate', 'block_config', 'num_init_features', 'num_representation_features', 'num_outputs',
     'environment', 'batch_size', 'pin_mem', 'partition', 'lr', 'weight_decay', 'max_epochs',
-    'early_stopping_patience', 'seed', 'backbone_name', 'n_max']
+    'early_stopping_patience', 'seed', 'backbone_name', 'sigma_labels', 'proportion_pure_contrastive', 'n_max',
+    'train_val_csv_file']
+    if config.model == 'SimCLR_supervised':
+        keys_to_keep.extend(['temperature_supervised', 'sigma_labels', 'pretrained_model_path'])
 
     create_accessible_config(keys_to_keep, os.getcwd()+"/.hydra/config.yaml")
 

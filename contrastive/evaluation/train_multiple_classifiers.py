@@ -16,7 +16,7 @@ from joblib import cpu_count
 from functools import partial
 
 from contrastive.models.binary_classifier import BinaryClassifier 
-from sklearn.svm import LinearSVR
+from sklearn.svm import LinearSVR, SVC
 
 from contrastive.data.utils import read_labels
 
@@ -66,10 +66,15 @@ def load_embeddings(dir_path, labels_path, config):
     # get the labels (0 = no paracingulate, 1 = paracingulate) and match them to the embeddings
     # /!\ use read_labels
     labels = read_labels(labels_path, config.subject_column_name, config.label_names)
-    labels = pd.DataFrame(labels.values, columns=['Subject', 'label'])
+    labels.rename(columns={config.label_names[0]: 'label'}, inplace=True)
     labels = labels[labels.Subject.isin(embeddings.index)]
     labels.sort_values(by='Subject', inplace=True, ignore_index=True)
     print("sorted labels", labels.head())
+
+    embeddings = embeddings[embeddings.index.isin(labels.Subject)]
+    embeddings.sort_index(inplace=True)
+    print("sorted embeddings:", embeddings.head())
+
     # /!\ multiple labels is not handled
     
     return embeddings, labels
@@ -115,12 +120,14 @@ def compute_indicators(Y, labels_pred):
     accuracy = accuracy_score(labels_true, labels_pred)
     return curves, roc_auc, accuracy
 
+def as_int(l):
+    return (l>l.mean()).astype(int)
 
 def compute_auc(column, label_col=None):
     log.debug("COMPUTE AUC")
     log.debug(label_col.head())
     log.debug(column.head())
-    return roc_auc_score(label_col, column)
+    return roc_auc_score(as_int(label_col), as_int(column))
 
 
 # get a model with performance that is representative of the group
@@ -131,7 +138,7 @@ def get_average_model(labels_df):
     return(aucs.index[0])
 
 
-def post_processing_results(labels, Curves, aucs, accuracies, values, columns_names, mode, results_save_path):
+def post_processing_results(labels, embeddings, Curves, aucs, accuracies, values, columns_names, mode, results_save_path):
     
     labels_true = labels.label.values.astype('float64')
     
@@ -152,12 +159,13 @@ def post_processing_results(labels, Curves, aucs, accuracies, values, columns_na
     # get the average model (with AUC as a criteria)
     # /!\ This model is a classifier that exists in the pool != 'mean_pred' and 'median_pred'
     average_model = get_average_model(labels[['label'] + columns_names].astype('float64'))
-    roc_curve_average = roc_curve(labels_true, labels[average_model].values)
+    labels['average_model'] = labels[average_model]
+    roc_curve_average = roc_curve(as_int(labels_true), as_int(labels[average_model].values))
     # ROC curves of "special" models
-    roc_curve_median = roc_curve(labels_true, labels.median_pred.values)
-    roc_curve_mean = roc_curve(labels_true, labels.mean_pred.values)
+    roc_curve_median = roc_curve(as_int(labels_true), as_int(labels.median_pred.values))
+    roc_curve_mean = roc_curve(as_int(labels_true), as_int(labels.mean_pred.values))
     
-    plt.plot(roc_curve_average[0], roc_curve_average[1], color='red', alpha=0.5, label='average model')
+    # plt.plot(roc_curve_average[0], roc_curve_average[1], color='red', alpha=0.5, label='average model')
     plt.plot(roc_curve_median[0], roc_curve_median[1], color='blue', label='agregated model (median)')
     plt.plot(roc_curve_mean[0], roc_curve_mean[1], color='black', label='agregated model (mean)')
     plt.legend()
@@ -173,7 +181,9 @@ def post_processing_results(labels, Curves, aucs, accuracies, values, columns_na
 
     # save predicted labels
     labels.to_csv(results_save_path+f"/{mode}_predicted_labels.csv", index=False)
+    embeddings.to_csv(results_save_path+f"/{mode}_effective_embeddings.csv", index=True)
 
+    return
 
 
 def train_nn_classifiers(config):
@@ -321,16 +331,20 @@ def train_one_svm_classifier(config, inputs, i=0):
         Y_test = inputs['Y_test']
     outputs = {}
 
-    model = LinearSVR(max_iter=config.class_max_epochs, random_state=i) # set the params here
+    # SVC predict_proba
+    model = SVC(kernel='linear',probability=True, max_iter=config.class_max_epochs, random_state=i)
+    labels_pred = cross_val_predict(model, X, as_int(Y), cv=5, method='predict_proba')
+    curves, roc_auc, accuracy = compute_indicators(as_int(Y), labels_pred[:,1])
+    outputs['labels_pred'] = labels_pred[:,1]
 
-    # train the model with cross validation and get the predictions
-    labels_pred = cross_val_predict(model, X, Y, cv=5)
-
-    # compute the indicators and store the results
-    curves, roc_auc, accuracy = compute_indicators(Y, labels_pred)
+    # SVR
+    # model = LinearSVR(max_iter=config.class_max_epochs, random_state=i) # set the params here
+    # labels_pred = cross_val_predict(model, X, Y, cv=5)
+    # curves, roc_auc, accuracy = compute_indicators(Y, labels_pred)
+    # outputs['labels_pred'] = labels_pred
 
     # Stores in outputs dict
-    outputs['labels_pred'] = labels_pred
+    
     outputs['curves'] = curves
     outputs['roc_auc'] = roc_auc
     outputs['accuracy'] = accuracy
@@ -354,6 +368,7 @@ def train_svm_classifiers(config):
     test_embs_path = config.test_embeddings
     train_lab_paths = config.training_labels #/!\ in fact all_labels (=train_val and test labels)
     # if not specified, the embeddings the results are created from are the ones used for training
+    log.info(f"training_labels file in train_svm_classifiers = {train_lab_paths}")
 
     EoI_path = config.embeddings_of_interest if config.embeddings_of_interest else train_embs_path
     LoI_path = config.labels_of_interest if config.labels_of_interest else train_lab_paths
@@ -442,14 +457,15 @@ def train_svm_classifiers(config):
     # post processing (mainly plotting graphs)
     values = {}
     mode = 'cross_val'
-    post_processing_results(labels, Curves, aucs, accuracies, values, columns_names, mode, results_save_path)
+    post_processing_results(labels, embeddings, Curves, aucs, accuracies, values, columns_names, mode, results_save_path)
+    print(f"results_save_path = {results_save_path}")
     with open(results_save_path+"/values.json", 'w+') as file:
         json.dump(values, file)
 
     if test_embs_path:
         values = {}
         mode = 'test'
-        post_processing_results(test_labels, Curves, aucs, accuracies, values, columns_names, mode, results_save_path)
+        post_processing_results(test_labels, test_embeddings, Curves, aucs, accuracies, values, columns_names, mode, results_save_path)
         
         with open(results_save_path+"/values_test.json", 'w+') as file:
             json.dump(values, file)
@@ -462,6 +478,8 @@ def train_svm_classifiers(config):
 @hydra.main(config_name='config_no_save', config_path="../configs")
 def train_classifiers(config):
     config = process_config(config)
+
+    print(f"\nIn train_classifiers, after process_config, training_labels = {config['training_labels']}\n")
 
     set_root_logger_level(config.verbose)
 

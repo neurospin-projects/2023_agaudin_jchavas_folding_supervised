@@ -93,7 +93,8 @@ class ConvNet(pl.LightningModule):
                  num_outputs=64, projection_head_hidden_layers=None,
                  drop_rate=0.1, mode="encoder",
                  memory_efficient=False,
-                 in_shape=None):
+                 in_shape=None,
+                 pretrained_model_path=None):
 
         super(ConvNet, self).__init__()
 
@@ -181,35 +182,22 @@ class ConvNet(pl.LightningModule):
             modules_decoder.append(('conv_final', nn.Conv3d(1, 2, kernel_size=1, stride=1)))
             self.decoder = nn.Sequential(OrderedDict(modules_decoder))
 
+        if self.mode == "encoder":
+            # This loads pretrained weight if present
+            if pretrained_model_path:
+                path = pretrained_model_path
+                pretrained = torch.load(path)
+                model_dict = self.state_dict()
+                for n, p in pretrained['state_dict'].items():
+                    print(n)
+                    if n in model_dict:
+                        model_dict[n] = p
+                self.load_state_dict(model_dict)
 
-        """# Init. with kaiming
-        for m in self.encoder:
-            if isinstance(m, nn.Conv3d):
-                nn.init.kaiming_normal_(m.weight)
-            elif isinstance(m, nn.BatchNorm3d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0, 0.5)
-                nn.init.constant_(m.bias, 0)
-        for m in self.projection_head:
-            if isinstance(m, nn.Conv3d):
-                nn.init.kaiming_normal_(m.weight)
-            elif isinstance(m, nn.BatchNorm3d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.BatchNorm1d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0, 0.5)
-                nn.init.constant_(m.bias, 0)"""
-
-        
         if self.mode == "decoder":
 
             # This loads pretrained weight
-            path = "/host/volatile/jc225751/Runs/33_MIDL_2022_reviews/Output/t-0.1/n-004_o-4/logs/default/version_0/checkpoints/epoch=299-step=8399.ckpt"
+            # path = "/host/volatile/jc225751/Runs/33_MIDL_2022_reviews/Output/t-0.1/n-004_o-4/logs/default/version_0/checkpoints/epoch=299-step=8399.ckpt"
             pretrained = torch.load(path)
             model_dict = self.state_dict()
             for n, p in pretrained['state_dict'].items():
@@ -242,9 +230,6 @@ class ConvNet(pl.LightningModule):
         out = self.encoder(x)
 
         if (self.mode == "encoder") or (self.mode == 'evaluation'):
-            # if self.drop_rate > 0:
-            #     out = F.dropout(out, p=self.drop_rate,
-            #                     training=True)
             out = self.projection_head(out)
 
         elif self.mode == "decoder":
