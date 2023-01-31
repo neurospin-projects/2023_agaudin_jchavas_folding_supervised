@@ -41,6 +41,7 @@
 import os
 
 import hydra
+import torch
 import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
@@ -135,6 +136,9 @@ def train(config):
     trainer.fit(model, data_module, ckpt_path=config.checkpoint_path)
     log.info("Fitting is done")
     log.info(f"Number of hooks: {len(model.save_output.outputs)} ; {len(model.hook_handles)}")
+
+    save_path = './logs/trained_model.pt'
+    torch.save(model, save_path)
 
 
 if __name__ == "__main__":
