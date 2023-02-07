@@ -43,7 +43,8 @@ from sklearn.manifold import TSNE
 from toolz.itertoolz import first
 
 from contrastive.models.contrastive_learner import ContrastiveLearner
-from contrastive.losses import GeneralizedSupervisedNTXenLoss
+from contrastive.losses import GeneralizedSupervisedNTXenLoss,\
+                               CrossEntropyLoss_Classification
 from contrastive.utils.plots.visualize_images \
     import plot_scatter_matrix_with_labels
 from contrastive.utils.plots.visualize_tsne import plot_tsne
@@ -114,6 +115,11 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             return_logits=True)
         return loss.forward(z_i, z_j, labels)
 
+    def cross_entropy_loss_classification(self, output_i, output_j, labels):
+        """Loss function for decoder"""
+        loss = CrossEntropyLoss_Classification(device=self.device)
+        return loss.forward(output_i, output_j, labels)
+
     def training_step(self, train_batch, batch_idx):
         """Training step.
         """
@@ -126,6 +132,9 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         if self.config.mode == "decoder":
             sample = inputs[:, 2, :]
             batch_loss = self.cross_entropy_loss(sample, z_i, z_j)
+        elif self.config.mode == "classifier":
+            batch_loss = self.cross_entropy_loss_classification(z_i, z_j, labels)
+            batch_label_loss = torch.tensor(0.)
         else:
             batch_loss, batch_label_loss, \
             sim_zij, sim_zii, sim_zjj, correct_pair, weights = \
@@ -156,7 +165,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                         f"Shape of file read from array = {self.sample_k[0,0,...].shape}\n"
                         f"Sum of reference file = {self.sample_ref_0.sum()}\n"
                         f"Sum of file read from array = {self.sample_k[0,...].sum()}")
-            if self.config.mode != "decoder":
+            if self.config.mode != "decoder" and self.config.mode != "classifier":
                 self.sim_zij = sim_zij * self.config.temperature
                 self.sim_zii = sim_zii * self.config.temperature
                 self.sim_zjj = sim_zjj * self.config.temperature
@@ -405,6 +414,9 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         if self.config.mode == "decoder":
             sample = inputs[:, 2, :]
             batch_loss = self.cross_entropy_loss(sample, z_i, z_j)
+        elif self.config.mode == "classifier":
+            batch_loss = self.cross_entropy_loss_classification(z_i, z_j, labels)
+            batch_label_loss = torch.tensor(0.)
         else:
             batch_loss, batch_label_loss, \
             sim_zij, sim_sii, sim_sjj, correct_pairs, weights = \

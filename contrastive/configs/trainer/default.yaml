@@ -3,8 +3,8 @@ batch_size: 16
 pin_mem: True
 partition: [0.9, 0.1]
 lr: 4e-4
-weight_decay: 5e-5
-max_epochs: 251
+weight_decay: 0.1
+max_epochs: 101
 nb_epochs_per_saving: 1
 nb_epochs_per_tSNE: -1
 nb_epochs_per_matrix_plot: -1

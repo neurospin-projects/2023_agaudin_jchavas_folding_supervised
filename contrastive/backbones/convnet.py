@@ -91,20 +91,21 @@ class ConvNet(pl.LightningModule):
     def __init__(self, in_channels=1, encoder_depth=3,
                  num_representation_features=256,
                  num_outputs=64, projection_head_hidden_layers=None,
-                 drop_rate=0.1, mode="encoder",
+                 drop_rate=0.1, mode="encoder", num_classes=2,
                  memory_efficient=False,
                  in_shape=None,
                  pretrained_model_path=None):
 
         super(ConvNet, self).__init__()
 
-        assert mode in {'encoder', 'evaluation', 'decoder'},\
+        assert mode in {'encoder', 'evaluation', 'decoder', 'classifier'},\
             "Unknown mode selected: %s" % mode
 
 
         self.mode = mode
         self.num_representation_features = num_representation_features
         self.num_outputs = num_outputs
+        self.num_classes = num_classes
         if projection_head_hidden_layers:
             self.projection_head_hidden_layers = projection_head_hidden_layers
         else:
@@ -150,13 +151,24 @@ class ConvNet(pl.LightningModule):
             for i, dim_i in enumerate(self.projection_head_hidden_layers):
                 output_size = dim_i
                 projection_head.append(('Linear%s' %i, nn.Linear(input_size, output_size)))
-                #projection_head.append(('Norm%s' %i, nn.BatchNorm1d(output_size)))
-                projection_head.append(('ReLU%s' %i, nn.ReLU()))
                 input_size = output_size
             projection_head.append(('Output layer' ,nn.Linear(input_size,
                                                              self.num_outputs)))
-            #projection_head.append(('Norm layer', nn.BatchNorm1d(self.num_outputs)))
             self.projection_head = nn.Sequential(OrderedDict(projection_head))
+
+        elif self.mode == "classifier":
+            modules_classifier = []
+            i=0
+            modules_classifier.append((f'LeakyReLU{i}', nn.LeakyReLU()))
+            modules_classifier.append((f'Linear{i}', 
+                    nn.Linear(self.num_representation_features,
+                            self.num_representation_features)))
+            i=1
+            modules_classifier.append((f'LeakyReLU{i}', nn.LeakyReLU()))
+            modules_classifier.append((f'Linear{i}', 
+                    nn.Linear(self.num_representation_features,
+                            self.num_classes)))
+            self.classifier = nn.Sequential(OrderedDict(modules_classifier))
 
         elif self.mode == "decoder":
             self.hidden_representation = nn.Linear(
@@ -232,6 +244,9 @@ class ConvNet(pl.LightningModule):
         if (self.mode == "encoder") or (self.mode == 'evaluation'):
             out = self.projection_head(out)
 
+        elif self.mode == "classifier":
+            out = self.classifier(out)
+
         elif self.mode == "decoder":
             out = F.relu(out, inplace=True)
             out = F.adaptive_avg_pool3d(out, 1)
@@ -242,6 +257,7 @@ class ConvNet(pl.LightningModule):
             out = self.develop(out)
             out = out.view(out.size(0), 16 * 2**(self.depth-1), self.z_dim_h, self.z_dim_w, self.z_dim_d)
             out = self.decoder(out)
+
         return out.squeeze(dim=1)
 
     def get_current_visuals(self):
