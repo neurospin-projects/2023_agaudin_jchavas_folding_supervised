@@ -15,6 +15,7 @@ from pqdm.processes import pqdm
 from joblib import cpu_count
 from functools import partial
 
+from sklearn.preprocessing import StandardScaler
 from contrastive.models.binary_classifier import BinaryClassifier 
 from sklearn.svm import LinearSVR, SVC
 
@@ -105,29 +106,27 @@ def load_and_format_embeddings(dir_path, labels_path, config):
 
 
 
-def compute_indicators(Y, labels_pred):
+def compute_indicators(Y, proba_pred):
     # compute ROC curve and auc
     if type(Y) == torch.tensor:
         labels_true = Y.detach_().numpy()
     else:
         labels_true = Y.values.astype('float64')
-    curves = roc_curve(labels_true, labels_pred)
-    roc_auc = roc_auc_score(labels_true, labels_pred)
+    curves = roc_curve(labels_true, proba_pred[:,1])
+    roc_auc = roc_auc_score(labels_true, proba_pred[:,1])
 
     # choose labels predicted with frontier = 0.5
-    labels_pred = (labels_pred >= 0.5).astype('int')
+    labels_pred = np.argmax(proba_pred, axis=1)
     # compute accuracy
     accuracy = accuracy_score(labels_true, labels_pred)
     return curves, roc_auc, accuracy
 
-def as_int(l):
-    return (l>l.mean()).astype(int)
 
 def compute_auc(column, label_col=None):
     log.debug("COMPUTE AUC")
     log.debug(label_col.head())
     log.debug(column.head())
-    return roc_auc_score(as_int(label_col), as_int(column))
+    return roc_auc_score(label_col, column)
 
 
 # get a model with performance that is representative of the group
@@ -160,12 +159,12 @@ def post_processing_results(labels, embeddings, Curves, aucs, accuracies, values
     # /!\ This model is a classifier that exists in the pool != 'mean_pred' and 'median_pred'
     average_model = get_average_model(labels[['label'] + columns_names].astype('float64'))
     labels['average_model'] = labels[average_model]
-    roc_curve_average = roc_curve(as_int(labels_true), as_int(labels[average_model].values))
+    roc_curve_average = roc_curve(labels_true, labels[average_model].values)
     # ROC curves of "special" models
-    roc_curve_median = roc_curve(as_int(labels_true), as_int(labels.median_pred.values))
-    roc_curve_mean = roc_curve(as_int(labels_true), as_int(labels.mean_pred.values))
+    roc_curve_median = roc_curve(labels_true, labels.median_pred.values)
+    roc_curve_mean = roc_curve(labels_true, labels.mean_pred.values)
     
-    # plt.plot(roc_curve_average[0], roc_curve_average[1], color='red', alpha=0.5, label='average model')
+    plt.plot(roc_curve_average[0], roc_curve_average[1], color='red', alpha=0.5, label='average model')
     plt.plot(roc_curve_median[0], roc_curve_median[1], color='blue', label='agregated model (median)')
     plt.plot(roc_curve_mean[0], roc_curve_mean[1], color='black', label='agregated model (mean)')
     plt.legend()
@@ -180,8 +179,8 @@ def post_processing_results(labels, embeddings, Curves, aucs, accuracies, values
     values[f'{mode}_auc'] = [np.mean(aucs[mode]), np.std(aucs[mode])]
 
     # save predicted labels
-    labels.to_csv(results_save_path+f"/{mode}_predicted_labels.csv", index=False)
-    embeddings.to_csv(results_save_path+f"/{mode}_effective_embeddings.csv", index=True)
+    labels.to_csv(results_save_path+f"/{mode}_predicted_probas.csv", index=False)
+    # DEBUG embeddings.to_csv(results_save_path+f"/{mode}_effective_embeddings.csv", index=True)
 
     return
 
@@ -332,10 +331,10 @@ def train_one_svm_classifier(config, inputs, i=0):
     outputs = {}
 
     # SVC predict_proba
-    model = SVC(kernel='linear',probability=True, max_iter=config.class_max_epochs, random_state=i)
-    labels_pred = cross_val_predict(model, X, as_int(Y), cv=5, method='predict_proba')
-    curves, roc_auc, accuracy = compute_indicators(as_int(Y), labels_pred[:,1])
-    outputs['labels_pred'] = labels_pred[:,1]
+    model = SVC(kernel='linear', probability=True, max_iter=config.class_max_epochs, random_state=i)
+    labels_proba = cross_val_predict(model, X, Y, cv=5, method='predict_proba')
+    curves, roc_auc, accuracy = compute_indicators(Y, labels_proba)
+    outputs['proba_of_1'] = labels_proba[:,1]
 
     # SVR
     # model = LinearSVR(max_iter=config.class_max_epochs, random_state=i) # set the params here
@@ -394,7 +393,7 @@ def train_svm_classifiers(config):
     Curves = {'cross_val': []}
     aucs = {'cross_val': []}
     accuracies = {'cross_val': []}
-    prediction_matrix = np.zeros((labels.shape[0], config.n_repeat))
+    proba_matrix = np.zeros((labels.shape[0], config.n_repeat))
 
     if test_embs_path:
         Curves['test'] = []
@@ -408,6 +407,10 @@ def train_svm_classifiers(config):
 
     inputs = {}
     inputs['X'] = X
+    # rescale embeddings
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X)
+
     inputs['Y'] = Y
     inputs['test_embs_path'] = test_embs_path
     if test_embs_path:
@@ -431,11 +434,11 @@ def train_svm_classifiers(config):
 
     # Put together the results
     for i, o in enumerate(outputs):
-        labels_pred = o['labels_pred']
+        probas_pred = o['proba_of_1']
         curves = o['curves']
         roc_auc = o['roc_auc']
         accuracy = o['accuracy']
-        prediction_matrix[:,i] = labels_pred
+        proba_matrix[:,i] = probas_pred
         Curves['cross_val'].append(curves)
         aucs['cross_val'].append(roc_auc)
         accuracies['cross_val'].append(accuracy)
@@ -450,9 +453,9 @@ def train_svm_classifiers(config):
 
     
     # add the predictions to the df where the true values are
-    columns_names = ["predicted_"+str(i) for i in range(config.n_repeat)]
-    preds = pd.DataFrame(prediction_matrix, columns=columns_names, index=labels.index)
-    labels = pd.concat([labels, preds], axis=1)
+    columns_names = ["svm_"+str(i) for i in range(config.n_repeat)]
+    probas = pd.DataFrame(proba_matrix, columns=columns_names, index=labels.index)
+    labels = pd.concat([labels, probas], axis=1)
 
     # post processing (mainly plotting graphs)
     values = {}
