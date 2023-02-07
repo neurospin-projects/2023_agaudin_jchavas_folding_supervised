@@ -179,9 +179,9 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
     
     # specify dataset if not done
     if "dataset_name" in bdd_models.columns:
-        bdd_models.numpy_all.fillna(value="osef", inplace=True)
+        # bdd_models.numpy_all.fillna(value="osef", inplace=True)
         bdd_models.dataset_name.fillna(value="cingulate_HCP_half_1", inplace=True)
-        bdd_models.loc[bdd_models.numpy_all.str.contains('1mm'), 'dataset_name'] = "cingulate_HCP_1mm"
+        # bdd_models.loc[bdd_models.numpy_all.str.contains('1mm'), 'dataset_name'] = "cingulate_HCP_1mm"
     
     # hard_remove contains columns you want to remove by hand
     bdd_models = bdd_models.drop(columns=hard_remove)

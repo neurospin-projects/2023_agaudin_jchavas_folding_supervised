@@ -149,6 +149,30 @@ class NTXenLoss(nn.Module):
         return "{}(temp={})".format(type(self).__name__, self.temperature)
 
 
+class CrossEntropyLoss_Classification(nn.Module):
+    """
+    Croos entropy loss between outputs and labels
+    """
+
+    def __init__(self, device=None):
+        super().__init__()
+        self.loss = nn.CrossEntropyLoss()
+
+    def forward(self, output_i, output_j, labels):
+        output_i = output_i.float()
+        output_j = output_j.float()
+        
+        loss_i = self.loss(output_i,
+                           labels[:,0])
+        loss_j = self.loss(output_j,
+                           labels[:,0])
+
+        return (loss_i + loss_j)
+
+    def __str__(self):
+        return f"{type(self).__name__}"
+
+
 class GeneralizedSupervisedNTXenLoss(nn.Module):
     def __init__(self, kernel='rbf',
                  temperature=0.1,

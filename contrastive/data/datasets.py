@@ -363,8 +363,27 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
                                               self.config)
 
         # Computes the views
-        view1 = self.transform1(sample)
-        view2 = self.transform2(sample)
+        try:
+            view1 = self.transform1(sample)
+            view2 = self.transform2(sample)
+        except ValueError as e:
+            # self.transform1 = transform_nothing_done()
+            # self.transform2 = transform_nothing_done()
+            # view1 = self.transform1(sample)
+            # view2 = self.transform2(sample)
+            log.info("Something happens in view generation. "
+                    f"It happens for index {idx} and filename {filename}")
+            raise ValueError("Something happens in view generation. "
+                             f"It happens for index {idx} and filename {filename}") from e
+        except:
+            # self.transform1 = transform_nothing_done()
+            # self.transform2 = transform_nothing_done()
+            # view1 = self.transform1(sample)
+            # view2 = self.transform2(sample)
+            log.info("Something happens in view generation. "
+                    f"It happens for index {idx} and filename {filename}")
+            raise ValueError("Something happens in view generation. "
+                       f"It happens for index {idx} and filename {filename}")
 
         if self.config.mode == "decoder":
             self.transform3 = transform_only_padding(self.config)

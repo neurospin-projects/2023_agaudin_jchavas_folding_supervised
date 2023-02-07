@@ -113,6 +113,7 @@ def check_if_skeleton(a: np.array, key: str):
                    (a == 20) +
                    (a == 11) +
                    (a == 30) +
+                   (a == 35) +
                    (a == 40) +
                    (a == 50) +
                    (a == 60) +
