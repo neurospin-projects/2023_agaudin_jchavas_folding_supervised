@@ -47,20 +47,21 @@ def compute_embeddings(config):
     data_module = DataModule_Evaluation(config)
     data_module.setup(stage='validate')
 
-    model = ContrastiveLearner_Visualization(config,
-                               sample_data=data_module)
+    # model = ContrastiveLearner_Visualization(config,
+    #                            sample_data=data_module)
+    model = torch.load(glob.glob(config.model_path + r'/logs/*.pt')[0])
     model.eval()
 
-    # fetch and load weights
+    """# fetch and load weights
     paths = config.model_path+"/logs/*/version_0/checkpoints"+r'/*.ckpt'
     files = glob.glob(paths)
     print("model_weights:", files[0])
     cpkt_path = files[0]
-    checkpoint = torch.load(cpkt_path, map_location=torch.device(config.device))
+    checkpoint = torch.load(cpkt_path, map_location=torch.device(config.device))"""
 
     print(config.model)
     print(config.backbone_name)
-    model.load_state_dict(checkpoint['state_dict'])
+    #model.load_state_dict(checkpoint['state_dict'])
 
     # create folder where to save the embeddings
     embeddings_path = config.embeddings_save_path
