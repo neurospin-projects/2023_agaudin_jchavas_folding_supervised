@@ -68,14 +68,11 @@ class DataModule_Learning(DataModule):
 
     def __init__(self, config):
         super(DataModule_Learning, self).__init__(config)
-        self.gen = Generator()
 
     def train_dataloader(self):
         loader_train = DataLoader(self.dataset_train,
                                   batch_size=self.config.batch_size,
-                                  sampler=RandomSampler(
-                                      data_source=self.dataset_train,
-                                      generator=self.gen),
+                                  sampler=RandomSampler(data_source=self.dataset_train),
                                   pin_memory=self.config.pin_mem,
                                   multiprocessing_context='fork',
                                   num_workers=self.config.num_cpu_workers
