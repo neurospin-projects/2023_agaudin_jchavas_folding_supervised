@@ -1,9 +1,9 @@
 defaults:
   - hydra: local
   - hydra/job_logging: custom
-  - dataset: cingulate_HCP_full_gender
+  - dataset: cingulate_UkBioBank_full
   - model: SimCLR_supervised
-  - mode: classifier
+  - mode: encoder
   - augmentations: foldlabel
   - backbone: ConvNet
   - platform: cuda_not_brainvisa
