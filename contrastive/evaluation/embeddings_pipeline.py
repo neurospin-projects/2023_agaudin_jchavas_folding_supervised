@@ -1,5 +1,6 @@
 import os
 import yaml
+import json
 import omegaconf
 
 from contrastive.evaluation.generate_embeddings import compute_embeddings
@@ -77,7 +78,7 @@ overwrite to True if you still want to compute them.")
                     cfg = preprocess_config(sub_dir, dataset, classifier_name=classifier_name)
                     if verbose:
                         print("CONFIG FILE", type(cfg))
-                        print(cfg)
+                        print(json.dumps(omegaconf.OmegaConf.to_container(cfg, resolve=True), indent=4, sort_keys=True))
                     # save the modified config next to the real one
                     with open(sub_dir+'/.hydra/config_classifiers.yaml', 'w') as file:
                         yaml.dump(omegaconf.OmegaConf.to_yaml(cfg), file)
@@ -101,6 +102,6 @@ overwrite to True if you still want to compute them.")
 
 # embeddings_pipeline("/neurospin/dico/agaudin/Runs/04_pointnet/Output",
 embeddings_pipeline("/volatile/jc225751/Runs/52_ukbiobank/Output/different-n",
-dataset='cingulate_ACCpatterns_1', verbose=True, classifier_name='svm', overwrite=True)
+dataset='cingulate_ACCpatterns_1', verbose=True, classifier_name='svm', overwrite=False)
 #label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
 #label_names: ["NEOFAC_C"]
