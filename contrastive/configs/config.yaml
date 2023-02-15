@@ -1,7 +1,7 @@
 defaults:
   - hydra: local
   - hydra/job_logging: custom
-  - dataset: cingulate_UkBioBank_n=1114
+  - dataset: cingulate_UkBioBank_full
   - model: SimCLR_supervised
   - mode: encoder
   - augmentations: foldlabel
