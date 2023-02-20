@@ -47,25 +47,25 @@ def compute_embeddings(config):
     data_module = DataModule_Evaluation(config)
     data_module.setup(stage='validate')
 
-    # load model
+    """# load model
     try:
         # load a model entirely saved with torch.save
         path = glob.glob(config.model_path + r'/logs/*.pt')[0]
         model = torch.load(path)
         print("Model loaded from full model save.")
     
-    except:
-        # create a new instance of the current model version then load hydra weights.
-        print("No trained_model.pt saved. Create a new instance and load weights.")
+    except:"""
+    # create a new instance of the current model version then load hydra weights.
+    print("No trained_model.pt saved. Create a new instance and load weights.")
 
-        model = ContrastiveLearner_Visualization(config, sample_data=data_module)
-        # fetch and load weights
-        paths = config.model_path+"/logs/*/version_0/checkpoints"+r'/*.ckpt'
-        files = glob.glob(paths)
-        print("model_weights:", files[0])
-        cpkt_path = files[0]
-        checkpoint = torch.load(cpkt_path, map_location=torch.device(config.device))
-        model.load_state_dict(checkpoint['state_dict'])
+    model = ContrastiveLearner_Visualization(config, sample_data=data_module)
+    # fetch and load weights
+    paths = config.model_path+"/logs/*/version_0/checkpoints"+r'/*.ckpt'
+    files = glob.glob(paths)
+    print("model_weights:", files[0])
+    cpkt_path = files[0]
+    checkpoint = torch.load(cpkt_path, map_location=torch.device(config.device))
+    model.load_state_dict(checkpoint['state_dict'])
 
     model.eval()
 

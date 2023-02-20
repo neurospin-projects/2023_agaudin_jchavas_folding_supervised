@@ -1,5 +1,5 @@
 # @package _global_
-dataset_name: cingulate_ACCpatterns_1
+dataset_name: cingulate_ACCpatterns_1_SVR
 numpy_all: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/ACCpatterns_1.npy
 subjects_all: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/ACCpatterns_1_subject.csv
 #foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/CINGULATE/mask/Rlabel.npy
