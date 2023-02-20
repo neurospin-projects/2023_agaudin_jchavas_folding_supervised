@@ -18,4 +18,4 @@ analysis_path:
 verbose: 1
 checking: False
 # pretrained_model_path: /neurospin/dico/data/deep_folding/papers/ipmi2023/models/contrastive/trained_on_HCP_half_1/gridsearch/joel/convnet-10/23-11-12_2/logs/default/version_0/checkpoints/epoch=250-step=7780.ckpt
-pretrained_model_path:
+pretrained_model_path: 
