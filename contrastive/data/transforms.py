@@ -82,8 +82,8 @@ def transform_foldlabel(sample_foldlabel, percentage, config):
                                         variable_percentage = config.variable_percentage,
                                         input_size=config.input_size,
                                         keep_bottom=config.keep_bottom),
-                RotateTensor(max_angle=config.max_angle),
-                BinarizeTensor()
+                BinarizeTensor(),
+                RotateTensor(max_angle=config.max_angle)
             ])
     else:
         return \
@@ -112,8 +112,8 @@ def transform_no_foldlabel(from_skeleton, config):
                 PartialCutOutTensor_Roll(from_skeleton=from_skeleton,
                                         keep_bottom=config.keep_bottom,
                                         patch_size=config.patch_size),
-                RotateTensor(max_angle=config.max_angle),
-                BinarizeTensor()
+                BinarizeTensor(),
+                RotateTensor(max_angle=config.max_angle)
             ])
     else:
         return \

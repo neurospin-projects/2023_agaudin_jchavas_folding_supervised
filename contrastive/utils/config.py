@@ -49,10 +49,10 @@ def process_config(config) -> DictConfig:
     """Does whatever operations on the config file
     """
 
-    log.info(OmegaConf.to_yaml(config))
+    log.debug(OmegaConf.to_yaml(config))
     log.info("Working directory : {}".format(os.getcwd()))
     config.input_size = eval(config.input_size)
-    log.info("config type: {}".format(type(config)))
+    log.debug("config type: {}".format(type(config)))
     if "pretrained_model_path" not in config:
         config.pretrained_model_path = None
     return config

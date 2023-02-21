@@ -194,7 +194,7 @@ class ConvNet(pl.LightningModule):
             modules_decoder.append(('conv_final', nn.Conv3d(1, 2, kernel_size=1, stride=1)))
             self.decoder = nn.Sequential(OrderedDict(modules_decoder))
 
-        if self.mode == "encoder":
+        if (self.mode == "encoder") or (self.mode == 'evaluation'):
             # This loads pretrained weight if present
             if pretrained_model_path:
                 path = pretrained_model_path
@@ -202,8 +202,11 @@ class ConvNet(pl.LightningModule):
                 model_dict = self.state_dict()
                 for n, p in pretrained['state_dict'].items():
                     print(n)
-                    if n in model_dict:
-                        model_dict[n] = p
+                    # The pretrained model weight is saved as backbone.conv0.weight
+                    # whereas here the key is conv0.weight
+                    n_model = '.'.join(n.split('.')[1:])
+                    if n_model in model_dict:
+                        model_dict[n_model] = p
                 self.load_state_dict(model_dict)
 
         if self.mode == "decoder":

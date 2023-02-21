@@ -41,6 +41,7 @@ from scipy.ndimage import rotate
 from sklearn.preprocessing import OneHotEncoder
 
 from contrastive.utils import logs
+from contrastive.utils.test_timeit import timeit
 from contrastive.data.utils import zero_padding, repeat_padding, pad
 
 log = logs.set_file_logger(__file__)
@@ -321,8 +322,28 @@ class RotateTensor(object):
         self.max_angle = max_angle
 
     def __call__(self, tensor):
+        arr = tensor.numpy()
+        print("Shapes before rotation",tensor.shape, arr.shape)
+        rot_array = np.copy(arr)
 
-        arr = tensor.numpy()[:, :, :, 0]
+        for axes in (0, 1), (0, 2), (1, 2):
+            np.random.seed()
+            angle = np.random.uniform(-self.max_angle, self.max_angle)
+            rot_array = rotate(rot_array,
+                               angle=angle,
+                               axes=axes,
+                               order=0,
+                               reshape=False,
+                               mode='constant',
+                               cval=0)
+
+        rot_array = np.expand_dims(rot_array[..., 0], axis=0)
+
+        print("Values in the array after rotation", np.unique(rot_array))
+
+        return torch.from_numpy(rot_array)
+
+        """arr = tensor.numpy()[:, :, :, 0]
         arr_shape = arr.shape
         flat_im = np.reshape(arr, (-1, 1))
         im_encoder = OneHotEncoder(sparse=False, categories='auto')
@@ -343,6 +364,7 @@ class RotateTensor(object):
                                                reshape=False,
                                                mode='constant',
                                                cval=const)
+                print("Values after rotation", np.unique(onehot_im_rot))
             onehot_im_result = onehot_im_rot
         im_rot_flat = im_encoder.inverse_transform(
             np.reshape(onehot_im_result, (-1, n_cat)))
@@ -350,7 +372,9 @@ class RotateTensor(object):
         arr_rot = np.expand_dims(
             im_rot,
             axis=0)
-        return torch.from_numpy(arr_rot)
+
+        print("Shape after rotation", arr_rot.shape)
+        return torch.from_numpy(arr_rot)"""
 
 
 class PartialCutOutTensor_Roll(object):

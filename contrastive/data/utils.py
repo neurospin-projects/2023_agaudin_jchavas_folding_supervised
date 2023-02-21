@@ -57,7 +57,7 @@ log = set_file_logger(__file__)
 def read_npy_file(npy_file_path: str) -> np.ndarray:
     """Reads npy file containing all subjects and returns the numpy array."""
     # Loads crops from all subjects
-    log.info("Current directory = " + os.getcwd())
+    log.debug("Current directory = " + os.getcwd())
     arr = np.load(npy_file_path, mmap_mode='r')
     log.debug(f"shape of loaded numpy array = {arr.shape}")
     return arr
