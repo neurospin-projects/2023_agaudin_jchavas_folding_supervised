@@ -323,12 +323,13 @@ class RotateTensor(object):
 
     def __call__(self, tensor):
         arr = tensor.numpy()
-        print("Shapes before rotation",tensor.shape, arr.shape)
+        log.debug("Shapes before rotation",tensor.shape, arr.shape)
         rot_array = np.copy(arr)
 
         for axes in (0, 1), (0, 2), (1, 2):
             np.random.seed()
             angle = np.random.uniform(-self.max_angle, self.max_angle)
+            log.debug(axes, angle)
             rot_array = rotate(rot_array,
                                angle=angle,
                                axes=axes,
@@ -339,42 +340,9 @@ class RotateTensor(object):
 
         rot_array = np.expand_dims(rot_array[..., 0], axis=0)
 
-        print("Values in the array after rotation", np.unique(rot_array))
+        log.debug("Values in the array after rotation", np.unique(rot_array))
 
         return torch.from_numpy(rot_array)
-
-        """arr = tensor.numpy()[:, :, :, 0]
-        arr_shape = arr.shape
-        flat_im = np.reshape(arr, (-1, 1))
-        im_encoder = OneHotEncoder(sparse=False, categories='auto')
-        onehot_im = im_encoder.fit_transform(flat_im)
-        # rotate one hot im
-        onehot_im = onehot_im.reshape(*arr_shape, -1)
-        onehot_im_result = np.copy(onehot_im)
-        n_cat = onehot_im.shape[-1]
-        for axes in (0, 1), (0, 2), (1, 2):
-            np.random.seed()
-            angle = np.random.uniform(-self.max_angle, self.max_angle)
-            onehot_im_rot = np.empty_like(onehot_im)
-            for c in range(n_cat):
-                const = 1 if c == 0 else 0
-                onehot_im_rot[..., c] = rotate(onehot_im_result[..., c],
-                                               angle=angle,
-                                               axes=axes,
-                                               reshape=False,
-                                               mode='constant',
-                                               cval=const)
-                print("Values after rotation", np.unique(onehot_im_rot))
-            onehot_im_result = onehot_im_rot
-        im_rot_flat = im_encoder.inverse_transform(
-            np.reshape(onehot_im_result, (-1, n_cat)))
-        im_rot = np.reshape(im_rot_flat, arr_shape)
-        arr_rot = np.expand_dims(
-            im_rot,
-            axis=0)
-
-        print("Shape after rotation", arr_rot.shape)
-        return torch.from_numpy(arr_rot)"""
 
 
 class PartialCutOutTensor_Roll(object):

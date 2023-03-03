@@ -55,6 +55,7 @@ from contrastive.utils.plots.visualize_images import plot_histogram_weights
 from contrastive.utils.plots.visualize_images import plot_histogram
 from contrastive.utils.plots.visualize_images import plot_scatter_matrix
 from contrastive.utils.plots.visualize_tsne import plot_tsne
+from contrastive.utils.test_timeit import timeit
 
 try:
     from contrastive.utils.plots.visualize_anatomist import Visu_Anatomist
