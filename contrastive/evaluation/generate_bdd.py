@@ -29,12 +29,13 @@ print("Number of subjects:", bdd.shape[0])
 
 # save the database
 name = "HCP-UkBioBank_different-n_evaluation-ACCpatterns-1"
-save_path = f"/volatile/jc225751/Runs/52_ukbiobank/Output/summary/bdd_{name}.csv"
-bdd.to_csv(save_path, index=True)
+save_path = f"/neurospin/dico/data/deep_folding/papers/miccai2023/Output/contrastive/summary"
+csv_name = f"{save_path}/bdd_{name}.csv"
+bdd.to_csv(csv_name, index=True)
 
 
 # write the little readme
-with open(f"/volatile/jc225751/Runs/52_ukbiobank/Output/README_{name}.txt", 'w') as file:
+with open(f"{save_path}/README_{name}.txt", 'w') as file:
     file.write("Contient les paramètres de tous les modèles d'intérêt (dossiers précisés en-dessous). La base est faite en sorte que \
 seuls les paramètres qui changent entre les modèles soient enregistrés.\n")
     file.write("\n")
