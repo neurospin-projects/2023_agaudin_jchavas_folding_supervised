@@ -1,5 +1,5 @@
 # @package _global_
-dataset_name: cingulate_UkBioBank_n=1114
+dataset_name: cingulate_UkBioBank_n=21072
 pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rskeleton.pkl
 # numpy_all: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rskeleton.npy
 numpy_all: /home_local/jc225751/Runs/52_ukbiobank/Input/UkBioBank/Rskeleton.npy
