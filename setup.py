@@ -10,15 +10,16 @@ setup(
     description='Deep learning models '
                 'to analyze anterior cingulate sulcus patterns',
     long_description=open('README.rst').read(),
-    install_requires=['pandas',
+    install_requires=['pandas==1.0.0',
                       'scipy',
-		      'psutil',
-		      'orca',
-                      'matplotlib==3.5.1',
+                      'psutil',
+                      'orca',
+                      'matplotlib',
                       'torch',
                       'tqdm==4.51.0',
                       'torchvision',
                       'torch-summary',
+                      'tensorflow',
                       'tensorboard',
                       'hydra',
                       'hydra.core',
@@ -41,6 +42,6 @@ setup(
                       ],
     },
     url='https://github.com/neurospin-projects/2022_jchavas_cingulate_inhibitory_control',
-    author='Joël Chavas',
-    author_email='joel.chavas@cea.fr'
+    author='Joël Chavas, Aymeric Gaudin',
+    author_email='joel.chavas@cea.fr, aymeric.gaudin@cea.fr'
 )

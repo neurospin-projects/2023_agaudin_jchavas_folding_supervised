@@ -10,7 +10,7 @@ dataset = 'cingulate_ACCpatterns_1'
 # folders to look for the models in
 # folders = ["/neurospin/dico/agaudin/Runs/04_pointnet/Output", "/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/convnet",
 # "/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/densenet2", "/neurospin/dico/agaudin/Runs/03_monkeys/Output/convnet_exploration"]
-folders = ["/volatile/jc225751/Runs/52_ukbiobank/Output/different-n"]
+folders = ["/neurospin/dico/data/deep_folding/papers/miccai2023/Output/contrastive/trained_on_HCP_UkBioBank_different-n"]
 # folders = ["/neurospin/dico/data/deep_folding/papers/ipmi2023/models/beta-VAE"]
 bdd = []
 visited = []
