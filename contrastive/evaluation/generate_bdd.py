@@ -8,12 +8,14 @@ dataset = 'cingulate_ACCpatterns_1'
 
 ## construct the database
 # folders to look for the models in
-# folders = ["/neurospin/dico/agaudin/Runs/04_pointnet/Output", "/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/convnet",
-# "/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/densenet2", "/neurospin/dico/agaudin/Runs/03_monkeys/Output/convnet_exploration"]
-folders = ["/neurospin/dico/data/deep_folding/papers/miccai2023/Output/contrastive/trained_on_UkBioBank/different-n_without_top",
+folders = ["/neurospin/dico/data/deep_folding/papers/miccai2023/Output/contrastive/trained_on_UkBioBank/different-n",
            "/neurospin/dico/data/deep_folding/papers/miccai2023/Output/contrastive/trained_on_all_HCP/all",
            "/neurospin/dico/data/deep_folding/papers/miccai2023/Output/contrastive/trained_on_HCP_half_2/training-different-n",
            "/neurospin/dico/data/deep_folding/papers/miccai2023/Output/contrastive/trained_on_ACCpatterns_0/unsupervised/convnet-10-n=171"]
+# folders = ["/neurospin/dico/data/deep_folding/papers/miccai2023/Output/contrastive/trained_on_UkBioBank/different-n_without_top",
+#            "/neurospin/dico/data/deep_folding/papers/miccai2023/Output/contrastive/trained_on_all_HCP/all",
+#            "/neurospin/dico/data/deep_folding/papers/miccai2023/Output/contrastive/trained_on_HCP_half_2/training-different-n",
+#            "/neurospin/dico/data/deep_folding/papers/miccai2023/Output/contrastive/trained_on_ACCpatterns_0/unsupervised/convnet-10-n=171"]
 # folders = ["/neurospin/dico/data/deep_folding/papers/ipmi2023/models/beta-VAE"]
 bdd = []
 visited = []
@@ -31,6 +33,7 @@ print("Number of subjects:", bdd.shape[0])
 
 
 # save the database
+# name = "HCP-UkBioBank-with-top_different-n_evaluation-ACCpatterns-1"
 name = "HCP-UkBioBank_different-n_evaluation-ACCpatterns-1"
 save_path = f"/neurospin/dico/data/deep_folding/papers/miccai2023/Output/contrastive/summary"
 csv_name = f"{save_path}/bdd_{name}.csv"
