@@ -1,17 +1,17 @@
 # @package _global_
 dataset_name: cingulate_UkBioBank_full_without_top
-pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rskeleton.pkl
-numpy_all: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rskeleton_without_top.npy
-subjects_all: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rskeleton_subject.csv
-crop_dir: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rcrops
-foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rlabels
-foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rlabel_without_top.npy
-subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rlabel_subject.csv
+pickle_normal: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rskeleton.pkl
+numpy_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rskeleton_without_top.npy
+subjects_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rskeleton_subject.csv
+crop_dir: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rcrops
+foldlabel_dir: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rlabels
+foldlabel_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rlabel_without_top.npy
+subjects_foldlabel_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rlabel_subject.csv
 crop_file_suffix: _cropped_skeleton.nii.gz
 pickle_benchmark: 
-train_val_csv_file: /neurospin/dico/jchavas/Runs/52_ukbiobank/Input/UkBioBank/subjects_full.csv
+train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/UkBioBank/subjects_full.csv
 nb_subjects: -1
-subject_labels_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/UkBioBank/participants.csv
+subject_labels_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/UkBioBank/participants.csv
 subject_column_name: 'Subject'
 label_names: ["Gender"]
 n_max: 1080

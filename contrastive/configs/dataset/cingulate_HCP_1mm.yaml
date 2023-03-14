@@ -1,15 +1,10 @@
 # @package _global_
 dataset_name: cingulate_HCP_1mm
-pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/1mm/CINGULATE/mask/Rskeleton.pkl
-numpy_all: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/1mm/CINGULATE/mask/Rskeleton.npy
-subjects_all: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/1mm/CINGULATE/mask/Rskeleton_subject.csv
-#pickle_foldlabel: /host/home/jc225751/Runs/38_cingulate_with_foldlabels/Input/Processed_External/crops/1mm/CINGULATE/mask/Rlabel.pkl
-foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/1mm/CINGULATE/mask/Rlabel.npy
-subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/hcp/crops/1mm/CINGULATE/mask/Rlabel_subject.csv
+pickle_normal: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/1mm/CINGULATE/mask/Rskeleton.pkl
+numpy_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/1mm/CINGULATE/mask/Rskeleton.npy
+subjects_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/1mm/CINGULATE/mask/Rskeleton_subject.csv
+foldlabel_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/1mm/CINGULATE/mask/Rlabel.npy
+subjects_foldlabel_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/1mm/CINGULATE/mask/Rlabel_subject.csv
 pickle_benchmark: 
-train_val_csv_file: /neurospin/dico/data/deep_folding/papers/midl2022/HCP_half_1bis.csv
+train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/hcp/HCP_half_1bis.csv
 nb_subjects: -1
-# subject_labels_file: /host/home/jc225751/Runs/38_cingulate_with_foldlabels/Input/participants.csv
-#label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
-#label_names: ["NEOFAC_C"]
-#label_names: ["Gender"]

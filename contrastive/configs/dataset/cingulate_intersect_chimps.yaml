@@ -1,13 +1,8 @@
 # @package _global_
 dataset_name: cingulate_intersect_chimps
-pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/chimps/crops/2mm/F.C.M.ant_Intersect_Human_Chimps/mask/Rskeleton.pkl
-numpy_all: /neurospin/dico/data/deep_folding/current/datasets/chimps/crops/2mm/F.C.M.ant_Intersect_Human_Chimps/mask/Rskeleton.npy
-subjects_all: /neurospin/dico/data/deep_folding/current/datasets/chimps/crops/2mm/F.C.M.ant_Intersect_Human_Chimps/mask/Rskeleton_subject.csv
-#pickle_foldlabel: /host/home/jc225751/Runs/38_cingulate_with_foldlabels/Input/Processed_External/crops/2mm/CINGULATE/mask/Rlabel.pkl
+pickle_normal: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/chimps/crops/2mm/F.C.M.ant_Intersect_Human_Chimps/mask/Rskeleton.pkl
+numpy_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/chimps/crops/2mm/F.C.M.ant_Intersect_Human_Chimps/mask/Rskeleton.npy
+subjects_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/chimps/crops/2mm/F.C.M.ant_Intersect_Human_Chimps/mask/Rskeleton_subject.csv
 pickle_benchmark: 
-train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/chimps/train.csv
+train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/chimps/train.csv
 nb_subjects: -1
-# subject_labels_file: /host/home/jc225751/Runs/38_cingulate_with_foldlabels/Input/participants.csv
-#label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
-#label_names: ["NEOFAC_C"]
-#label_names: ["Gender"]

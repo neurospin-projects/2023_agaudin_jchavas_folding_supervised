@@ -13,6 +13,5 @@ train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/cs
 nb_subjects: -1
 subject_labels_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/hcp/participants.csv
 subject_column_name: 'Subject'
-#label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
-label_names: ["NEOFAC_E"]
+label_names: ["Gender"]
 n_max: 1080
