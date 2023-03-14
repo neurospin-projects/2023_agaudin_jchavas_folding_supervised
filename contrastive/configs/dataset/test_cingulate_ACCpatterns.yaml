@@ -1,7 +1,7 @@
 # @package _global_
 numpy_all: /volatile/jc225751/Runs/43_supervised_contrastive_ACCpatterns/Input/Rskeleton_ACCpatterns_test.npy
 subjects_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/ACCpatterns/crops/2mm/CINGULATE/mask/Rskeleton_subject.csv
-foldlabel_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/ACCpatterns/crops/2mm/CINGULATE/mask/Rlabel.npy
+foldlabel_all: /volatile/jc225751/Runs/43_supervised_contrastive_ACCpatterns/Input/Rlabel_ACCpatterns_test.npy
 subjects_foldlabel_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/ACCpatterns/crops/2mm/CINGULATE/mask/Rlabel_subject.csv
 crop_dir: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/ACCpatterns/crops/2mm/CINGULATE/mask/Rcrops
 crop_file_suffix: _cropped_skeleton.nii.gz

@@ -12,7 +12,5 @@ train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/cs
 nb_subjects: -1
 subject_labels_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/ACCpatterns/all.csv
 subject_column_name: 'long_name'
-#label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
-#label_names: ["NEOFAC_C"]
 label_names: ["Right_PCS"]
 n_max: 1099
