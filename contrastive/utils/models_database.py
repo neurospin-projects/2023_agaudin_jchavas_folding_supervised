@@ -99,9 +99,9 @@ def process_model(model_path, dataset='cingulate_ACCpatterns', verbose=True):
         get_loss(model_path, save=True, verbose=verbose)
     
     # get the final losses
-    # with open(os.path.join(log_path, "final_losses.json"), 'r') as file3:
-    #     losses = json.load(file3)
-    #     model_dict.update(losses)
+    with open(os.path.join(log_path, "final_losses.json"), 'r') as file3:
+        losses = json.load(file3)
+        model_dict.update(losses)
     
     # get bad learning exclusion criteria
     # compute this criteria thanks to SimCLR_performance_criteria.py
@@ -170,7 +170,7 @@ they are done with another database than {dataset}")
                     print("End file", len(bdd_models))
 
 
-def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
+def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False, dropnan=False):
     """
     - bdd_models: pandas dataframe containing the models path, performances, and parameters. Created by
     generate_bdd_models.
@@ -215,7 +215,10 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False):
     remove = []
     for col in bdd_models.columns:
         print(f"column = {col}")
-        col_values = bdd_models[col].dropna().unique()
+        if dropnan:
+            col_values = bdd_models[col].dropna().unique()
+        else:
+            col_values = bdd_models[col].unique()
         if len(col_values) <= 1:
             remove.append(col)
     bdd_models = bdd_models.drop(columns=remove)

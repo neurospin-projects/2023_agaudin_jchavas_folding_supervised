@@ -10,7 +10,7 @@ dataset = 'cingulate_ACCpatterns_1'
 # folders to look for the models in
 # folders = ["/neurospin/dico/agaudin/Runs/04_pointnet/Output", "/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/convnet",
 # "/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/densenet2", "/neurospin/dico/agaudin/Runs/03_monkeys/Output/convnet_exploration"]
-folders = ["/neurospin/dico/agaudin/Runs/05_rigourous/Output"]
+folders = ["/neurospin/dico/agaudin/Runs/05_rigourous/Output_2"]
 # folders = ["/neurospin/dico/data/deep_folding/papers/ipmi2023/models/beta-VAE"]
 bdd = []
 visited = []
@@ -21,7 +21,7 @@ bdd = pd.DataFrame(bdd)
 print("Number of subjects:", bdd.shape[0])
 
 # remove useless columns
-bdd = post_process_bdd_models(bdd, hard_remove=["partition", "patch_size"], git_branch=True)
+bdd = post_process_bdd_models(bdd, hard_remove=["partition"], git_branch=True)
 # bdd = post_process_bdd_models(bdd, hard_remove=["partition", "numpy_all"], git_branch=True)
 
 # bdd = post_process_bdd_models(bdd, hard_remove=[], git_branch=True)
@@ -29,12 +29,12 @@ bdd = post_process_bdd_models(bdd, hard_remove=["partition", "patch_size"], git_
 
 # save the database
 name = "05"
-save_path = f"/neurospin/dico/agaudin/Runs/05_rigourous/Output/bdd_{name}.csv"
+save_path = f"/neurospin/dico/agaudin/Runs/05_rigourous/Output_2/bdd_{name}.csv"
 bdd.to_csv(save_path, index=True)
 
 
 # write the little readme
-with open(f"/neurospin/dico/agaudin/Runs/05_rigourous/Output/README_{name}.txt", 'w') as file:
+with open(f"/neurospin/dico/agaudin/Runs/05_rigourous/Output_2/README_{name}.txt", 'w') as file:
     file.write("Contient les paramètres de tous les modèles d'intérêt (dossiers précisés en-dessous). La base est faite en sorte que \
 seuls les paramètres qui changent entre les modèles soient enregistrés.\n")
     file.write("\n")
