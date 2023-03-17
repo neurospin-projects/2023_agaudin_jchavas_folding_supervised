@@ -14,7 +14,7 @@ setup(
                       'scipy',
                       'psutil',
                       'orca',
-                      'matplotlib==3.5.1',
+                      'matplotlib',
                       'torch',
                       'tqdm==4.51.0',
                       'torchvision',
