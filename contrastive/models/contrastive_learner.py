@@ -37,6 +37,7 @@ Some helper functions are taken from:
 https://learnopencv.com/tensorboard-with-pytorch-lightning
 
 """
+import json
 import numpy as np
 import torch
 import pytorch_lightning as pl
@@ -151,6 +152,7 @@ class ContrastiveLearner(pl.LightningModule):
                 params,
                 self.current_epoch)
 
+
     def plot_histograms(self):
         """Plots all zii, zjj, zij and weights histograms"""
         # Computes histogram of sim_zii
@@ -174,6 +176,7 @@ class ContrastiveLearner(pl.LightningModule):
         self.logger.experiment.add_image(
             'histo_weights', histogram_weights, self.current_epoch)
 
+
     def plot_scatter_matrices(self):
         """Plots scatter matrices of output and representations spaces"""
         # Makes scatter matrix of output space
@@ -196,6 +199,7 @@ class ContrastiveLearner(pl.LightningModule):
             'scatter_matrix_representations',
             scatter_matrix_representations,
             self.current_epoch)
+
 
     def plot_views(self):
         """Plots different 3D views"""
@@ -227,6 +231,7 @@ class ContrastiveLearner(pl.LightningModule):
                     'input_ana_k: ',
                     image_input_k, self.current_epoch)
 
+
     def configure_optimizers(self):
         """Adam optimizer"""
         optimizer = torch.optim.Adam(\
@@ -235,16 +240,19 @@ class ContrastiveLearner(pl.LightningModule):
                         weight_decay=self.config.weight_decay)
         return optimizer
 
+
     def nt_xen_loss(self, z_i, z_j):
         """Loss function for contrastive"""
         loss = NTXenLoss(temperature=self.config.temperature,
                          return_logits=True)
         return loss.forward(z_i, z_j)
 
+
     def cross_entropy_loss(self, sample, output_i, output_j):
         """Loss function for decoder"""
         loss = CrossEntropyLoss(device=self.device)
         return loss.forward(sample, output_i, output_j)
+
 
     def training_step(self, train_batch, batch_idx):
         """Training step.
@@ -291,6 +299,7 @@ class ContrastiveLearner(pl.LightningModule):
         }
 
         return batch_dictionary
+
 
     def compute_outputs_skeletons(self, loader):
         """Computes the outputs of the model for each crop.
@@ -356,6 +365,7 @@ class ContrastiveLearner(pl.LightningModule):
 
         return X, filenames_list
 
+
     def compute_representations(self, loader):
         """Computes representations for each crop.
 
@@ -369,10 +379,16 @@ class ContrastiveLearner(pl.LightningModule):
         with torch.no_grad():
             for (inputs, filenames) in loader:
                 # First views of the whole batch
-                inputs = inputs.cuda()
+                if self.config.device != 'cpu':
+                    inputs = inputs.cuda()
+                else:
+                    inputs = inputs.cpu()
                 if self.config.backbone_name == 'pointnet':
                     inputs = torch.squeeze(inputs).to(torch.float)
-                model = self.cuda()
+                if self.config.device != 'cpu':
+                    model = self.cuda()
+                else:
+                    model = self.cpu()
                 input_i = inputs[:, 0, :]
                 input_j = inputs[:, 1, :]
                 model.forward(input_i)
@@ -393,6 +409,7 @@ class ContrastiveLearner(pl.LightningModule):
                 del inputs
 
         return X, filenames_list
+
 
     def compute_tsne(self, loader, register):
         """Computes t-SNE.
@@ -417,6 +434,7 @@ class ContrastiveLearner(pl.LightningModule):
 
         # Returns tsne embeddings
         return X_tsne
+
 
     def training_epoch_end(self, outputs):
         """Computation done at the end of the epoch"""
@@ -457,6 +475,7 @@ class ContrastiveLearner(pl.LightningModule):
             avg_loss,
             self.current_epoch)
 
+
     def validation_step(self, val_batch, batch_idx):
         """Validation step"""
 
@@ -489,6 +508,7 @@ class ContrastiveLearner(pl.LightningModule):
 
         return batch_dictionary
 
+
     def validation_epoch_end(self, outputs):
         """Computaion done at the end of each validation epoch"""
 
@@ -518,3 +538,19 @@ class ContrastiveLearner(pl.LightningModule):
             "Loss/Validation",
             avg_loss,
             self.current_epoch)
+
+        # save model if best
+        save_path = './logs/'
+        if self.current_epoch == 0:
+            best_loss = np.inf
+        elif self.current_epoch > 0:
+            with open(save_path+"best_model_params.json", 'r') as file:
+                best_model_params = json.load(file)
+                best_loss = best_model_params['best_loss']
+        
+        avg_loss = avg_loss.cpu().item()
+        if avg_loss < best_loss:
+            torch.save({'state_dict': self.state_dict()}, save_path+'best_model_weights.pt')
+            best_model_params = {'epoch': self.current_epoch, 'best_loss': avg_loss}
+            with open(save_path+"best_model_params.json", 'w') as file:
+                json.dump(best_model_params, file)

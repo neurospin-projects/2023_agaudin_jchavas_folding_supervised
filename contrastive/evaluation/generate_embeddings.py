@@ -61,6 +61,8 @@ def compute_embeddings(config):
     model = ContrastiveLearner_Visualization(config, sample_data=data_module)
     # fetch and load weights
     paths = config.model_path+"/logs/*/version_0/checkpoints"+r'/*.ckpt'
+    if 'use_best_model' in config.keys():
+        paths = config.model_path+"/logs/best_model_weights.pt"
     files = glob.glob(paths)
     print("model_weights:", files[0])
     cpkt_path = files[0]
@@ -74,6 +76,8 @@ def compute_embeddings(config):
 
     # create folder where to save the embeddings
     embeddings_path = config.embeddings_save_path
+    if 'use_best_model' in config.keys():
+        embeddings_path = config.embeddings_save_path+'_best_model'
     if not os.path.exists(embeddings_path):
         os.makedirs(embeddings_path)
 

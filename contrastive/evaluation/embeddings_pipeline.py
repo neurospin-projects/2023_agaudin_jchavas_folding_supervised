@@ -88,8 +88,21 @@ overwrite to True if you still want to compute them.")
                     compute_embeddings(cfg)
                     # reload config for train_classifiers to work properly
                     cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config_classifiers.yaml')
-                    print(f"\nbefore train_classifiers: training_labels = {cfg.training_labels}\n")
                     train_classifiers(cfg)
+                    
+                    # compute embeddings for the best model if saved
+                    # FULL BRICOLAGE (et ça marche pas en plus)
+                    if os.path.exists(sub_dir+'/logs/best_model_weights.pt'):
+                        # apply the functions
+                        cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config_classifiers.yaml')
+                        cfg.use_best_model = True
+                        compute_embeddings(cfg)
+                        # reload config for train_classifiers to work properly
+                        cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config_classifiers.yaml')
+                        cfg.use_best_model = True
+                        cfg.training_embeddings = cfg.embeddings_save_path+'_best_model/full_embeddings.csv'
+                        cfg.embeddings_save_path = cfg.embeddings_save_path+'_best_model'
+                        train_classifiers(cfg)
 
             else:
                 print(f"{sub_dir} not associated to a model. Continue")
@@ -100,7 +113,7 @@ overwrite to True if you still want to compute them.")
 
 
 # embeddings_pipeline("/neurospin/dico/agaudin/Runs/04_pointnet/Output",
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/05_rigourous/Output",
+embeddings_pipeline("/neurospin/dico/agaudin/Runs/05_rigourous/Output_2",
 dataset='cingulate_ACCpatterns_1', verbose=True, classifier_name='svm', overwrite=False)
 #label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
 #label_names: ["NEOFAC_C"]
