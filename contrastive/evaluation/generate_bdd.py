@@ -7,36 +7,38 @@ from contrastive.utils.models_database import *
 dataset = 'cingulate_ACCpatterns_1'
 
 ## construct the database
-# folders to look for the models in
-# folders = ["/neurospin/dico/agaudin/Runs/04_pointnet/Output", "/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/convnet",
-# "/neurospin/dico/agaudin/Runs/03_monkeys/Output/analysis_folders/densenet2", "/neurospin/dico/agaudin/Runs/03_monkeys/Output/convnet_exploration"]
-folders = ["/neurospin/dico/agaudin/Runs/05_rigourous/Output_2"]
-# folders = ["/neurospin/dico/data/deep_folding/papers/ipmi2023/models/beta-VAE"]
+folders = ["/neurospin/dico/agaudin/Runs/05_rigourous/Output"]
 bdd = []
 visited = []
 
-generate_bdd_models(folders, bdd, visited, verbose=False, dataset=dataset)
+best_model=False
+
+generate_bdd_models(folders, bdd, visited, verbose=False, dataset=dataset, best_model=best_model)
 
 bdd = pd.DataFrame(bdd)
 print("Number of subjects:", bdd.shape[0])
 
-# remove useless columns
-bdd = post_process_bdd_models(bdd, hard_remove=["partition"], git_branch=True)
-# bdd = post_process_bdd_models(bdd, hard_remove=["partition", "numpy_all"], git_branch=True)
+for col in bdd.columns:
+    print(col, bdd[col][0])
 
-# bdd = post_process_bdd_models(bdd, hard_remove=[], git_branch=True)
+# remove useless columns
+bdd = post_process_bdd_models(bdd, hard_remove=["partition", "patch_size"], git_branch=True)
+# bdd = post_process_bdd_models(bdd, hard_remove=["partition", "numpy_all"], git_branch=True)
 
 
 # save the database
-name = "05"
-save_path = f"/neurospin/dico/agaudin/Runs/05_rigourous/Output_2/bdd_{name}.csv"
-bdd.to_csv(save_path, index=True)
+name = "nb_epochs"
+save_path = f"/neurospin/dico/agaudin/Runs/05_rigourous/Output/"
+bdd.to_csv(save_path+f"bdd_{name}.csv", index=True)
 
 
 # write the little readme
-with open(f"/neurospin/dico/agaudin/Runs/05_rigourous/Output_2/README_{name}.txt", 'w') as file:
+with open(save_path+f"README_{name}.txt", 'w') as file:
     file.write("Contient les paramètres de tous les modèles d'intérêt (dossiers précisés en-dessous). La base est faite en sorte que \
 seuls les paramètres qui changent entre les modèles soient enregistrés.\n")
+    if best_model:
+        file.write("\n")
+        file.write("The given values are for the 'best models', ie the models saved when the validation loss is the lowest during training.\n")
     file.write("\n")
     file.write(f"Peformances données pour le dataset {dataset}\n")
     file.write("\n")

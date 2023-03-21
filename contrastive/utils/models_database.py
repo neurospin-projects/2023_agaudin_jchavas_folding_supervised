@@ -7,7 +7,7 @@ from tensorflow.python.summary.summary_iterator import summary_iterator
 
 """
 This file contains functions to create a database containing all the models.
-These functions are used in the generate_bdd notebook and python file"""
+These functions are used in the generate_bdd python file"""
 
 
 # get all the subdirectories (not files) of a given directory
@@ -121,8 +121,38 @@ def process_model(model_path, dataset='cingulate_ACCpatterns', verbose=True):
     return model_dict
 
 
+# Do the same than process_model but for model's best state weights, saved 'by hand'
+def process_best_model(model_path, dataset='cingulate_ACCpatterns'):
+    # generate a dictionnary with the model's parameters and performances
+    model_dict = {}
+    model_dict['model_path'] = model_path
+
+    # read performances
+    with open(model_path + f"/{dataset}_embeddings_best_model/values.json", 'r') as file:
+        values = json.load(file)
+        decomposed_values = {'auc': values['cross_val_auc'][0],
+                            'auc_std': values['cross_val_auc'][1],
+                            'accuracy': values['cross_val_total_accuracy'][0],
+                            'accuracy_std': values['cross_val_total_accuracy'][1]}
+        model_dict.update(decomposed_values)
+    
+    # read parameters
+    with open(model_path+'/partial_config.yaml', 'r') as file2:
+        partial_config = yaml.load(file2, Loader=yaml.FullLoader)
+        model_dict.update(partial_config)
+
+    # get the final losses
+    log_path = model_path + '/logs'
+    with open(os.path.join(log_path, "best_model_params.json"), 'r') as file3:
+        losses = json.load(file3)
+        model_dict.update(losses)
+
+    return model_dict
+
+
 # fill the dictionnary bdd_models with the parameters and performances of all the bdd models
-def generate_bdd_models(folders, bdd_models, visited, dataset='cingulate_ACCpatterns', verbose=True):
+def generate_bdd_models(folders, bdd_models, visited, dataset='cingulate_ACCpatterns',
+                        verbose=True, best_model=False):
     # depth first exploration of folders to treat all the models in it
     
     if verbose:
@@ -144,8 +174,14 @@ def generate_bdd_models(folders, bdd_models, visited, dataset='cingulate_ACCpatt
                     print("Treating", dir_path)
                     # check if values and parameters computed for the model
                     if os.path.exists(dir_path + f"/{dataset}_embeddings/values.json"):
-                        model_dict = process_model(dir_path, dataset=dataset)
-                        bdd_models.append(model_dict)
+                        if not best_model:
+                            model_dict = process_model(dir_path, dataset=dataset)
+                            bdd_models.append(model_dict)
+                        else:
+                            if os.path.exists(dir_path + f"/{dataset}_embeddings_best_model/values.json"):
+                                model_dict = process_best_model(dir_path, dataset=dataset)
+                                bdd_models.append(model_dict)
+
                         if verbose:
                             print("End model", len(folders), len(bdd_models))
 
@@ -162,7 +198,8 @@ they are done with another database than {dataset}")
                     if verbose:
                         print("End recursive", len(folders), len(bdd_models))
                     
-                    generate_bdd_models(folders, bdd_models, visited, dataset=dataset, verbose=verbose)
+                    generate_bdd_models(folders, bdd_models, visited, dataset=dataset,
+                                        verbose=verbose, best_model=best_model)
             
             else:
                 print(f"{dir_path} is a file. Continue.")
