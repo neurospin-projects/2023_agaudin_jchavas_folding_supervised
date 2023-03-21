@@ -12,11 +12,21 @@ dataset = 'cingulate_ACCpatterns_1'
 #            "/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/trained_on_all_HCP/all",
 #            "/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/trained_on_HCP_half_2/training-different-n",
 #            "/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/trained_on_ACCpatterns_0/unsupervised/convnet-10-n=171"]
-folders = ["/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/trained_on_UkBioBank/different-n_without_top",
-           "/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/trained_on_all_HCP/all",
-           "/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/trained_on_HCP_half_2/training-different-n",
-           "/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/trained_on_ACCpatterns_0/unsupervised/convnet-10-n=171"]
+# folders = ["/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/trained_on_UkBioBank/different-n_without_top",
+#            "/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/trained_on_all_HCP/all",
+#            "/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/trained_on_HCP_half_2/training-different-n",
+#            "/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/trained_on_ACCpatterns_0/unsupervised/convnet-10-n=171"]
+# folders = ["/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/trained_on_HCP_half_2/training-different-n-top-separated-random"]
+# folders = ["/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/trained_on_UkBioBank/different-n_top-separated"]
 # folders = ["/neurospin/dico/data/deep_folding/papers/ipmi2023/models/beta-VAE"]
+
+folders = ["/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/trained_on_UkBioBank/different-n-top-included",
+           "/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/trained_on_UkBioBank/different-n-top-separated",
+           "/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/trained_on_HCP_half_2/training-different-n-top-included",
+           "/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/trained_on_HCP_half_2/training-different-n-top-separated",
+           "/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/trained_on_ACCpatterns_0/unsupervised/convnet-10-n=171"]
+
+
 bdd = []
 visited = []
 
@@ -34,7 +44,8 @@ print("Number of subjects:", bdd.shape[0])
 
 # save the database
 # name = "HCP-UkBioBank-with-top_different-n_evaluation-ACCpatterns-1"
-name = "HCP-with-top-UkBioBank_without-top-different-n_evaluation-ACCpatterns-1"
+# name = "HCP-with-top-UkBioBank_without-top-different-n_evaluation-ACCpatterns-1"
+name = "HCP-UkBioBank-all-different-n_evaluation-ACCpatterns-1"
 save_path = f"/neurospin/dico/jchavas/Runs/57_miccai2023_checks_done_after/Output/contrastive/summary"
 csv_name = f"{save_path}/bdd_{name}.csv"
 bdd.to_csv(csv_name, index=True)
