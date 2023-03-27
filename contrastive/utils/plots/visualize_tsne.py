@@ -99,8 +99,8 @@ def plot_tsne(X_tsne, buffer, labels=None, savepath=None, type=""):
                           False -> plots the figure
     """
     fig, ax = plt.subplots(1)
-    logger.info(f"Matplotlib backend = {matplotlib.get_backend()}")
-    logger.info(f"X_tsne shape = {X_tsne.shape}")
+    logger.debug(f"Matplotlib backend = {matplotlib.get_backend()}")
+    logger.debug(f"X_tsne shape = {X_tsne.shape}")
     nb_points = X_tsne.shape[0]
     m = np.repeat(["o"], nb_points)
     if labels is None:

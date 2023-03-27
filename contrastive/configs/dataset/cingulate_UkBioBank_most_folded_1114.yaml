@@ -1,5 +1,5 @@
 # @package _global_
-dataset_name: cingulate_UkBioBank_full
+dataset_name: cingulate_UkBioBank_most_folded_1114
 pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rskeleton.pkl
 numpy_all: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rskeleton.npy
 subjects_all: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rskeleton_subject.csv
@@ -10,8 +10,8 @@ foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crop
 subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rlabel_subject.csv
 crop_file_suffix: _cropped_skeleton.nii.gz
 pickle_benchmark: 
-train_val_csv_file: /volatile/jc225751/Runs/52_ukbiobank/Input/UkBioBank/subjects_full.csv
-nb_subjects: 551
+train_val_csv_file: /neurospin/dico/agaudin/Runs/05_rigourous/2022_jchavas_cingulate_inhibitory_control/contrastive/notebooks/most_folded_1114.csv
+nb_subjects: -1
 subject_labels_file: /volatile/jc225751/Runs/52_ukbiobank/Input/UkBioBank/participants.csv
 subject_column_name: 'Subject'
 # subject_labels_file: /host/home/jc225751/Runs/38_cingulate_with_foldlabels/Input/participants.csv

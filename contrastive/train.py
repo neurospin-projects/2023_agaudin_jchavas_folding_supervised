@@ -39,6 +39,7 @@
 # Imports and global variables definitions
 ######################################################################
 import os
+#os.environ['MPLCONFIGDIR'] = os.getcwd()+'/.config_mpl'
 
 import hydra
 import torch
@@ -57,9 +58,8 @@ from contrastive.models.contrastive_learner_visualization import \
     ContrastiveLearner_Visualization
 from contrastive.utils.config import create_accessible_config, process_config,\
 get_config_diff
-from contrastive.utils.logs import set_root_logger_level
-from contrastive.utils.logs import set_file_log_handler
-from contrastive.utils.logs import set_file_logger
+from contrastive.utils.logs import set_root_logger_level, set_file_log_handler,\
+set_file_logger
 
 tb_logger = pl_loggers.TensorBoardLogger('logs')
 writer = SummaryWriter()
@@ -76,13 +76,19 @@ We use the following definitions:
 @hydra.main(config_name='config', config_path="configs")
 def train(config):
     config = process_config(config)
-    os.environ["NUMEXPR_MAX_THREADS"] = str(config.num_cpu_workers)
+
+    # set the number of working cpus
+    available_cpus = len(os.sched_getaffinity(0))
+    log.debug('Available working cpus:', available_cpus)
+    n_cpus = min(available_cpus, config.num_cpu_workers)
+    os.environ["NUMEXPR_MAX_THREADS"] = str(n_cpus)
+    log.debug('NUMEXPR_MAX_THREADS', n_cpus)
 
     set_root_logger_level(config.verbose)
     # Sets handler for logger
     set_file_log_handler(file_dir=os.getcwd(),
                          suffix='output')
-    log.info(f"current directory = {os.getcwd()}")
+    log.debug(f"current directory = {os.getcwd()}")
 
 
     # copies some of the config parameters in a yaml file easily accessible
@@ -91,7 +97,7 @@ def train(config):
     'mode', 'foldlabel', 'fill_value', 'patch_size', 'max_angle', 'checkerboard_size', 'keep_bottom',
     'growth_rate', 'block_config', 'num_init_features', 'num_representation_features', 'num_outputs',
     'environment', 'batch_size', 'pin_mem', 'partition', 'lr', 'weight_decay', 'max_epochs',
-    'early_stopping_patience', 'seed', 'backbone_name', 'sigma_labels', 'proportion_pure_contrastive', 'n_max',
+    'early_stopping_patience', 'random_state', 'seed', 'backbone_name', 'sigma_labels', 'proportion_pure_contrastive', 'n_max',
     'train_val_csv_file']
     if config.model == 'SimCLR_supervised':
         keys_to_keep.extend(['temperature_supervised', 'sigma_labels', 'pretrained_model_path'])

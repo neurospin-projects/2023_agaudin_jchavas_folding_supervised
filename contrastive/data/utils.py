@@ -57,7 +57,7 @@ log = set_file_logger(__file__)
 def read_npy_file(npy_file_path: str) -> np.ndarray:
     """Reads npy file containing all subjects and returns the numpy array."""
     # Loads crops from all subjects
-    log.info("Current directory = " + os.getcwd())
+    log.debug("Current directory = " + os.getcwd())
     arr = np.load(npy_file_path, mmap_mode='r')
     log.debug(f"shape of loaded numpy array = {arr.shape}")
     return arr
@@ -165,15 +165,17 @@ def extract_test(normal_subjects, train_val_subjects, normal_data):
     return test_subjects, test_data
 
 
-def restrict_length(subjects:pd.DataFrame, nb_subjects: int) -> pd.DataFrame:
+def restrict_length(subjects:pd.DataFrame, nb_subjects: int, is_random: bool=True, random_state: int=1) -> pd.DataFrame:
     """Restrict length by nb_subjects if requested"""
     if nb_subjects == _ALL_SUBJECTS:
         length = len(subjects)
     else:
         length = min(nb_subjects,
-                  len(subjects))
-        subjects = subjects[:length]
-
+                     len(subjects))
+        if is_random:
+            subjects = subjects.sample(n=length, random_state=random_state)
+        else:
+            subjects = subjects[:length]
     return subjects
 
 
@@ -228,7 +230,8 @@ def extract_data(npy_file_path, config):
         extract_test(normal_subjects, train_val_subjects, normal_data)
 
     # Restricts train_val length
-    train_val_subjects = restrict_length(train_val_subjects, config.nb_subjects)
+    random_state = None if not 'random_state' in config.keys() else config.random_state
+    train_val_subjects = restrict_length(train_val_subjects, config.nb_subjects, random_state=random_state)
 
     # Extracts train_val from normal_data
     train_val_subjects, train_val_data = \
@@ -379,7 +382,7 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
     test_labels = extract_labels(subject_labels, test_subjects)
 
     # Restricts train_val length
-    train_val_subjects = restrict_length(train_val_subjects, config.nb_subjects)
+    train_val_subjects = restrict_length(train_val_subjects, config.nb_subjects, random_state=config.random_state)
 
     # Extracts train_val from normal_data
     train_val_subjects, train_val_data = \

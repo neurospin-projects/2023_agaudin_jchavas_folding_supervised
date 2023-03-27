@@ -41,6 +41,7 @@ from scipy.ndimage import rotate
 from sklearn.preprocessing import OneHotEncoder
 
 from contrastive.utils import logs
+from contrastive.utils.test_timeit import timeit
 from contrastive.data.utils import zero_padding, repeat_padding, pad
 
 log = logs.set_file_logger(__file__)
@@ -158,7 +159,7 @@ class OnlyBottomTensor(object):
 
     def __call__(self, tensor):
         arr = tensor.numpy()
-        arr = arr * (arr == 30)
+        arr[arr != 30] = 0
         return torch.from_numpy(arr)
 
 
@@ -180,22 +181,23 @@ def count_non_null(arr):
 def remove_branch(arr_foldlabel, arr_skel, selected_branch):
     """It masks the selected branch in arr_skel
     """
-    mask = ( (arr_foldlabel != 0) & (arr_foldlabel != selected_branch))  
-    mask = mask.astype(int)
-    return arr_skel * mask
+    arr_skel[arr_foldlabel == selected_branch] = 0
+    return arr_skel
 
 def intersection_skeleton_foldlabel(arr_foldlabel, arr_skel):
     """It returns the intersection between skeleton and foldlabel
     """
-    mask = ( (arr_foldlabel != 0) ).astype(int) 
-    intersec = arr_skel*mask
+    intersec = np.copy(arr_skel)
+    intersec[arr_foldlabel == 0] = 0
     count_intersec = count_non_null(intersec)
     count_skel = count_non_null(arr_skel)
-    if count_intersec != count_skel:
+    count_foldlabel = count_non_null(arr_foldlabel)
+    if count_intersec != count_skel or count_foldlabel != count_skel:
         raise ValueError("Probably misaligned skeleton and foldlabel\n"
                          f"Intersection between skeleton and foldlabel "
                          f"has {count_intersec} non-null elements.\n"
-                         f"Skeleton has {count_skel} non-null elements")
+                         f"Skeleton has {count_skel} non-null elements.\n"
+                         f"Foldlabel has {count_foldlabel} non-null elements.")
     return count_intersec
     
 
@@ -203,7 +205,8 @@ def remove_bottom_branches(a):
     """Removes bottom branches from foldlabel.
     
     Bottom branches are numerated between 2000 and 2999"""
-    return a*((a<2000) | (a>=3000)).astype(int)
+    a[(a>=2000)&(a<3000)] = 0
+    return a
 
 
 def remove_branches_up_to_percent(arr_foldlabel, arr_skel,
@@ -235,7 +238,7 @@ def remove_branches_up_to_percent(arr_foldlabel, arr_skel,
     # We take random branches
     np.random.seed()
     np.random.shuffle(indexes)
-    arr_skel_without_branches = arr_skel
+    arr_skel_without_branches = np.copy(arr_skel)
 
     # We loop over shuffled indexes until enough branches have been removed
     for index in indexes:
@@ -319,36 +322,27 @@ class RotateTensor(object):
         self.max_angle = max_angle
 
     def __call__(self, tensor):
+        arr = tensor.numpy()
+        log.debug("Shapes before rotation",tensor.shape, arr.shape)
+        rot_array = np.copy(arr)
 
-        arr = tensor.numpy()[:, :, :, 0]
-        arr_shape = arr.shape
-        flat_im = np.reshape(arr, (-1, 1))
-        im_encoder = OneHotEncoder(sparse=False, categories='auto')
-        onehot_im = im_encoder.fit_transform(flat_im)
-        # rotate one hot im
-        onehot_im = onehot_im.reshape(*arr_shape, -1)
-        onehot_im_result = np.copy(onehot_im)
-        n_cat = onehot_im.shape[-1]
         for axes in (0, 1), (0, 2), (1, 2):
             np.random.seed()
             angle = np.random.uniform(-self.max_angle, self.max_angle)
-            onehot_im_rot = np.empty_like(onehot_im)
-            for c in range(n_cat):
-                const = 1 if c == 0 else 0
-                onehot_im_rot[..., c] = rotate(onehot_im_result[..., c],
-                                               angle=angle,
-                                               axes=axes,
-                                               reshape=False,
-                                               mode='constant',
-                                               cval=const)
-            onehot_im_result = onehot_im_rot
-        im_rot_flat = im_encoder.inverse_transform(
-            np.reshape(onehot_im_result, (-1, n_cat)))
-        im_rot = np.reshape(im_rot_flat, arr_shape)
-        arr_rot = np.expand_dims(
-            im_rot,
-            axis=0)
-        return torch.from_numpy(arr_rot)
+            log.debug(axes, angle)
+            rot_array = rotate(rot_array,
+                               angle=angle,
+                               axes=axes,
+                               order=0,
+                               reshape=False,
+                               mode='constant',
+                               cval=0)
+
+        rot_array = np.expand_dims(rot_array[..., 0], axis=0)
+
+        log.debug("Values in the array after rotation", np.unique(rot_array))
+
+        return torch.from_numpy(rot_array)
 
 
 class PartialCutOutTensor_Roll(object):
@@ -548,7 +542,8 @@ class PartialCutOutTensor(object):
                 arr_copy[tuple(indexes)] = arr_cut * (arr_cut == 30)
                 return torch.from_numpy(arr_copy)
         else:
-            arr_bottom = arr * (arr == 30)
+            arr_bottom = np.copy(arr)
+            arr_bottom[arr_bottom != 30] = 0
             arr_cut = arr[tuple(indexes)]
             arr_bottom[tuple(indexes)] = np.copy(arr_cut)
             return torch.from_numpy(arr_bottom)

@@ -111,6 +111,7 @@ env.bak/
 venv.bak/
 venv_local/
 venv_kraken/
+venv_*
 
 # Spyder project settings
 .spyderproject
@@ -146,3 +147,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# kraken managing
+sh_kraken
