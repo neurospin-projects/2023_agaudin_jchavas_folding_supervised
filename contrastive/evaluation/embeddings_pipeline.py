@@ -113,7 +113,5 @@ overwrite to True if you still want to compute them.")
 
 
 # embeddings_pipeline("/neurospin/dico/agaudin/Runs/04_pointnet/Output",
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/05_rigourous/Output_2",
+embeddings_pipeline("/neurospin/dico/agaudin/Runs/05_rigourous/Output",
 dataset='cingulate_ACCpatterns_1', verbose=True, classifier_name='svm', overwrite=False)
-#label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
-#label_names: ["NEOFAC_C"]

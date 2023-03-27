@@ -10,8 +10,9 @@ nb_epochs_per_tSNE: 25
 nb_epochs_per_matrix_plot: -1
 nb_steps_per_flush_logs: 1
 log_every_n_steps: 2
-early_stopping_patience: 50
-seed: -1
+early_stopping_patience: 100
+random_state: 25
+seed:
 start_epoch: 0
 checkpoint_path:
 analysis_path: 

@@ -7,10 +7,11 @@ from contrastive.utils.models_database import *
 dataset = 'cingulate_ACCpatterns_1'
 
 ## construct the database
-folders = ["/neurospin/dico/agaudin/Runs/05_rigourous/Output"]
+folders = ["/neurospin/dico/agaudin/Runs/05_rigourous/Output/nb_epochs"]
 bdd = []
 visited = []
 
+# parameter to use or not the model with the best validation loss
 best_model=False
 
 generate_bdd_models(folders, bdd, visited, verbose=False, dataset=dataset, best_model=best_model)
@@ -23,12 +24,12 @@ for col in bdd.columns:
 
 # remove useless columns
 bdd = post_process_bdd_models(bdd, hard_remove=["partition", "patch_size"], git_branch=True)
-# bdd = post_process_bdd_models(bdd, hard_remove=["partition", "numpy_all"], git_branch=True)
+# the hard remove are the ones containing [] char in their fields. They are (for now) patch_size, partition, numpy_all
 
 
 # save the database
 name = "nb_epochs"
-save_path = f"/neurospin/dico/agaudin/Runs/05_rigourous/Output/"
+save_path = "/neurospin/dico/agaudin/Runs/05_rigourous/Output/nb_epochs/"
 bdd.to_csv(save_path+f"bdd_{name}.csv", index=True)
 
 
