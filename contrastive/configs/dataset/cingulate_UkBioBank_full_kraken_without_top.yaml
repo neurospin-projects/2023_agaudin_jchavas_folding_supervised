@@ -11,6 +11,8 @@ crop_file_suffix: _cropped_skeleton.nii.gz
 pickle_benchmark: 
 train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/UkBioBank/subjects_full.csv
 nb_subjects: -1
+random: False
+random_state: 1
 subject_labels_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/UkBioBank/participants.csv
 subject_column_name: 'Subject'
 label_names: ["Gender"]

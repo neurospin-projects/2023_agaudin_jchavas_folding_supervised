@@ -6,3 +6,5 @@ subjects_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets
 pickle_benchmark: 
 train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/chimps/train.csv
 nb_subjects: -1
+random: False
+random_state: 1

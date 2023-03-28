@@ -8,3 +8,5 @@ subjects_foldlabel_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Inpu
 pickle_benchmark: 
 train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/hcp/HCP_half_1bis.csv
 nb_subjects: -1
+random: False
+random_state: 1
