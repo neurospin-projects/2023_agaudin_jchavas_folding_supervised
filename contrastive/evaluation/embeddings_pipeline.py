@@ -92,7 +92,7 @@ overwrite to True if you still want to compute them.")
                     train_classifiers(cfg)
                     
                     # compute embeddings for the best model if saved
-                    # FULL BRICOLAGE (et ça marche pas en plus)
+                    # FULL BRICOLAGE
                     if os.path.exists(sub_dir+'/logs/best_model_weights.pt'):
                         # apply the functions
                         cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config_classifiers.yaml')
@@ -113,6 +113,5 @@ overwrite to True if you still want to compute them.")
             print(f"{sub_dir} is a file. Continue.")
 
 
-# embeddings_pipeline("/neurospin/dico/agaudin/Runs/04_pointnet/Output",
 embeddings_pipeline("/neurospin/dico/agaudin/Runs/05_rigourous/Output",
 dataset='cingulate_ACCpatterns_1', verbose=True, classifier_name='svm', overwrite=False)

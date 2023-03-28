@@ -236,7 +236,7 @@ def extract_data(npy_file_path, config):
     train_val_subjects = restrict_length(train_val_subjects,
                                          config.nb_subjects,
                                          config.random,
-                                         config.random_state)
+                                         random_state)
 
     # Extracts train_val from normal_data
     train_val_subjects, train_val_data = \
