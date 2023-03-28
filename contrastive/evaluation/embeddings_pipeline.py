@@ -1,5 +1,6 @@
 import os
 import yaml
+import json
 import omegaconf
 
 from contrastive.evaluation.generate_embeddings import compute_embeddings
@@ -77,7 +78,7 @@ overwrite to True if you still want to compute them.")
                     cfg = preprocess_config(sub_dir, dataset, classifier_name=classifier_name)
                     if verbose:
                         print("CONFIG FILE", type(cfg))
-                        print(cfg)
+                        print(json.dumps(omegaconf.OmegaConf.to_container(cfg, resolve=True), indent=4, sort_keys=True))
                     # save the modified config next to the real one
                     with open(sub_dir+'/.hydra/config_classifiers.yaml', 'w') as file:
                         yaml.dump(omegaconf.OmegaConf.to_yaml(cfg), file)

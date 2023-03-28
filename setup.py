@@ -16,14 +16,15 @@ setup(
 		              'orca',
                       'matplotlib',
                       'torch',
-                      'tqdm',
+                      'tqdm==4.51.0',
                       'torchvision',
                       'torch-summary',
+                      'tensorboard',
                       'hydra',
                       'hydra.core',
                       'dataclasses',
                       'OmegaConf',
-                      'sklearn',
+                      'scikit-learn==0.24.2',
                       'scikit-image',
                       'pytorch-lightning',
                       'lightly',
@@ -40,6 +41,6 @@ setup(
                       ],
     },
     url='https://github.com/neurospin-projects/2022_jchavas_cingulate_inhibitory_control',
-    author='Joël Chavas',
-    author_email='joel.chavas@cea.fr'
+    author='Joël Chavas, Aymeric Gaudin',
+    author_email='joel.chavas@cea.fr, aymeric.gaudin@cea.fr'
 )

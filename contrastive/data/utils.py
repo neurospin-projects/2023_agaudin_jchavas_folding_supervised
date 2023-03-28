@@ -40,6 +40,7 @@ import os
 import numpy as np
 import pandas as pd
 import torch
+import random
 
 from contrastive.utils.logs import set_file_logger
 #from contrastive.data.transforms import transform_foldlabel
@@ -165,7 +166,7 @@ def extract_test(normal_subjects, train_val_subjects, normal_data):
     return test_subjects, test_data
 
 
-def restrict_length(subjects:pd.DataFrame, nb_subjects: int, is_random: bool=True, random_state: int=1) -> pd.DataFrame:
+def restrict_length(subjects:pd.DataFrame, nb_subjects: int, is_random: bool=False, random_state: int=1) -> pd.DataFrame:
     """Restrict length by nb_subjects if requested"""
     if nb_subjects == _ALL_SUBJECTS:
         length = len(subjects)
@@ -176,6 +177,7 @@ def restrict_length(subjects:pd.DataFrame, nb_subjects: int, is_random: bool=Tru
             subjects = subjects.sample(n=length, random_state=random_state)
         else:
             subjects = subjects[:length]
+
     return subjects
 
 
@@ -231,7 +233,10 @@ def extract_data(npy_file_path, config):
 
     # Restricts train_val length
     random_state = None if not 'random_state' in config.keys() else config.random_state
-    train_val_subjects = restrict_length(train_val_subjects, config.nb_subjects, random_state=random_state)
+    train_val_subjects = restrict_length(train_val_subjects,
+                                         config.nb_subjects,
+                                         config.random,
+                                         config.random_state)
 
     # Extracts train_val from normal_data
     train_val_subjects, train_val_data = \
@@ -382,7 +387,10 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
     test_labels = extract_labels(subject_labels, test_subjects)
 
     # Restricts train_val length
-    train_val_subjects = restrict_length(train_val_subjects, config.nb_subjects, random_state=config.random_state)
+    train_val_subjects = restrict_length(train_val_subjects,
+                                         config.nb_subjects,
+                                         config.random,
+                                         config.random_state)
 
     # Extracts train_val from normal_data
     train_val_subjects, train_val_data = \

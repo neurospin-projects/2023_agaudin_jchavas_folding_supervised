@@ -203,7 +203,8 @@ class ConvNet(pl.LightningModule):
                 for n, p in pretrained['state_dict'].items():
                     print(n)
                     # The pretrained model weight is saved as backbone.conv0.weight
-                    # whereas here the key is conv0.weight
+                    # whereas here the key in state_dict is conv0.weight
+                    # we must remove the "bakcbone." part of the key
                     n_model = '.'.join(n.split('.')[1:])
                     if n_model in model_dict:
                         model_dict[n_model] = p

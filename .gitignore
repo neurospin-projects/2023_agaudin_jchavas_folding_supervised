@@ -134,6 +134,10 @@ contrastive/notebooks/*.bck.minf
 contrastive/multirun
 contrastive/checkpoints
 
+# generated src folders
+src
+contrastive/src
+
 # Rope project settings
 .ropeproject
 

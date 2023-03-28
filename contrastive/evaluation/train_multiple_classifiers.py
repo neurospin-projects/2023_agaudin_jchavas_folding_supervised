@@ -180,7 +180,11 @@ def post_processing_results(labels, embeddings, Curves, aucs, accuracies, values
 
     # save predicted labels
     labels.to_csv(results_save_path+f"/{mode}_predicted_probas.csv", index=False)
+    labels.to_csv(results_save_path+f"/{mode}_predicted_labels.csv", index=False)
     # DEBUG embeddings.to_csv(results_save_path+f"/{mode}_effective_embeddings.csv", index=True)
+    
+    # save predicted labels
+    embeddings.to_csv(results_save_path+f"/{mode}_effective_embeddings.csv", index=True)
 
     return
 
