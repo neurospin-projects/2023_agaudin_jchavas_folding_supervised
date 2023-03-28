@@ -11,7 +11,7 @@ foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crop
 subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rlabel_subject.csv
 crop_file_suffix: _cropped_skeleton.nii.gz
 pickle_benchmark: 
-train_val_csv_file: /neurospin/dico/agaudin/Runs/05_rigourous/2022_jchavas_cingulate_inhibitory_control/contrastive/notebooks/mid_folded_551.csv
+train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/gyrification_based_subsets/mid_folded_551.csv
 nb_subjects: -1
 subject_labels_file: /volatile/jc225751/Runs/52_ukbiobank/Input/UkBioBank/participants.csv
 subject_column_name: 'Subject'
