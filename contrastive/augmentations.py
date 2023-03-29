@@ -205,8 +205,7 @@ def remove_bottom_branches(a):
     """Removes bottom branches from foldlabel.
     
     Bottom branches are numerated between 2000 and 2999"""
-    a[(a>=2000)&(a<3000)] = 0
-    return a
+    return a*((a<2000) | (a>=3000)).astype(int)
 
 
 def remove_branches_up_to_percent(arr_foldlabel, arr_skel,
