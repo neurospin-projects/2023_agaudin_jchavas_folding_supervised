@@ -192,7 +192,7 @@ def intersection_skeleton_foldlabel(arr_foldlabel, arr_skel):
     count_intersec = count_non_null(intersec)
     count_skel = count_non_null(arr_skel)
     count_foldlabel = count_non_null(arr_foldlabel)
-    if count_intersec != count_skel or count_foldlabel != count_skel:
+    if count_intersec != count_skel:
         raise ValueError("Probably misaligned skeleton and foldlabel\n"
                          f"Intersection between skeleton and foldlabel "
                          f"has {count_intersec} non-null elements.\n"

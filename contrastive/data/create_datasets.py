@@ -38,7 +38,7 @@ Tools to create datasets
 
 # only if foldlabel == True
 try:
-    from deep_folding.brainvisa.utils.save_data import compare_npy_file_aims_files
+    from deep_folding.brainvisa.utils.save_data import quality_checks
     from deep_folding.brainvisa.utils.save_data import compare_array_aims_files
 except ImportError:
     print("INFO: you cannot use deep_folding in brainvisa. Probably OK.")
@@ -152,7 +152,7 @@ def create_sets_with_labels(config):
                                  config.label_names)
 
     if config.environment == "brainvisa" and config.checking:
-        compare_npy_file_aims_files(config.subjects_all, config.numpy_all, config.crop_dir)
+        quality_checks(config.subjects_all, config.numpy_all, config.crop_dir, parallel=True)
 
     # Loads and separates in train_val/test skeleton crops
     train_val_subjects, train_val_data, train_val_labels,\

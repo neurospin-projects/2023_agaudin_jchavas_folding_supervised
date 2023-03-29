@@ -170,6 +170,7 @@ def restrict_length(subjects:pd.DataFrame, nb_subjects: int, is_random: bool=Fal
     """Restrict length by nb_subjects if requested"""
     if nb_subjects == _ALL_SUBJECTS:
         length = len(subjects)
+        subjects = subjects
     else:
         length = min(nb_subjects,
                      len(subjects))
