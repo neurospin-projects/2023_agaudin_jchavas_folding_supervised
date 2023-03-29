@@ -9,9 +9,6 @@ crop_file_suffix: _cropped_skeleton.nii.gz
 #foldlabel_dir: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/ACCpatterns/crops/2mm/CINGULATE/mask/Rlabels
 pickle_benchmark: 
 train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/ACCpatterns/ACCpatterns_0_without_headers.csv
-nb_subjects: -1
-random: False
-random_state: 1
 subject_labels_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/ACCpatterns/all.csv
 subject_column_name: 'long_name'
 #label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]

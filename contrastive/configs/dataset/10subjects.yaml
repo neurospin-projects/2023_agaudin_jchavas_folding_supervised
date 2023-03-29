@@ -3,7 +3,6 @@ pickle_normal: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/hcp
 pickle_foldlabel: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/hcp/crop_10subjects/Rlabel.pkl
 pickle_benchmark: 
 train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/hcp/HCP_half_1bis.csv
-nb_subjects: -1
 subject_labels_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/hcp/participants.csv
 #label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
 #label_names: ["NEOFAC_C"]

@@ -5,6 +5,3 @@ numpy_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/ch
 subjects_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/chimps/crops/2mm/chimps_F.C.M.ant/mask/Rskeleton_subject.csv
 pickle_benchmark: 
 train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/chimps/train.csv
-nb_subjects: -1
-random: False
-random_state: 1
