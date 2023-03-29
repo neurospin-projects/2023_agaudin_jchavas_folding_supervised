@@ -1,7 +1,0 @@
-# @package _global_
-dataset_name: cingulate_intersect_chimps
-pickle_normal: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/chimps/crops/2mm/F.C.M.ant_Intersect_Human_Chimps/mask/Rskeleton.pkl
-numpy_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/chimps/crops/2mm/F.C.M.ant_Intersect_Human_Chimps/mask/Rskeleton.npy
-subjects_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/chimps/crops/2mm/F.C.M.ant_Intersect_Human_Chimps/mask/Rskeleton_subject.csv
-pickle_benchmark: 
-train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/chimps/train.csv
