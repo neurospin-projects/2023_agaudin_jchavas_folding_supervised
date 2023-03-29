@@ -2,7 +2,7 @@ import os
 from setuptools import setup, find_packages
 
 setup(
-    name='2022_jchavas_cingulate_inhibitory_control',
+    name='2023_agaudin_jchavas_folding_supervised',
     version='0.0.1',
     packages=find_packages(
         exclude=['tests*', 'notebooks*']),
@@ -34,7 +34,9 @@ setup(
                       'pytorch_ssim',
                       'seaborn',
                       'statsmodels',
-                      'umap-learn'
+                      'umap-learn',
+                      'plotly',
+                      'pqdm'
                       ],
     extras_require={"anatomist": ['deep_folding @ \
                         git+https://git@github.com/neurospin/deep_folding',
