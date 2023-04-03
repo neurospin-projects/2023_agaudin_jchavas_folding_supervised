@@ -47,7 +47,7 @@ import torch
 
 from train import train_vae
 from load_data import create_subset
-from config import Config
+from configs.config import Config
 
 
 if __name__ == '__main__':
