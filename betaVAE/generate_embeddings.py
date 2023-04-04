@@ -38,10 +38,11 @@
 import os
 import pandas as pd
 import torch
+import torch.nn as nn
 
 from beta_vae import VAE, ModelTester
 from load_data import create_test_subset
-from config import Config
+from configs.config import Config
 
 
 def generate_emebdding_sets(embedding, config):
@@ -103,7 +104,7 @@ def main():
 
     weights = [1, 2]
     class_weights = torch.FloatTensor(weights).to(device)
-    criterion = torch.nn.CrossEntropyLoss(weight=class_weights, reduction='sum')
+    criterion = nn.CrossEntropyLoss(weight=class_weights, reduction='sum')
 
     subset_test = create_test_subset(config)
     testloader = torch.utils.data.DataLoader(

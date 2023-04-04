@@ -40,12 +40,12 @@ import pandas as pd
 import torchvision
 from torchsummary import summary
 from torch.utils.tensorboard import SummaryWriter
+import torch.nn as nn
 
 from beta_vae import *
 from deep_folding.utils.pytorchtools import EarlyStopping
 
-from datetime import datetime
-now = datetime.now()
+from betaVAE.postprocess import plot_loss
 
 
 def train_vae(config, trainloader, valloader, root_dir=None):
@@ -60,7 +60,7 @@ def train_vae(config, trainloader, valloader, root_dir=None):
         final_loss_val
     """
     torch.manual_seed(5)
-    writer = SummaryWriter(log_dir= f"/neurospin/dico/agaudin/Runs/09_new_repo/Output/{now:%Y-%m-%d}/{now:%H-%M-%S}",
+    writer = SummaryWriter(log_dir= config.save_dir+'logs/',
                             comment="")
 
     lr = config.lr
@@ -119,10 +119,10 @@ def train_vae(config, trainloader, valloader, root_dir=None):
         writer.add_scalar('recon Loss/train', recon_loss, epoch)
         writer.close()
 
-        print("[%d] KL loss: %.3f" % (epoch + 1, kl_loss))
-        print("[%d] recon loss: %.3f" % (epoch + 1, recon_loss))
+        print("[%d] KL loss: %.2e" % (epoch + 1, kl_loss))
+        print("[%d] recon loss: %.2e" % (epoch + 1, recon_loss))
         #print(kl_loss * config.kl + recon_loss)
-        print("[%d] loss: %.3f" % (epoch + 1,
+        print("[%d] loss: %.2e" % (epoch + 1,
                                         running_loss))
         list_loss_train.append(running_loss)
         running_loss = 0.0
@@ -170,10 +170,10 @@ def train_vae(config, trainloader, valloader, root_dir=None):
         writer.close()
 
         # prints on the terminal
-        print("[%d] KL validation loss: %.3f" % (epoch + 1, kl_val))
-        print("[%d] recon validation loss: %.3f" % (epoch + 1, recon_loss_val))
+        print("[%d] KL validation loss: %.2e" % (epoch + 1, kl_val))
+        print("[%d] recon validation loss: %.2e" % (epoch + 1, recon_loss_val))
         #print(kl_val * config.kl + recon_loss_val)
-        print("[%d] validation loss: %.3f" % (epoch + 1, valid_loss))
+        print("[%d] validation loss: %.2e" % (epoch + 1, valid_loss))
         list_loss_val.append(valid_loss)
 
         early_stopping(valid_loss, vae)

@@ -42,6 +42,7 @@ import sys
 import numpy as np
 import pandas as pd
 import json
+import yaml
 import itertools
 import torch
 
@@ -56,6 +57,13 @@ if __name__ == '__main__':
 
     torch.manual_seed(5)
     save_dir = config.save_dir
+
+    # create the save dir
+    try:
+        os.makedirs(save_dir)
+    except FileExistsError:
+        print("Directory " , save_dir ,  " already exists")
+        pass
 
     """ Load data and generate torch datasets """
     subset1 = create_subset(config)
@@ -87,12 +95,11 @@ if __name__ == '__main__':
 
 
     cur_config = {"kl": config.kl, "n": config.n}
-    try:
-        os.mkdir(save_dir)
-    except FileExistsError:
-        print("Directory " , save_dir ,  " already exists")
-        pass
     print(cur_config)
+
+    # save config as a yaml file
+    with open(config.save_dir + '/config.yaml', 'w') as file:
+        yaml.dump(config.__dict__, file)
 
     """ Train model for given configuration """
     vae, final_loss_val = train_vae(config, trainloader, valloader,

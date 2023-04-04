@@ -20,4 +20,4 @@ Other contributors
 
 Some other past or present contributors are:
 
-* Louise Guillon
+* Louise Guillon for the beta-VAE codes.
