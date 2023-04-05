@@ -6,7 +6,7 @@ class Config:
 
     def __init__(self):
         self.batch_size = 64
-        self.nb_epoch = 100
+        self.nb_epoch = 50
         self.kl = 2
         self.n = 10
         self.lr = 2e-4
@@ -17,6 +17,9 @@ class Config:
         self.save_dir = f"/neurospin/dico/agaudin/Runs/09_new_repo/Output/{now:%Y-%m-%d}/{now:%H-%M-%S}/"
         self.data_dir = "/neurospin/dico/data/deep_folding/current/datasets/hcp/crops/2mm/CINGULATE/mask"
         self.subject_dir = "/neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton_subject_full.csv"
+        # used for embeddings generation:
+        self.acc_subjects_dir = "/neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/CINGULATE/mask"
+        self.test_model_dir = "/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-04-05/11-53-51"
 
 
 # class Config:

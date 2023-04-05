@@ -45,28 +45,29 @@ from load_data import create_test_subset
 from configs.config import Config
 
 
-def generate_emebdding_sets(embedding, config):
+def generate_embedding_sets(embedding, config, dataset='cingulate_ACCpatterns'):
     """
     From a dataframe of encoded subjects, generate csv files:
     full_embeddings.csv, train_embeddings.csv etc.
     """
-    data_dir = '/neurospin/dico/lguillon/collab_joel_aymeric_cingulate/data'
-    save_dir = config.test_model_dir
+    subjects_dir = '/neurospin/dico/lguillon/collab_joel_aymeric_cingulate/data'
+    save_dir = config.test_model_dir + f'/{dataset}_embeddings'
+    os.mkdir(save_dir)
 
     # Loading of data subsets
-    full = pd.read_csv(os.path.join(data_dir, 'full_subjects.csv'),
+    full = pd.read_csv(os.path.join(subjects_dir, 'full_subjects.csv'),
                 header=None, usecols=[1], names=['ID'])
     full['ID'] = full['ID'].astype('str')
 
-    train = pd.read_csv(os.path.join(data_dir, 'train_subjects.csv'),
+    train = pd.read_csv(os.path.join(subjects_dir, 'train_subjects.csv'),
                 header=None, usecols=[1], names=['ID'])
     train['ID'] = train['ID'].astype('str')
 
-    val = pd.read_csv(os.path.join(data_dir, 'val_subjects.csv'),
+    val = pd.read_csv(os.path.join(subjects_dir, 'val_subjects.csv'),
                 header=None, usecols=[1], names=['ID'])
     val['ID'] = val['ID'].astype('str')
 
-    test = pd.read_csv(os.path.join(data_dir, 'test_subjects.csv'),
+    test = pd.read_csv(os.path.join(subjects_dir, 'test_subjects.csv'),
                 header=None, usecols=[1], names=['ID'])
     test['ID'] = test['ID'].astype('str')
 
@@ -85,13 +86,14 @@ def generate_emebdding_sets(embedding, config):
     test_embeddings.to_csv(os.path.join(save_dir, 'test_embeddings.csv'), index=False)
 
 
-def main():
+def main(dataset='cingulate_ACCpatterns'):
     """
     Infer a trained model on test data and saves the embeddings as csv
     """
     config = Config()
 
     torch.manual_seed(0)
+    device = 'cpu'
     if torch.cuda.is_available():
         device = "cuda:0"
         if torch.cuda.device_count() > 1:
@@ -124,7 +126,7 @@ def main():
     embedding = embedding.rename(columns={k:f"dim{k+1}" for k in range(config.n)})
     print(embedding.head())
 
-    generate_emebdding_sets(embedding, config)
+    generate_embedding_sets(embedding, config, dataset=dataset)
 
 if __name__ == '__main__':
-    main()
+    main(dataset='cingulate_ACCpatterns')
