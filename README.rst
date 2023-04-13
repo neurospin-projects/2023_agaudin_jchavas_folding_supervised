@@ -2,7 +2,7 @@
 Unsupervised Representation Learning of Cingulate Cortical Folding Patterns
 ###########################################################################
 
-Official Pytorch implementation for Unsupervised Learning and Cortical Folding `paper <https://openreview.net/forum?id=ueRZzvQ_K6u>`_.
+Official Pytorch implementation for Unsupervised Learning and Cortical Folding (`paper <https://openreview.net/forum?id=ueRZzvQ_K6u>`_).
 The project aims to study cortical folding patterns thanks to unsupervised deep learning methods.
 
 
