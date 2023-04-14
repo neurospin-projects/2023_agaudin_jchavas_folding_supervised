@@ -14,7 +14,7 @@ class Config:
         #self.data_dir = "/path/to/data/directory"
         #self.subject_dir = "/path/to/list_of_subjects"
         #self.save_dir = "/path/to/saving/directory"
-        self.save_dir = f"/neurospin/dico/agaudin/Runs/09_new_repo/Output/{now:%Y-%m-%d}/{now:%H-%M-%S}/"
+        self.save_dir = f"/neurospin/dico/agaudin/Runs/09_new_repo/Output/beta-VAE/{now:%Y-%m-%d}/{now:%H-%M-%S}/"
         self.data_dir = "/neurospin/dico/data/deep_folding/current/datasets/hcp/crops/2mm/CINGULATE/mask"
         self.subject_dir = "/neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton_subject_full.csv"
         # used for embeddings generation:
