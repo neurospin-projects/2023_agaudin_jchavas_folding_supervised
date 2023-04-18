@@ -385,7 +385,17 @@ def train_svm_classifiers(config):
     embeddings, labels = load_embeddings(train_embs_path, train_lab_paths, config)
     names_col = 'ID' if 'ID' in embeddings.columns else 'Subject'
     X = embeddings.loc[:, embeddings.columns != names_col]
+
     Y = labels.label
+
+    if np.unique(Y).shape[0] > 2:
+        per_50 = np.percentile(Y, 50.)
+        Z = Y.copy(deep=True)
+        Z[Y<=per_50] = 0
+        Z[Y>per_50] = 1
+        Z = Z.astype(int)
+        labels.label = Z.copy(deep=True)
+        Y = labels.label
 
     if test_embs_path:
         test_embeddings, test_labels = load_embeddings(test_embs_path, train_lab_paths, config)
