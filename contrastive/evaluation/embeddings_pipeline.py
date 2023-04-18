@@ -114,5 +114,5 @@ overwrite to True if you still want to compute them.")
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/jchavas/Runs/59_analysis_ukbiobank/Output/trained_on_ukbiobank/chosen_model",
+embeddings_pipeline("/neurospin/dico/jchavas/Runs/59_analysis_ukbiobank/Output/trained_on_ukbiobank/ukbiobank_without_top-n=21070",
 dataset='cingulate_schiz', verbose=True, classifier_name='svm', overwrite=True)

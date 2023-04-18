@@ -234,9 +234,10 @@ def extract_data(npy_file_path, config):
 
     # Restricts train_val length
     random_state = None if not 'random_state' in config.keys() else config.random_state
+    is_random = None if not 'random' in config.keys() else config.random
     train_val_subjects = restrict_length(train_val_subjects,
                                          config.nb_subjects,
-                                         config.random,
+                                         is_random,
                                          random_state)
 
     # Extracts train_val from normal_data
@@ -388,10 +389,12 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
     test_labels = extract_labels(subject_labels, test_subjects)
 
     # Restricts train_val length
+    random_state = None if not 'random_state' in config.keys() else config.random_state
+    is_random = None if not 'random' in config.keys() else config.random
     train_val_subjects = restrict_length(train_val_subjects,
                                          config.nb_subjects,
-                                         config.random,
-                                         config.random_state)
+                                         is_random,
+                                         random_state)
 
     # Extracts train_val from normal_data
     train_val_subjects, train_val_data = \
