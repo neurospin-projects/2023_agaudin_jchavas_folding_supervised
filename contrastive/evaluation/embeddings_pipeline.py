@@ -76,6 +76,7 @@ overwrite to True if you still want to compute them.")
                     print("Start post processing")
                     # get the config and correct it to suit what is needed for classifiers
                     cfg = preprocess_config(sub_dir, dataset, classifier_name=classifier_name)
+                    print("verbose", verbose)
                     if verbose:
                         print("CONFIG FILE", type(cfg))
                         print(json.dumps(omegaconf.OmegaConf.to_container(cfg, resolve=True), indent=4, sort_keys=True))
@@ -113,5 +114,5 @@ overwrite to True if you still want to compute them.")
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-04-13",
-dataset='cingulate_schiz', verbose=True, classifier_name='svm', overwrite=False)
+embeddings_pipeline("/neurospin/dico/jchavas/Runs/59_analysis_ukbiobank/Output/trained_on_ukbiobank/chosen_model",
+dataset='cingulate_schiz', verbose=True, classifier_name='svm', overwrite=True)
