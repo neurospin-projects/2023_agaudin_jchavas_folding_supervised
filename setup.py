@@ -20,7 +20,6 @@ setup(
                       'torchvision',
                       'torch-summary',
                       'tensorboard',
-                      'hydra',
                       'hydra.core',
                       'dataclasses',
                       'OmegaConf',

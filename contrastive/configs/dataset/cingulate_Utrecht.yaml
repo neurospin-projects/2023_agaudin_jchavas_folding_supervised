@@ -1,0 +1,18 @@
+# @package _global_
+dataset_name: cingulate_Utrecht
+pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/utrecht_40wks/crops/2mm/F.C.M.ant./mask/Rskeleton.pkl
+numpy_all: /neurospin/dico/data/deep_folding/current/datasets/utrecht_40wks/crops/2mm/F.C.M.ant./mask/Rskeleton.npy
+subjects_all: /neurospin/dico/data/deep_folding/current/datasets/utrecht_40wks/crops/2mm/F.C.M.ant./mask/Rskeleton_subject.csv
+crop_dir: /neurospin/dico/data/deep_folding/current/datasets/utrecht_40wks/crops/2mm/F.C.M.ant./mask/Rcrops
+foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/utrecht_40wks/crops/2mm/F.C.M.ant./mask/Rlabels
+foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/utrecht_40wks/crops/2mm/F.C.M.ant./mask/Rlabel.npy
+subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/utrecht_40wks/crops/2mm/F.C.M.ant./mask/Rlabel_subject.csv
+crop_file_suffix: _cropped_skeleton.nii.gz
+pickle_benchmark: 
+train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/utrecht_40wks/crops/2mm/F.C.M.ant./mask/Rskeleton_subject_full.csv
+subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/utrecht_40wks/crops/2mm/F.C.M.ant./Rskeleton_subject.csv
+subject_column_name: 'Subject'
+#label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
+#label_names: ["NEOFAC_C"]
+label_names: ["Gender"]
+n_max: 1080
