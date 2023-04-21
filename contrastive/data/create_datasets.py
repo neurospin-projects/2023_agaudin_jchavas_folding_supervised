@@ -57,6 +57,27 @@ from contrastive.data.utils import *
 log = set_file_logger(__file__)
 
 
+def sanity_checks_without_labels(config, train_val_subjects, test_subjects, train_val_data, test_data):
+    # Loads and separates in train_val/test set foldlabels if requested
+    check_subject_consistency(config.subjects_all,
+                                config.subjects_foldlabel_all)
+    # add all the other created objects in the next line
+    train_val_foldlabel_subjects, train_val_foldlabel_data, \
+        test_foldlabel_subjects, test_foldlabel_data = \
+        extract_data(config.foldlabel_all, config)
+    log.info("foldlabel data loaded")
+
+    # Makes some sanity checks
+    check_if_same_subjects(train_val_subjects,
+                            train_val_foldlabel_subjects, "train_val")
+    check_if_same_subjects(test_subjects,
+                            test_foldlabel_subjects, "test")
+    check_if_same_shape(train_val_data,
+                        train_val_foldlabel_data, "train_val")
+    check_if_same_shape(test_data,
+                        test_foldlabel_data, "test")
+
+
 def create_sets_without_labels(config):
     """Creates train, validation and test sets
 
@@ -72,22 +93,11 @@ def create_sets_without_labels(config):
 
     # Loads and separates in train_val/test set foldlabels if requested
     if (config.foldlabel == True) and (config.mode != 'evaluation'):
-        check_subject_consistency(config.subjects_all,
-                                  config.subjects_foldlabel_all)
-        train_val_foldlabel_subjects, train_val_foldlabel_data, \
-            test_foldlabel_subjects, test_foldlabel_data = \
-            extract_data(config.foldlabel_all, config)
-        log.info("foldlabel data loaded")
-
-        # Makes some sanity checks
-        check_if_same_subjects(train_val_subjects,
-                               train_val_foldlabel_subjects, "train_val")
-        check_if_same_subjects(test_subjects,
-                               test_foldlabel_subjects, "test")
-        check_if_same_shape(train_val_data,
-                            train_val_foldlabel_data, "train_val")
-        check_if_same_shape(test_data,
-                            test_foldlabel_data, "test")
+        train_val_foldlabel_data, test_foldlabel_data = sanity_checks_without_labels(config,
+                                                                                     train_val_subjects,
+                                                                                     test_subjects,
+                                                                                     train_val_data,
+                                                                                     test_data)
     else:
         log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
 

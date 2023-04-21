@@ -454,14 +454,14 @@ class ContrastiveLearner(pl.LightningModule):
                 self.logger.experiment.add_image(
                     'TSNE representation image', image_TSNE, self.current_epoch)
 
-            # Computes histogram of sim_zij
-            histogram_sim_zij = plot_histogram(self.sim_zij, buffer=True)
-            self.logger.experiment.add_image(
-                'histo_sim_zij', histogram_sim_zij, self.current_epoch)
+                # Computes histogram of sim_zij
+                histogram_sim_zij = plot_histogram(self.sim_zij, buffer=True)
+                self.logger.experiment.add_image(
+                    'histo_sim_zij', histogram_sim_zij, self.current_epoch)
 
         # Plots views
-        if self.config.backbone_name != 'pointnet':
-            self.plot_views()
+        # if self.config.backbone_name != 'pointnet':
+        #     self.plot_views() # far too slow and I don't get what it is doing
 
         # calculates average loss
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()

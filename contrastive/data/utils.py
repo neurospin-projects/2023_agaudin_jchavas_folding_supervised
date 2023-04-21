@@ -42,6 +42,8 @@ import pandas as pd
 import torch
 import random
 
+from sklearn.model_selection import train_test_split
+
 from contrastive.utils.logs import set_file_logger
 #from contrastive.data.transforms import transform_foldlabel
 # only if foldlabel == True
@@ -132,6 +134,19 @@ def check_if_skeleton(a: np.array, key: str):
         )
 
 
+def read_subject_csv(csv_file_path: str, name='train_val') -> pd.DataFrame:
+    """Reads a subject csv.
+    
+    This csv has a unique column.
+    The resulting dataframe gives the name 'Subject' to this column
+    """
+    subjects = pd.read_csv(csv_file_path, names=['Subject'])
+    log.debug(f"{name}_subjects = {subjects.head()}")
+
+    return subjects
+
+
+## Shouldn't be used anymore, replaced by read_subject_csv
 def read_train_val_csv(csv_file_path: str) -> pd.DataFrame:
     """Reads train_val csv.
     
@@ -182,6 +197,21 @@ def restrict_length(subjects:pd.DataFrame, nb_subjects: int, is_random: bool=Fal
     return subjects
 
 
+def extract_partial_numpy(normal_subjects, target_subjects, normal_data, name='train_val'):
+    """Returns data (numpy) corresponding to subjects listed in target_subjects"""
+
+    log.info(f"Length of {name} dataframe = {len(target_subjects)}")
+    # Filter to keep only the target subjects
+    target_normal_subjects = normal_subjects[normal_subjects.Subject.isin(
+                                target_subjects.Subject)]
+    target_normal_index = target_normal_subjects.index # corresponding indices in the npy file
+    # /!\ copy the data to construct the target_data
+    target_data = normal_data[target_normal_index]
+    target_normal_subjects = target_normal_subjects.reset_index(drop=True)
+    return target_normal_subjects, target_data
+
+
+## Shouldn't be used anymore, replaced by extract_partial_numpy
 def extract_train_val(normal_subjects, train_val_subjects, normal_data):
     """Returns data corresponding to subjects listed in train_val_subjects"""
 
@@ -208,6 +238,32 @@ def extract_labels(subject_labels, subjects):
     return selected_subject_labels
 
 
+def extract_train_and_val_subjects(train_val_subjects, partition, seed):
+    """Extracts traing and validation dataset from a train_val dataset"""
+    # Split training/val set into train and validation set
+    size_partitions = [round(i * (len(train_val_subjects))) for i in partition]
+    # to be sure the sum of train and val sizes is train_val's one
+    size_partitions[-1] = len(train_val_subjects) - sum(size_partitions[:-1])
+    log.info(f"Train/val size partitions = {size_partitions}")
+
+    # Fixates seed if it is defined
+    if seed:
+        log.info(f"Seed for train/val split is {seed}")
+    else:
+        seed = None
+        log.info("Train/val split has not fixed seed")
+
+    # Split train and test
+    train_subjects, val_subjects = train_test_split(train_val_subjects,
+                                                    test_size=size_partitions[-1],
+                                                    train_size=size_partitions[0],
+                                                    random_state=seed)
+    log.debug(f"Size of train / val sets: {len(train_subjects)} /  {len(val_subjects)}")
+
+    return train_subjects, val_subjects
+
+
+
 def extract_data(npy_file_path, config):
     """Extracts train_val and test data and subjects from npy and csv file
 
@@ -226,31 +282,75 @@ def extract_data(npy_file_path, config):
         compare_array_aims_files(normal_subjects, normal_data, config.crop_dir)
 
     # Gets train_val subjects as dataframe from csv file
-    train_val_subjects = read_train_val_csv(config.train_val_csv_file)
+    if 'train_val_csv_file' in config.keys():
+        train_val_subjects = read_subject_csv(config.train_val_csv_file)
+        if 'train_csv_file' not in config.keys():
+            # define train and val from here
+            train_subjects, val_subjects = \
+                extract_train_and_val_subjects(train_val_subjects, config.partition, config.seed)
+    # get train & val separately if in config
+    if 'train_csv_file' in config.keys():
+        train_subjects = read_subject_csv(config.train_csv_file, name='train')
+        val_subjects = read_subject_csv(config.val_csv_file, name='val')
+        if 'train_val_csv_file' not in config.keys():
+            # reconstruct train_val from train + val if not already done
+            train_val_subjects = pd.concat([train_subjects, val_subjects])
+
+    # get test_intra subjects and data if in config
+    if 'test_intra_csv_file' in config.keys():
+        test_intra_subjects = read_subject_csv(config.test_intra_csv_file, name='test_intra')
+        test_intra_data = extract_partial_numpy(normal_subjects, test_intra_subjects, normal_data)
+    else:
+        test_intra_subjects = pd.DataFrame([])
+        test_intra_data = np.array([])
 
     # Extracts test subject names and corresponding data
-    test_subjects, test_data = \
+    if 'test_csv_file' in config.keys(): # if specified in config
+        test_subjects = read_subject_csv(config.test_csv_file, name='test')
+        test_subjects, test_data = extract_partial_numpy(normal_subjects, test_subjects, normal_data)
+    else: # define it as complementary to train_val
+        test_subjects, test_data = \
         extract_test(normal_subjects, train_val_subjects, normal_data)
 
-    # Restricts train_val length
+    # Restricts train_val or train length
     random_state = None if not 'random_state' in config.keys() else config.random_state
     is_random = None if not 'random' in config.keys() else config.random
-    train_val_subjects = restrict_length(train_val_subjects,
+    if 'train_csv_file' in config.keys():
+        train_subjects = restrict_length(train_subjects,
                                          config.nb_subjects,
                                          is_random,
                                          random_state)
+        # propagate the modification to train_val ; val is not affected
+        train_val_subjects = pd.concat([train_subjects, val_subjects])
+    else:
+        train_val_subjects = restrict_length(train_val_subjects,
+                                             config.nb_subjects,
+                                             is_random,
+                                             random_state)
 
-    # Extracts train_val from normal_data
+    # Extracts train, val and train_val from normal_data
+    train_subjects, train_data = extract_partial_numpy(normal_subjects, test_subjects, normal_data)
+    val_subjects, val_data = extract_partial_numpy(normal_subjects, val_subjects, normal_data)
     train_val_subjects, train_val_data = \
-        extract_train_val(normal_subjects, train_val_subjects, normal_data)
+        extract_partial_numpy(normal_subjects, train_val_subjects, normal_data)
 
     if config.environment == "brainvisa" and config.checking:
+        compare_array_aims_files(train_subjects, train_data, config.crop_dir)
+        compare_array_aims_files(val_subjects, val_data, config.crop_dir)
         compare_array_aims_files(train_val_subjects, train_val_data, config.crop_dir)
+        compare_array_aims_files(test_intra_subjects, test_intra_data, config.crop_dir)
         compare_array_aims_files(test_subjects, test_data, config.crop_dir)
+    
+    output = {'train': [train_subjects, train_data],
+              'val': [val_subjects, val_data],
+              'train_val': [train_val_subjects, train_val_data],
+              'test_intra': [test_intra_subjects, test_intra_data],
+              'test': [test_subjects, test_data],}
 
-    return train_val_subjects, train_val_data, test_subjects, test_data
+    return output
 
 
+## Shouldn'y be used anymore, separation made earlier (see extract_train_and_val_subjects)
 def extract_train_val_dataset(train_val_dataset, partition, seed):
     """Extracts traing and validation dataset from a train_val dataset"""
     # Split training/val set into train and validation set
@@ -359,6 +459,9 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
         train_val_subjects, train_val_data, test_subjects, test_data (tuple)
     """
 
+    # extract data without labels
+    output = extract_data(npy_file_path, config)
+
     # Reads numpy data and subject list
     # normal_data corresponds to all data ('normal' != 'benchmark')
     normal_data, normal_subjects = \
@@ -380,34 +483,22 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
     subject_labels = \
         sort_labels_according_to_normal(subject_labels, normal_subjects)
 
-    # Gets train_val subjects as dataframe from csv file
-    train_val_subjects = read_train_val_csv(config.train_val_csv_file)
+    # extract labels
+    train_labels = extract_labels(subject_labels, output['train'][0])
+    val_labels = extract_labels(subject_labels, output['val'][0])
+    train_val_labels = extract_labels(subject_labels, output['train_val'][0])
+    test_intra_labels = extract_labels(subject_labels, output['test_intra'][0])
+    test_labels = extract_labels(subject_labels, output['test'][0])
 
-    # Extracts test subject names, corresponding data and labels
-    test_subjects, test_data = \
-        extract_test(normal_subjects, train_val_subjects, normal_data)
-    test_labels = extract_labels(subject_labels, test_subjects)
+    output['train'].append(train_labels)
+    output['val'].append(val_labels)
+    output['train_val'].append(train_val_labels)
+    output['test_intra'].append(test_intra_labels)
+    output['test'].append(test_labels)
 
-    # Restricts train_val length
-    random_state = None if not 'random_state' in config.keys() else config.random_state
-    is_random = None if not 'random' in config.keys() else config.random
-    train_val_subjects = restrict_length(train_val_subjects,
-                                         config.nb_subjects,
-                                         is_random,
-                                         random_state)
+    log.debug(len(output['train']))
 
-    # Extracts train_val from normal_data
-    train_val_subjects, train_val_data = \
-        extract_train_val(normal_subjects, train_val_subjects, normal_data)
-    train_val_labels = extract_labels(subject_labels, train_val_subjects)
-
-    if config.environment == "brainvisa" and config.checking:
-        compare_array_aims_files(train_val_subjects, train_val_data, sample_dir)
-        compare_array_aims_files(test_subjects, test_data, sample_dir)
-
-
-    return train_val_subjects, train_val_data, train_val_labels,\
-           test_subjects, test_data, test_labels
+    return output
 
 
 
