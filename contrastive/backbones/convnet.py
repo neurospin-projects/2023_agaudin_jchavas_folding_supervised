@@ -263,6 +263,7 @@ class ConvNet(pl.LightningModule):
 
         elif self.mode == "classifier":
             out = self.classifier(out)
+            out = F.softmax(out)
 
         elif self.mode == "regresser":
             out = self.regresser(out)
