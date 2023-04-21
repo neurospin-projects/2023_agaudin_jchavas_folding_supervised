@@ -3,8 +3,8 @@ import yaml
 import json
 import omegaconf
 
-from contrastive.evaluation.generate_embeddings import compute_embeddings
-from contrastive.evaluation.train_multiple_classifiers import train_classifiers
+from generate_embeddings import compute_embeddings
+from train_multiple_classifiers import train_classifiers
 
 from sklearn.utils._testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning

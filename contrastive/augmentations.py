@@ -159,7 +159,7 @@ class OnlyBottomTensor(object):
 
     def __call__(self, tensor):
         arr = tensor.numpy()
-        arr[arr != 30] = 0
+        arr = arr * (arr == 30)
         return torch.from_numpy(arr)
 
 
@@ -181,23 +181,22 @@ def count_non_null(arr):
 def remove_branch(arr_foldlabel, arr_skel, selected_branch):
     """It masks the selected branch in arr_skel
     """
-    arr_skel[arr_foldlabel == selected_branch] = 0
-    return arr_skel
+    mask = ( (arr_foldlabel != 0) & (arr_foldlabel != selected_branch))  
+    mask = mask.astype(int)
+    return arr_skel * mask
 
 def intersection_skeleton_foldlabel(arr_foldlabel, arr_skel):
     """It returns the intersection between skeleton and foldlabel
     """
-    intersec = np.copy(arr_skel)
-    intersec[arr_foldlabel == 0] = 0
+    mask = ( (arr_foldlabel != 0) ).astype(int) 
+    intersec = arr_skel*mask
     count_intersec = count_non_null(intersec)
     count_skel = count_non_null(arr_skel)
-    count_foldlabel = count_non_null(arr_foldlabel)
     if count_intersec != count_skel:
         raise ValueError("Probably misaligned skeleton and foldlabel\n"
                          f"Intersection between skeleton and foldlabel "
                          f"has {count_intersec} non-null elements.\n"
-                         f"Skeleton has {count_skel} non-null elements.\n"
-                         f"Foldlabel has {count_foldlabel} non-null elements.")
+                         f"Skeleton has {count_skel} non-null elements")
     return count_intersec
     
 
@@ -237,7 +236,7 @@ def remove_branches_up_to_percent(arr_foldlabel, arr_skel,
     # We take random branches
     np.random.seed()
     np.random.shuffle(indexes)
-    arr_skel_without_branches = np.copy(arr_skel)
+    arr_skel_without_branches = arr_skel
 
     # We loop over shuffled indexes until enough branches have been removed
     for index in indexes:
@@ -541,8 +540,7 @@ class PartialCutOutTensor(object):
                 arr_copy[tuple(indexes)] = arr_cut * (arr_cut == 30)
                 return torch.from_numpy(arr_copy)
         else:
-            arr_bottom = np.copy(arr)
-            arr_bottom[arr_bottom != 30] = 0
+            arr_bottom = arr * (arr == 30)
             arr_cut = arr[tuple(indexes)]
             arr_bottom[tuple(indexes)] = np.copy(arr_cut)
             return torch.from_numpy(arr_bottom)
