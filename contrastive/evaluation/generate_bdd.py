@@ -4,10 +4,10 @@ from datetime import datetime
 from contrastive.utils.models_database import *
 
 
-dataset = 'cingulate_ACCpatterns_1'
+dataset = 'cingulate_ACCpatterns'
 
 ## construct the database
-folders = ["/volatile/jc225751/Runs/59_analysis_ukbiobank/Output/checks"]
+folders = ["/volatile/jc225751/Runs/59_analysis_ukbiobank/Output/HCP/right"]
 bdd = []
 visited = []
 
@@ -18,6 +18,8 @@ generate_bdd_models(folders, bdd, visited, verbose=False, dataset=dataset)
 
 bdd = pd.DataFrame(bdd)
 print("Number of subjects:", bdd.shape[0])
+if bdd.empty:
+    raise ValueError("Empty dataframe => no subject selected: you should check 'folders' or 'dataset'")
 
 for col in bdd.columns:
     print(col, bdd[col][0])
@@ -28,7 +30,7 @@ bdd = post_process_bdd_models(bdd, hard_remove=["partition"], git_branch=True)
 
 
 # save the database
-name = "checks"
+name = "HCP_right"
 save_path = "/volatile/jc225751/Runs/59_analysis_ukbiobank/Output/checks/summary/"
 bdd.to_csv(save_path+f"bdd_{name}.csv", index=True)
 
