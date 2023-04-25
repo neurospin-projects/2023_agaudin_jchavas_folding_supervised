@@ -121,6 +121,7 @@ def compute_embeddings(config):
     print("FULL SET")
     full_df = pd.concat([train_embeddings_df, val_embeddings_df, test_embeddings_df],
                          axis=0)
+    full_df = full_df.sort_values(by='ID')
     full_df.to_csv(embeddings_path+"/full_embeddings.csv")
 
     print("ALL EMBEDDINGS GENERATED: OK")

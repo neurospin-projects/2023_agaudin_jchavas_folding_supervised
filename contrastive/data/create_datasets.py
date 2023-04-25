@@ -67,6 +67,8 @@ def sanity_checks_without_labels(config, skeleton_output):
 
     # Makes some sanity checks
     for subset_name in foldlabel_output.keys():
+        log.debug("skeleton", skeleton_output[subset_name][1].shape)
+        log.debug("foldlabel", foldlabel_output[subset_name][1].shape)
         check_if_same_subjects(skeleton_output[subset_name][0],
                                foldlabel_output[subset_name][0],
                                subset_name)

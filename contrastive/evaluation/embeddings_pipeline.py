@@ -18,6 +18,13 @@ def preprocess_config(sub_dir, dataset, classifier_name='svm', verbose=False):
     cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config.yaml')
 
     # replace the dataset
+    # first, remove some keys of the older dataset
+    keys_to_remove = ['train_val_csv_file', 'train_csv_file', 'val_csv_file',
+                      'test_intra_csv_file', 'test_csv_file']
+    for key in keys_to_remove:
+        if key in cfg.keys():
+            cfg.pop(key)
+    # add the ones of the target dataset
     with open(f'./configs/dataset/{dataset}.yaml', 'r') as file:
         dataset_yaml = yaml.load(file, yaml.FullLoader)
     for key in dataset_yaml:
@@ -113,6 +120,6 @@ overwrite to True if you still want to compute them.")
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-04-19",
-dataset='cingulate_ACCpatterns_1', verbose=False, classifier_name='svm', overwrite=False,
+embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-04-25",
+dataset='cingulate_schiz', verbose=False, classifier_name='svm', overwrite=False,
 use_best_model=False)

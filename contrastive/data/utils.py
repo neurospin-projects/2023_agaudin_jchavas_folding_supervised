@@ -300,7 +300,8 @@ def extract_data(npy_file_path, config):
     # get test_intra subjects and data if in config
     if 'test_intra_csv_file' in config.keys():
         test_intra_subjects = read_subset_csv(config.test_intra_csv_file, name='test_intra')
-        test_intra_data = extract_partial_numpy(normal_subjects, test_intra_subjects, normal_data)
+        test_intra_subjects, test_intra_data = extract_partial_numpy(normal_subjects, test_intra_subjects,
+                                                normal_data, name='test_intra')
     else:
         test_intra_subjects = pd.DataFrame([], columns=['Subject'])
         test_intra_data = np.array([])
@@ -308,7 +309,8 @@ def extract_data(npy_file_path, config):
     # Extracts test subject names and corresponding data
     if 'test_csv_file' in config.keys(): # if specified in config
         test_subjects = read_subset_csv(config.test_csv_file, name='test')
-        test_subjects, test_data = extract_partial_numpy(normal_subjects, test_subjects, normal_data)
+        test_subjects, test_data = extract_partial_numpy(normal_subjects, test_subjects,
+                                                         normal_data, name='test')
     else: # define it as complementary to train_val
         test_subjects, test_data = \
         extract_test(normal_subjects, train_val_subjects, normal_data)
