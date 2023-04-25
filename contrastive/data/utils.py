@@ -95,7 +95,7 @@ def read_numpy_data_and_subject_csv(npy_file_path, csv_file_path):
     if not is_equal_length(npy_data, subjects):
         raise ValueError(
             f"numpy array {npy_file_path} "
-            f"and csv subject file {csv_file_path}" 
+            f"and csv subject file {csv_file_path} " 
              "don't have the same length.")
     return npy_data, subjects
 
@@ -134,29 +134,30 @@ def check_if_skeleton(a: np.array, key: str):
         )
 
 
-def read_subject_csv(csv_file_path: str, name='train_val') -> pd.DataFrame:
-    """Reads a subject csv.
+def read_subset_csv(csv_file_path: str, name='train_val') -> pd.DataFrame:
+    """Reads a subset subject csv.
     
     This csv has a unique column.
     The resulting dataframe gives the name 'Subject' to this column
     """
     subjects = pd.read_csv(csv_file_path, names=['Subject'])
     log.debug(f"{name}_subjects = {subjects.head()}")
+    print(f"{name} subjects", subjects.head())
 
     return subjects
 
 
-## Shouldn't be used anymore, replaced by read_subject_csv
-def read_train_val_csv(csv_file_path: str) -> pd.DataFrame:
-    """Reads train_val csv.
+# ## Shouldn't be used anymore, replaced by read_subset_csv
+# def read_train_val_csv(csv_file_path: str) -> pd.DataFrame:
+#     """Reads train_val csv.
     
-    This csv has a unisque column.
-    The resulting dataframe gives the name 'Subject' to this column
-    """
-    train_val_subjects = pd.read_csv(csv_file_path, names=['Subject'])
-    log.debug(f"train_val_subjects = {train_val_subjects}")
-    print("TRAIN_VAL_SUBJECTS",train_val_subjects.head())
-    return train_val_subjects
+#     This csv has a unisque column.
+#     The resulting dataframe gives the name 'Subject' to this column
+#     """
+#     train_val_subjects = pd.read_csv(csv_file_path, names=['Subject'])
+#     log.debug(f"train_val_subjects = {train_val_subjects}")
+#     print("TRAIN_VAL_SUBJECTS",train_val_subjects.head())
+#     return train_val_subjects
 
 
 def extract_test(normal_subjects, train_val_subjects, normal_data):
@@ -211,19 +212,19 @@ def extract_partial_numpy(normal_subjects, target_subjects, normal_data, name='t
     return target_normal_subjects, target_data
 
 
-## Shouldn't be used anymore, replaced by extract_partial_numpy
-def extract_train_val(normal_subjects, train_val_subjects, normal_data):
-    """Returns data corresponding to subjects listed in train_val_subjects"""
+# ## Shouldn't be used anymore, replaced by extract_partial_numpy
+# def extract_train_val(normal_subjects, train_val_subjects, normal_data):
+#     """Returns data corresponding to subjects listed in train_val_subjects"""
 
-    log.info(f"Length of train/val dataframe = {len(train_val_subjects)}")
-    # Determines train/val dataframe
-    new_train_val_subjects = normal_subjects[normal_subjects.Subject.isin(
-                                train_val_subjects.Subject)]
-    new_train_val_subjects_index = new_train_val_subjects.index
-    # /!\ copy the data to construct train_val_data
-    train_val_data = normal_data[new_train_val_subjects_index]
-    new_train_val_subjects = new_train_val_subjects.reset_index(drop=True)
-    return new_train_val_subjects, train_val_data
+#     log.info(f"Length of train/val dataframe = {len(train_val_subjects)}")
+#     # Determines train/val dataframe
+#     new_train_val_subjects = normal_subjects[normal_subjects.Subject.isin(
+#                                 train_val_subjects.Subject)]
+#     new_train_val_subjects_index = new_train_val_subjects.index
+#     # /!\ copy the data to construct train_val_data
+#     train_val_data = normal_data[new_train_val_subjects_index]
+#     new_train_val_subjects = new_train_val_subjects.reset_index(drop=True)
+#     return new_train_val_subjects, train_val_data
 
 
 def extract_labels(subject_labels, subjects):
@@ -283,34 +284,35 @@ def extract_data(npy_file_path, config):
 
     # Gets train_val subjects as dataframe from csv file
     if 'train_val_csv_file' in config.keys():
-        train_val_subjects = read_subject_csv(config.train_val_csv_file)
+        train_val_subjects = read_subset_csv(config.train_val_csv_file, name='train_val')
         if 'train_csv_file' not in config.keys():
             # define train and val from here
             train_subjects, val_subjects = \
                 extract_train_and_val_subjects(train_val_subjects, config.partition, config.seed)
     # get train & val separately if in config
     if 'train_csv_file' in config.keys():
-        train_subjects = read_subject_csv(config.train_csv_file, name='train')
-        val_subjects = read_subject_csv(config.val_csv_file, name='val')
+        train_subjects = read_subset_csv(config.train_csv_file, name='train')
+        val_subjects = read_subset_csv(config.val_csv_file, name='val')
         if 'train_val_csv_file' not in config.keys():
             # reconstruct train_val from train + val if not already done
             train_val_subjects = pd.concat([train_subjects, val_subjects])
-
+    
     # get test_intra subjects and data if in config
     if 'test_intra_csv_file' in config.keys():
-        test_intra_subjects = read_subject_csv(config.test_intra_csv_file, name='test_intra')
+        test_intra_subjects = read_subset_csv(config.test_intra_csv_file, name='test_intra')
         test_intra_data = extract_partial_numpy(normal_subjects, test_intra_subjects, normal_data)
     else:
-        test_intra_subjects = pd.DataFrame([])
+        test_intra_subjects = pd.DataFrame([], columns=['Subject'])
         test_intra_data = np.array([])
 
     # Extracts test subject names and corresponding data
     if 'test_csv_file' in config.keys(): # if specified in config
-        test_subjects = read_subject_csv(config.test_csv_file, name='test')
+        test_subjects = read_subset_csv(config.test_csv_file, name='test')
         test_subjects, test_data = extract_partial_numpy(normal_subjects, test_subjects, normal_data)
     else: # define it as complementary to train_val
         test_subjects, test_data = \
         extract_test(normal_subjects, train_val_subjects, normal_data)
+
 
     # Restricts train_val or train length
     random_state = None if not 'random_state' in config.keys() else config.random_state
@@ -328,11 +330,15 @@ def extract_data(npy_file_path, config):
                                              is_random,
                                              random_state)
 
+
     # Extracts train, val and train_val from normal_data
-    train_subjects, train_data = extract_partial_numpy(normal_subjects, test_subjects, normal_data)
-    val_subjects, val_data = extract_partial_numpy(normal_subjects, val_subjects, normal_data)
+    train_subjects, train_data = extract_partial_numpy(normal_subjects, train_subjects,
+                                                       normal_data, name='train')
+    val_subjects, val_data = extract_partial_numpy(normal_subjects, val_subjects,
+                                                   normal_data, name='val')
     train_val_subjects, train_val_data = \
-        extract_partial_numpy(normal_subjects, train_val_subjects, normal_data)
+        extract_partial_numpy(normal_subjects, train_val_subjects,
+                              normal_data, name='train_val')
 
     if config.environment == "brainvisa" and config.checking:
         compare_array_aims_files(train_subjects, train_data, config.crop_dir)
@@ -350,28 +356,28 @@ def extract_data(npy_file_path, config):
     return output
 
 
-## Shouldn'y be used anymore, separation made earlier (see extract_train_and_val_subjects)
-def extract_train_val_dataset(train_val_dataset, partition, seed):
-    """Extracts traing and validation dataset from a train_val dataset"""
-    # Split training/val set into train and validation set
-    size_partitions = [round(i * (len(train_val_dataset))) for i in partition]
-    # to be sure all the elements are actually taken
-    size_partitions[-1] = len(train_val_dataset) - sum(size_partitions[:-1])
+# ## Shouldn'y be used anymore, separation made earlier (see extract_train_and_val_subjects)
+# def extract_train_val_dataset(train_val_dataset, partition, seed):
+#     """Extracts traing and validation dataset from a train_val dataset"""
+#     # Split training/val set into train and validation set
+#     size_partitions = [round(i * (len(train_val_dataset))) for i in partition]
+#     # to be sure all the elements are actually taken
+#     size_partitions[-1] = len(train_val_dataset) - sum(size_partitions[:-1])
 
-    log.info(f"size partitions = {size_partitions}")
+#     log.info(f"size partitions = {size_partitions}")
 
-    # Fixates seed if it is defined
-    if seed:
-        torch.manual_seed(seed)
-        log.info(f"Seed for train/val split is {seed}")
-    else:
-        log.info("Train/val split has not fixed seed")
+#     # Fixates seed if it is defined
+#     if seed:
+#         torch.manual_seed(seed)
+#         log.info(f"Seed for train/val split is {seed}")
+#     else:
+#         log.info("Train/val split has not fixed seed")
 
-    train_dataset, val_dataset = torch.utils.data.random_split(
-        train_val_dataset,
-        size_partitions)
+#     train_dataset, val_dataset = torch.utils.data.random_split(
+#         train_val_dataset,
+#         size_partitions)
 
-    return train_dataset, val_dataset
+#     return train_dataset, val_dataset
 
 
 def check_if_same_subjects(subjects_1, subjects_2, keyword):
@@ -487,7 +493,10 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
     train_labels = extract_labels(subject_labels, output['train'][0])
     val_labels = extract_labels(subject_labels, output['val'][0])
     train_val_labels = extract_labels(subject_labels, output['train_val'][0])
-    test_intra_labels = extract_labels(subject_labels, output['test_intra'][0])
+    if 'test_intra_csv_file' in config.keys():
+        test_intra_labels = extract_labels(subject_labels, output['test_intra'][0])
+    else:
+        test_intra_labels = pd.DataFrame([])
     test_labels = extract_labels(subject_labels, output['test'][0])
 
     output['train'].append(train_labels)

@@ -26,6 +26,11 @@ Notebook to visualize information about gyrification for datasets throuigh the n
 a normalized space. This notebooks also contains codes to generate gyrification based subsets (like
 the most or least folded subsets of a dataset).
 
+fusion_schiz_bases
+------------------
+Notebook to fusion bsnip1, candi, cnp and schizconnect in one database nammed schiz. Please look at 
+the google doc nammed "Travail base de données schizophrène" for more information.
+
 optimize_transforms
 -------------------
 Notebook to compare and decrease computation time of SimCLR augmentations.

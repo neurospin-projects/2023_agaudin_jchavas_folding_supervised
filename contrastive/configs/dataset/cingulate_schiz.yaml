@@ -7,7 +7,6 @@ subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/schiz
 crop_dir: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/CINGULATE/mask/Rcrops
 crop_file_suffix: _cropped_skeleton.nii.gz
 foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/CINGULATE/mask/Rlabels
-train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/train_subjects.csv # not true for now
 train_csv_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/train_subjects.csv
 val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/val_subjects.csv
 test_intra_csv_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/test_intra_subjects.csv

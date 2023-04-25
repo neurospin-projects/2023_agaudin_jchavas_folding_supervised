@@ -42,7 +42,7 @@ def preprocess_config(sub_dir, dataset, classifier_name='svm', verbose=False):
 # creates embeddings and train classifiers for all models contained in the folder
 @ignore_warnings(category=ConvergenceWarning)
 def embeddings_pipeline(dir_path, dataset='cingulate_ACCpatterns', classifier_name='svm',
-                        overwrite=False, verbose=False):
+                        overwrite=False, verbose=False, use_best_model=False):
     """
     - dir_path: path where to apply recursively the process.
     - dataset: dataset the embeddings are generated from.
@@ -76,7 +76,6 @@ overwrite to True if you still want to compute them.")
                     print("Start post processing")
                     # get the config and correct it to suit what is needed for classifiers
                     cfg = preprocess_config(sub_dir, dataset, classifier_name=classifier_name)
-                    print("verbose", verbose)
                     if verbose:
                         print("CONFIG FILE", type(cfg))
                         print(json.dumps(omegaconf.OmegaConf.to_container(cfg, resolve=True), indent=4, sort_keys=True))
@@ -94,7 +93,7 @@ overwrite to True if you still want to compute them.")
                     
                     # compute embeddings for the best model if saved
                     # FULL BRICOLAGE
-                    if os.path.exists(sub_dir+'/logs/best_model_weights.pt'):
+                    if use_best_model and os.path.exists(sub_dir+'/logs/best_model_weights.pt'):
                         # apply the functions
                         cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config_classifiers.yaml')
                         cfg.use_best_model = True
@@ -114,5 +113,6 @@ overwrite to True if you still want to compute them.")
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/jchavas/Runs/59_analysis_ukbiobank/Output/trained_on_ukbiobank/ukbiobank_without_top-n=21070",
-dataset='cingulate_schiz', verbose=True, classifier_name='svm', overwrite=True)
+embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-04-19",
+dataset='cingulate_ACCpatterns_1', verbose=False, classifier_name='svm', overwrite=False,
+use_best_model=False)

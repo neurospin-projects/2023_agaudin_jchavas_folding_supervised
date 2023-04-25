@@ -128,18 +128,24 @@ def create_sets_without_labels(config):
 
 
 def sanity_checks_with_labels(config, skeleton_output, subject_labels):
-    for subset_name in skeleton_output.keys():
+    # remove test_intra if not in config
+    subsets = [key for key in skeleton_output.keys()]
+    if 'test_intra_csv_file' not in config.keys():
+        subsets.pop(3)
+    print("SANITY CHECKS", subsets)
+
+    for subset_name in subsets:
         check_if_skeleton(skeleton_output[subset_name][1], subset_name)
 
     if config.environment == "brainvisa" and config.checking:
-        for subset_name in skeleton_output.keys():
+        for subset_name in subsets:
             compare_array_aims_files(skeleton_output[subset_name][0],
                                      skeleton_output[subset_name][1],
                                      config.crop_dir)
     
 
     # Makes some sanity checks on ordering of label subjects
-    for subset_name in skeleton_output.keys():
+    for subset_name in subsets:
         check_if_same_subjects(skeleton_output[subset_name][0],
                                skeleton_output[subset_name][2][['Subject']],
                                f"{subset_name} labels")
@@ -155,7 +161,7 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
         log.info("foldlabel data loaded")
 
         # Makes some sanity checks
-        for subset_name in foldlabel_output.keys():
+        for subset_name in subsets:
             check_if_same_subjects(skeleton_output[subset_name][0],
                                    foldlabel_output[subset_name][0],
                                    subset_name)
