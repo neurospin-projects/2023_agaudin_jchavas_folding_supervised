@@ -3,7 +3,7 @@ defaults:
   - hydra/job_logging: custom
   - dataset: cingulate_schiz
   - model: SimCLR
-  - mode: encoder
+  - mode: classifier
   - augmentations: foldlabel
   - backbone: ConvNet
   - platform: cuda_not_brainvisa

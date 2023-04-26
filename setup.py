@@ -22,6 +22,7 @@ setup(
                       'tensorboard',
                       #'hydra',
                       'hydra.core',
+                      'hydra-joblib-launcher',
                       'dataclasses',
                       'OmegaConf',
                       'scikit-learn==0.24.2',
