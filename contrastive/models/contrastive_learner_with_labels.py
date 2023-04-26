@@ -39,7 +39,9 @@ https://learnopencv.com/tensorboard-with-pytorch-lightning
 """
 import numpy as np
 import torch
+import torch.nn as nn
 from sklearn.manifold import TSNE
+from sklearn.metrics import roc_auc_score
 from toolz.itertoolz import first
 
 from contrastive.models.contrastive_learner import ContrastiveLearner
@@ -192,6 +194,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # Initialization
         X = torch.zeros([0, self.config.num_representation_features]).cpu()
+        if self.config.mode == 'classifier':
+            X = torch.zeros([0, 2]).cpu()
         labels_all = torch.zeros([0, len(self.config.label_names)]).cpu()
         filenames_list = []
 
@@ -349,6 +353,17 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             return True
         else:
             return False
+        
+    def compute_output_auc(self, loader):
+        X, labels, _ = self.compute_outputs_skeletons(loader)
+        # compute the mean of the two views' outputs
+        X = (X[::2,...] + X[1::2,...]) / 2
+        X = nn.functional.softmax(X, dim=1)
+        # remove the doubleing of labels
+        labels = labels[::2]
+        auc = roc_auc_score(labels, X[:,1])
+
+        return auc
 
     def training_epoch_end(self, outputs):
         """Computation done at the end of the epoch"""
@@ -380,6 +395,13 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                     self.sample_data.train_dataloader(),
                     "train")
         
+        if self.config.mode == 'classifier':
+            train_auc = self.compute_output_auc(self.sample_data.train_dataloader())
+            self.logger.experiment.add_scalar(
+                    "AUC/Train",
+                    train_auc,
+                    self.current_epoch)
+
         if self.plotting_matrices_now():
             # Plots views
             self.plot_views()
@@ -464,6 +486,13 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 self.plot_scatter_matrices_with_labels(
                                                 self.sample_data.val_dataloader(),
                                                 "validation")
+        
+        if self.config.mode == 'classifier':
+            val_auc = self.compute_output_auc(self.sample_data.val_dataloader())
+            self.logger.experiment.add_scalar(
+                    "AUC/Val",
+                    val_auc,
+                    self.current_epoch)
 
         # calculates average loss
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()

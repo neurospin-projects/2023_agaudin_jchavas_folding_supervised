@@ -151,7 +151,7 @@ class NTXenLoss(nn.Module):
 
 class CrossEntropyLoss_Classification(nn.Module):
     """
-    Croos entropy loss between outputs and labels
+    Cross entropy loss between outputs and labels
     """
 
     def __init__(self, device=None):

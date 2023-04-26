@@ -39,7 +39,7 @@
 # Imports and global variables definitions
 ######################################################################
 import os
-#os.environ['MPLCONFIGDIR'] = os.getcwd()+'/.config_mpl'
+# os.environ['MPLCONFIGDIR'] = os.getcwd()+'/.config_mpl'
 
 import hydra
 import torch
@@ -57,9 +57,9 @@ from contrastive.models.contrastive_learner_with_labels import \
 from contrastive.models.contrastive_learner_visualization import \
     ContrastiveLearner_Visualization
 from contrastive.utils.config import create_accessible_config, process_config,\
-get_config_diff
-from contrastive.utils.logs import set_root_logger_level, set_file_log_handler,\
-set_file_logger
+    get_config_diff
+from contrastive.utils.logs import set_root_logger_level, \
+    set_file_log_handler, set_file_logger
 
 tb_logger = pl_loggers.TensorBoardLogger('logs')
 writer = SummaryWriter()
@@ -72,6 +72,7 @@ We use the following definitions:
 - output, the space after the projection head.
   The elements are called output vectors
 """
+
 
 @hydra.main(config_name='config', config_path="configs")
 def train(config):
@@ -89,7 +90,6 @@ def train(config):
     set_file_log_handler(file_dir=os.getcwd(),
                          suffix='output')
     log.debug(f"current directory = {os.getcwd()}")
-
 
     # copies some of the config parameters in a yaml file easily accessible
     keys_to_keep = ['dataset_name', 'nb_subjects', 'model', 'with_labels', 
