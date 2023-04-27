@@ -38,6 +38,7 @@ https://learnopencv.com/tensorboard-with-pytorch-lightning
 
 """
 import numpy as np
+import json
 import torch
 import torch.nn as nn
 from sklearn.manifold import TSNE
@@ -364,6 +365,21 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         auc = roc_auc_score(labels, X[:,1])
 
         return auc
+    
+    def save_best_auc_model(self, current_auc, save_path='./logs/'):
+        if self.current_epoch == 0:
+            best_auc = 0
+        elif self.current_epoch > 0:
+            with open(save_path+"best_model_params.json", 'r') as file:
+                best_model_params = json.load(file)
+                best_auc = best_model_params['best_auc']
+        
+        if current_auc > best_auc:
+            torch.save({'state_dict': self.state_dict()}, save_path+'best_model_weights.pt')
+            best_model_params = {'epoch': self.current_epoch, 'best_auc': current_auc}
+            with open(save_path+"best_model_params.json", 'w') as file:
+                json.dump(best_model_params, file)
+
 
     def training_epoch_end(self, outputs):
         """Computation done at the end of the epoch"""
@@ -493,6 +509,9 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                     "AUC/Val",
                     val_auc,
                     self.current_epoch)
+
+            # save the model that has the best val auc during train
+            self.save_best_auc_model(val_auc, save_path='./logs/')
 
         # calculates average loss
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
