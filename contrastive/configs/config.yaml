@@ -1,7 +1,7 @@
 defaults:
   - hydra: local
   - hydra/job_logging: custom
-  - dataset: cingulate_schiz_left
+  - dataset: cingulate_ACCpatterns
   - model: SimCLR_supervised
   - mode: classifier
   - augmentations: foldlabel
