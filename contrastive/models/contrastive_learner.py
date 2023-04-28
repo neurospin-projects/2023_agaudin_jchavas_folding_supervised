@@ -43,8 +43,9 @@ import torch
 import pytorch_lightning as pl
 from sklearn.manifold import TSNE
 from toolz.itertoolz import first
-from contrastive.augmentations import ToPointnetTensor
+from collections import OrderedDict
 
+from contrastive.augmentations import ToPointnetTensor
 from contrastive.backbones.densenet import DenseNet
 from contrastive.backbones.convnet import ConvNet
 from contrastive.backbones.pointnet import PointNetCls
@@ -141,6 +142,27 @@ class ContrastiveLearner(pl.LightningModule):
                         self.hook_handles.append(handle)
                     i += 1
 
+    def load_pretrained_model(self, pretrained_model_path, encoder_only=False):
+        """load weights stored in a state_dict at pretrained_model_path
+        """
+        
+        pretrained_state_dict = torch.load(pretrained_model_path)['state_dict']
+        if encoder_only:
+            pretrained_state_dict = OrderedDict({k: v for k, v in pretrained_state_dict.items() if 'encoder' in k})
+
+        model_dict = self.state_dict()
+        
+        loaded_layers = []
+        for n, p in pretrained_state_dict.items():
+            if n in model_dict:
+                loaded_layers.append(n)
+                model_dict[n] = p
+
+        self.load_state_dict(model_dict)
+
+        not_loaded_layers = [key for key in model_dict.keys() if key not in loaded_layers]
+        #print(f"Loaded layers = {loaded_layers}")
+        print(f"Layers not loaded = {not_loaded_layers}")
 
     def custom_histogram_adder(self):
         """Builds histogram for each model parameter.
