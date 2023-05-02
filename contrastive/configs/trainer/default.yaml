@@ -22,3 +22,4 @@ nb_subjects: -1
 random: False
 random_state: 25
 pretrained_model_path: 
+# pretrained_model_path: path/to/.ckpt
