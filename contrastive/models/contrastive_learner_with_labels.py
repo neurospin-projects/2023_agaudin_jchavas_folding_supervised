@@ -57,6 +57,9 @@ try:
 except ImportError:
     print("INFO: you are not in a brainvisa environment. Probably OK.")
 
+from contrastive.utils.logs import set_root_logger_level, set_file_logger
+log = set_file_logger(__file__)
+
 
 class SaveOutput:
     def __init__(self):
@@ -206,6 +209,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 # First views of the whole batch
                 inputs = inputs.cuda()
                 model = self.cuda()
+                log.debug("COMPUTE OUTPUTS SKELETONS")
+                log.debug((inputs[:, 0, :] == inputs[:, 1, :]).all())
                 X_i = model.forward(inputs[:, 0, :])
                 # Second views of the whole batch
                 X_j = model.forward(inputs[:, 1, :])

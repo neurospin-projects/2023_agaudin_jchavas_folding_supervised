@@ -116,8 +116,8 @@ class ContrastiveDatasetFusion():
     Applies different transformations to data depending on the type of input.
     """
 
-    def __init__(self, array, filenames, config, labels=None,
-                 foldlabel_array=None):
+    def __init__(self, array, filenames, config, apply_transform=True,
+                 labels=None, foldlabel_array=None):
         """
         Args:
             data_tensor (tensor): contains MRIs as numpy arrays
@@ -130,8 +130,7 @@ class ContrastiveDatasetFusion():
         self.nb_train = len(filenames)
         self.filenames = filenames
         self.config = config
-
-        self.transform = 'foldlabel' in self.config.keys()
+        self.transform = apply_transform
 
         log.info(self.nb_train)
 

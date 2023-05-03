@@ -51,6 +51,7 @@ from contrastive.data.datasets import ContrastiveDataset_WithLabels
 from contrastive.data.datasets import ContrastiveDataset_WithFoldLabels
 from contrastive.data.datasets import \
     ContrastiveDataset_WithLabels_WithFoldLabels
+from contrastive.data.datasets_copy import ContrastiveDatasetFusion
 
 from contrastive.data.utils import *
 
@@ -100,7 +101,7 @@ def create_sets_without_labels(config):
 
     # Creates the dataset from these data by doing some preprocessing
     datasets = {}
-    if config.mode == 'evaluation':
+    """if config.mode == 'evaluation':
         for subset_name in skeleton_output.keys():
             datasets[subset_name] = ContrastiveDataset_Visualization(
                 filenames=skeleton_output[subset_name][0],
@@ -119,7 +120,24 @@ def create_sets_without_labels(config):
                 datasets[subset_name] = ContrastiveDataset(
                     filenames=skeleton_output[subset_name][0],
                     array=skeleton_output[subset_name][1],
-                    config=config)
+                    config=config)"""  
+    for subset_name in skeleton_output.keys():
+        # select the augmentation method
+        if 'foldlabel' in config.keys():
+            apply_transform = True
+            if config.foldlabel: # branch_clipping
+                foldlabel_array = foldlabel_output[subset_name][1]
+            else: # cutout
+                foldlabel_array = None
+        else: # no augmentation
+            apply_transform = False
+        
+        datasets[subset_name] = ContrastiveDatasetFusion(
+            filenames=skeleton_output[subset_name][0],
+            array=skeleton_output[subset_name][1],
+            foldlabel_array=foldlabel_array,
+            config=config,
+            apply_transform=apply_transform)
     
     # # just to have the same data format as train and val
     # test_dataset, _ = torch.utils.data.random_split(
@@ -153,7 +171,7 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
                                f"{subset_name} labels")
 
     # Loads and separates in train_val/test set foldlabels if requested
-    if (config.foldlabel == True) and (config.mode != 'evaluation'):
+    if ('foldlabel' in config.keys()) and (config.foldlabel == True) and (config.mode != 'evaluation'):
         check_subject_consistency(config.subjects_all,
                                   config.subjects_foldlabel_all)
         foldlabel_output = extract_data_with_labels(config.foldlabel_all,
@@ -212,12 +230,13 @@ def create_sets_with_labels(config):
 
     # Creates the dataset from these data by doing some preprocessing
     datasets = {}
-    if config.mode == 'evaluation':
+    """if config.mode == 'evaluation':
         for subset_name in skeleton_output.keys():
             datasets[subset_name] = ContrastiveDataset_Visualization(
                 filenames=skeleton_output[subset_name][0],
                 array=skeleton_output[subset_name][1],
-                config=config)
+                config=config,
+                labels=skeleton_output[subset_name][2])
     else:
         if config.foldlabel == True:
             for subset_name in skeleton_output.keys():
@@ -233,6 +252,25 @@ def create_sets_with_labels(config):
                     filenames=skeleton_output[subset_name][0],
                     array=skeleton_output[subset_name][1],
                     labels=skeleton_output[subset_name][2],
-                    config=config)
+                    config=config)"""
+    for subset_name in skeleton_output.keys():
+        # select the augmentation method
+        if 'foldlabel' in config.keys():
+            apply_transform = True
+            if config.foldlabel: # branch_clipping
+                foldlabel_array = foldlabel_output[subset_name][1]
+            else: # cutout
+                foldlabel_array = None
+        else: # no augmentation
+            apply_transform = False
+            foldlabel_array = None
+        
+        datasets[subset_name] = ContrastiveDatasetFusion(
+            filenames=skeleton_output[subset_name][0],
+            array=skeleton_output[subset_name][1],
+            foldlabel_array=foldlabel_array,
+            labels=skeleton_output[subset_name][2],
+            config=config,
+            apply_transform=apply_transform)
 
     return datasets
