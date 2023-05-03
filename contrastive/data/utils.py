@@ -142,7 +142,6 @@ def read_subset_csv(csv_file_path: str, name='train_val') -> pd.DataFrame:
     """
     subjects = pd.read_csv(csv_file_path, names=['Subject'])
     log.debug(f"{name}_subjects = {subjects.head()}")
-    print(f"{name} subjects", subjects.head())
 
     return subjects
 

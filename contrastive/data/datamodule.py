@@ -166,7 +166,6 @@ class DataModule_Evaluation(DataModule):
             loader_test_intra = DataLoader(self.dataset_test_intra,
                                           batch_size=self.config.batch_size,
                                           pin_memory=self.config.pin_mem,
-                                          multiprocessing_context='fork',
                                           num_workers=self.config.num_cpu_workers,
                                           shuffle=False
                                           )
