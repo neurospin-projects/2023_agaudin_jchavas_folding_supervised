@@ -177,7 +177,7 @@ def create_sets_with_labels(config):
 
     check_if_skeleton(train_val_data, "train_val")
     check_if_skeleton(test_data, "test")
- (with labels)
+
     if config.environment == "brainvisa" and config.checking:
         compare_array_aims_files(train_val_subjects, train_val_data, config.crop_dir)
         compare_array_aims_files(test_subjects, test_data, config.crop_dir)
@@ -237,11 +237,13 @@ def create_sets_with_labels(config):
             test_dataset = ContrastiveDataset_WithLabels_Both(
                 filenames=test_subjects,
                 array=test_data,
+                labels=test_labels,
                 foldlabel_array=test_foldlabel_data,
                 config=config)
             train_val_dataset = ContrastiveDataset_WithLabels_Both(
                 filenames=train_val_subjects,
                 array=train_val_data,
+                labels=train_val_labels,
                 foldlabel_array=train_val_foldlabel_data,
                 config=config)
         else:
