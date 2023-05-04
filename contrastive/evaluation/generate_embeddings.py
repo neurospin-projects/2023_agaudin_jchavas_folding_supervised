@@ -42,6 +42,7 @@ def compute_embeddings(config):
     config = process_config(config)
 
     config.mode = 'evaluation'
+    config.apply_augmentations = False
 
     # create new models in mode visualisation
     data_module = DataModule_Evaluation(config)

@@ -101,43 +101,22 @@ def create_sets_without_labels(config):
 
     # Creates the dataset from these data by doing some preprocessing
     datasets = {}
-    """if config.mode == 'evaluation':
-        for subset_name in skeleton_output.keys():
-            datasets[subset_name] = ContrastiveDataset_Visualization(
-                filenames=skeleton_output[subset_name][0],
-                array=skeleton_output[subset_name][1],
-                config=config)
-    else:
-        if config.foldlabel == True:
-            for subset_name in skeleton_output.keys():
-                datasets[subset_name] = ContrastiveDataset_WithFoldLabels(
-                    filenames=skeleton_output[subset_name][0],
-                    array=skeleton_output[subset_name][1],
-                    foldlabel_array=foldlabel_output[subset_name][1],
-                    config=config)
-        else:
-            for subset_name in skeleton_output.keys():
-                datasets[subset_name] = ContrastiveDataset(
-                    filenames=skeleton_output[subset_name][0],
-                    array=skeleton_output[subset_name][1],
-                    config=config)"""  
     for subset_name in skeleton_output.keys():
         # select the augmentation method
-        if 'foldlabel' in config.keys():
-            apply_transform = True
+        if config.apply_augmentations:
             if config.foldlabel: # branch_clipping
                 foldlabel_array = foldlabel_output[subset_name][1]
             else: # cutout
-                foldlabel_array = None
+                foldlabel_array = None  # no nedd of fold labels
         else: # no augmentation
-            apply_transform = False
+            foldlabel_array = None
         
         datasets[subset_name] = ContrastiveDatasetFusion(
             filenames=skeleton_output[subset_name][0],
             array=skeleton_output[subset_name][1],
             foldlabel_array=foldlabel_array,
             config=config,
-            apply_transform=apply_transform)
+            apply_transform=config.apply_augmentations)
     
     # # just to have the same data format as train and val
     # test_dataset, _ = torch.utils.data.random_split(
@@ -152,7 +131,7 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
     subsets = [key for key in skeleton_output.keys()]
     if 'test_intra_csv_file' not in config.keys():
         subsets.pop(3)
-    print("SANITY CHECKS", subsets)
+    log.debug(f"SANITY CHECKS {subsets}")
 
     for subset_name in subsets:
         check_if_skeleton(skeleton_output[subset_name][1], subset_name)
@@ -230,39 +209,14 @@ def create_sets_with_labels(config):
 
     # Creates the dataset from these data by doing some preprocessing
     datasets = {}
-    """if config.mode == 'evaluation':
-        for subset_name in skeleton_output.keys():
-            datasets[subset_name] = ContrastiveDataset_Visualization(
-                filenames=skeleton_output[subset_name][0],
-                array=skeleton_output[subset_name][1],
-                config=config,
-                labels=skeleton_output[subset_name][2])
-    else:
-        if config.foldlabel == True:
-            for subset_name in skeleton_output.keys():
-                datasets[subset_name] = ContrastiveDataset_WithLabels_WithFoldLabels(
-                    filenames=skeleton_output[subset_name][0],
-                    array=skeleton_output[subset_name][1],
-                    labels=skeleton_output[subset_name][2],
-                    foldlabel_array=foldlabel_output[subset_name][1],
-                    config=config)
-        else:
-            for subset_name in skeleton_output.keys():
-                datasets[subset_name] = ContrastiveDataset_WithLabels(
-                    filenames=skeleton_output[subset_name][0],
-                    array=skeleton_output[subset_name][1],
-                    labels=skeleton_output[subset_name][2],
-                    config=config)"""
     for subset_name in skeleton_output.keys():
         # select the augmentation method
-        if 'foldlabel' in config.keys():
-            apply_transform = True
+        if config.apply_augmentations:
             if config.foldlabel: # branch_clipping
                 foldlabel_array = foldlabel_output[subset_name][1]
             else: # cutout
-                foldlabel_array = None
+                foldlabel_array = None  # no need of fold labels
         else: # no augmentation
-            apply_transform = False
             foldlabel_array = None
         
         datasets[subset_name] = ContrastiveDatasetFusion(
@@ -271,6 +225,6 @@ def create_sets_with_labels(config):
             foldlabel_array=foldlabel_array,
             labels=skeleton_output[subset_name][2],
             config=config,
-            apply_transform=apply_transform)
+            apply_transform=config.apply_augmentations)
 
     return datasets
