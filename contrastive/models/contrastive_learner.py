@@ -64,6 +64,9 @@ try:
 except ImportError:
     print("INFO: you are probably not in a brainvisa environment. Probably OK.")
 
+from contrastive.utils.logs import set_root_logger_level, set_file_logger
+log = set_file_logger(__file__)
+
     
 class SaveOutput:
     def __init__(self):
@@ -162,7 +165,7 @@ class ContrastiveLearner(pl.LightningModule):
 
         not_loaded_layers = [key for key in model_dict.keys() if key not in loaded_layers]
         #print(f"Loaded layers = {loaded_layers}")
-        print(f"Layers not loaded = {not_loaded_layers}")
+        log.info(f"Layers not loaded = {not_loaded_layers}")
 
     def custom_histogram_adder(self):
         """Builds histogram for each model parameter.
