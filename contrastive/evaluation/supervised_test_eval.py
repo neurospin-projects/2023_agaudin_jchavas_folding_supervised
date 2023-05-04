@@ -18,7 +18,7 @@ from contrastive.data.datamodule import DataModule_Evaluation
 log = set_file_logger(__file__)
 
 
-def checks_before_compute(sub_dir, dataset, overwrite=False):
+def checks_before_compute(sub_dir, dataset, overwrite=False, use_best_model=True):
     config_path = sub_dir+'/.hydra/config.yaml'
     with open(config_path, 'r') as file:
         config = yaml.load(file, Loader=yaml.BaseLoader)
@@ -31,13 +31,20 @@ def checks_before_compute(sub_dir, dataset, overwrite=False):
     # check if test values are already saved
     if os.path.exists(sub_dir + f"/{dataset}_results") and (not overwrite):
         print("Model already treated (existing folder with results). Set \
-overwrite to True if you still want to compute them.")
+overwrite to True if you still want to evaluate it.")
         return False
         
     # check if the model is not excluded by hand
     if '#' in sub_dir:
         print("Model with an incompatible structure with the current one. Pass.")
         return False
+    
+    # check if the best_model has been saved
+    if use_best_model:
+        if not os.path.exists(os.path.abspath(sub_dir)+"/logs/best_model_weights.pt"):
+            print("The best model's weigths have not been saved for this model.\
+Set the keyword use_best_model to False if you want to evaluate it with its lasts weights.")
+            return False
     
     return True
 
@@ -142,7 +149,11 @@ def supervised_test_eval(config, model_path, use_best_model=True):
     if 'test_intra_auc' in locals():
         results_dico['test_intra_auc'] = test_intra_auc
 
-    with open(save_path+'/test_results.json', 'w') as file:
+    if use_best_model:
+        json_path = save_path+'/test_results_best_model.json'
+    else:
+        json_path = save_path+'/test_results.json'
+    with open(json_path, 'w') as file:
         json.dump(results_dico, file)
 
 
@@ -157,7 +168,7 @@ def pipeline(dir_path, dataset, overwrite=False, use_best_model=True):
                 print("\n")
                 print(f"Treating {sub_dir}")
                 # checks to know if the model should be treated
-                cont_bool = checks_before_compute(sub_dir, dataset, overwrite=overwrite)
+                cont_bool = checks_before_compute(sub_dir, dataset, overwrite=overwrite, use_best_model=use_best_model)
                 if cont_bool:
                     print("Start post processing")
                     # get the config and correct it to suit what is needed for classifiers
@@ -179,5 +190,5 @@ def pipeline(dir_path, dataset, overwrite=False, use_best_model=True):
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/supervised/ACCpatterns/L",
+pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/supervised/pretrained_UKB/ACCpatterns/opposite_side",
          dataset="cingulate_ACCpatterns_left", overwrite=True, use_best_model=True)
