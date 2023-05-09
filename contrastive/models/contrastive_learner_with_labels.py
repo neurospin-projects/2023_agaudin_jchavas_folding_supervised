@@ -217,6 +217,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         # Initialization
         if self.config.mode == "regresser":
             num_outputs = 1
+        elif self.config.mode == "classifier":
+            num_outputs = 2
         else:
             num_outputs = self.config.num_representation_features
         X = torch.zeros([0, num_outputs]).cpu()
@@ -539,8 +541,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 score = self.plot_scatter_matrices_with_labels(
                                                 self.sample_data.val_dataloader(),
                                                 self.config.mode)
-                                                "validation")
-        
+
         if self.config.mode == 'classifier':
             val_auc = self.compute_output_auc(self.sample_data.val_dataloader())
             self.logger.experiment.add_scalar(

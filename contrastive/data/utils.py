@@ -315,9 +315,11 @@ def extract_data(npy_file_path, config):
 
     # Restricts train_val length
     random_state = None if not 'random_state' in config.keys() else config.random_state
-    train_val_subjects = restrict_length(train_val_subjects,
+    is_random = None if not 'random' in config.keys() else config.random
+    if 'train_csv_file' in config.keys():
+        train_subjects = restrict_length(train_subjects,
                                          config.nb_subjects,
-                                         config.random,
+                                         is_random,
                                          random_state)
         # propagate the modification to train_val ; val is not affected
         train_val_subjects = pd.concat([train_subjects, val_subjects])
@@ -507,12 +509,8 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
     output['test_intra'].append(test_intra_labels)
     output['test'].append(test_labels)
 
-    # Restricts train_val length
-    train_val_subjects = restrict_length(train_val_subjects,
-                                         config.nb_subjects,
-                                         config.random,
-                                         config.random_state)
-
+    log.debug(f"length of output train = {len(output['train'])}")
+    
     return output
 
 
