@@ -196,7 +196,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 self.weights = weights
 
         # logs - a dictionary
-        logs = {"train_loss": float(batch_loss),
+        logs = {"loss": float(batch_loss),
                 "train_label_loss": float(batch_label_loss)}
 
         batch_dictionary = {
@@ -507,7 +507,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         batch_dictionary = {
             # REQUIRED: It is required for us to return "loss"
-            "loss": batch_loss,
+            "val_loss": batch_loss,
             "label_loss": batch_label_loss,
             # optional for batch logging purposes
             "log": logs,
@@ -553,7 +553,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             self.save_best_auc_model(val_auc, save_path='./logs/')
 
         # calculates average loss
-        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
         # avg_label_loss = torch.stack([x['label_loss'] for x in outputs]).mean()
 
         # logs losses using tensorboard logger
