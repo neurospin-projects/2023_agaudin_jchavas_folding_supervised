@@ -40,8 +40,8 @@ import os
 import numpy as np
 import pandas as pd
 import torch
-import random
 
+from sklearn.preprocessing import MinMaxScaler
 from contrastive.utils.logs import set_file_logger
 #from contrastive.data.transforms import transform_foldlabel
 # only if foldlabel == True
@@ -293,7 +293,7 @@ def check_if_same_shape(arr1, arr2, keyword):
                           "don't have the same shape")
 
 
-def read_labels(subject_labels_file, subject_column_name, label_names):
+def read_labels(subject_labels_file, subject_column_name, label_names, label_scaling):
     """Extracts labels from label file. Returns a dataframe with labels"""
     
     # Loads labels file
@@ -325,6 +325,11 @@ def read_labels(subject_labels_file, subject_column_name, label_names):
     subject_labels = subject_labels.dropna()
     log.info(f"Head of subject_labels:\n{subject_labels.head()}")
     log.info(f"Number of non-NaN subjects with label = {len(subject_labels)}")
+
+    # Sets min-max scaler on labels
+    if label_scaling == 'MinMax':
+        scaler = MinMaxScaler()
+        subject_labels.loc[:,label_names] = scaler.fit_transform(subject_labels[label_names])
 
     return subject_labels
 

@@ -98,7 +98,7 @@ class ConvNet(pl.LightningModule):
 
         super(ConvNet, self).__init__()
 
-        assert mode in {'encoder', 'evaluation', 'decoder', 'classifier'},\
+        assert mode in {'encoder', 'evaluation', 'decoder', 'classifier', 'regresser'},\
             "Unknown mode selected: %s" % mode
 
 

@@ -42,9 +42,12 @@ import torch
 from sklearn.manifold import TSNE
 from toolz.itertoolz import first
 
+from sklearn.metrics import r2_score
+
 from contrastive.models.contrastive_learner import ContrastiveLearner
 from contrastive.losses import GeneralizedSupervisedNTXenLoss,\
                                CrossEntropyLoss_Classification
+from contrastive.losses import MSELoss_Regression
 from contrastive.utils.plots.visualize_images \
     import plot_scatter_matrix_with_labels
 from contrastive.utils.plots.visualize_tsne import plot_tsne
@@ -72,7 +75,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         super(ContrastiveLearner_WithLabels, self).__init__(
             config=config, sample_data=sample_data)
 
-    def plot_scatter_matrices_with_labels(self, dataloader, key):
+    def plot_scatter_matrices_with_labels(self, dataloader, key, mode="encoder"):
         """Plots scatter matrices with label values."""
         # Makes scatter matrix of output space
         r = self.compute_outputs_skeletons(dataloader)
@@ -85,6 +88,10 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             'scatter_matrix_outputs_with_labels_' + key,
             scatter_matrix_outputs_with_labels,
             self.current_epoch)
+        if mode == "regresser":
+            score = r2_score(labels, X)
+        else:
+            score = 0
 
         # Makes scatter matrix of representation space with label values
         r = self.compute_representations(dataloader)
@@ -96,6 +103,9 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             'scatter_matrix_representations_with_labels_' + key,
             scatter_matrix_representations_with_labels,
             self.current_epoch)
+
+        return score
+        
 
     def generalized_supervised_nt_xen_loss(self, z_i, z_j, labels):
         """Loss function for contrastive"""
@@ -119,6 +129,11 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         """Loss function for decoder"""
         loss = CrossEntropyLoss_Classification(device=self.device)
         return loss.forward(output_i, output_j, labels)
+    
+    def mse_loss_regression(self, output_i, output_j, labels):
+        """Loss function for decoder"""
+        loss = MSELoss_Regression(device=self.device)
+        return loss.forward(output_i, output_j, labels)
 
     def training_step(self, train_batch, batch_idx):
         """Training step.
@@ -135,10 +150,13 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         elif self.config.mode == "classifier":
             batch_loss = self.cross_entropy_loss_classification(z_i, z_j, labels)
             batch_label_loss = torch.tensor(0.)
+        elif self.config.mode == "regresser":
+            batch_loss = self.mse_loss_regression(z_i, z_j, labels)
+            batch_label_loss = torch.tensor(0.)
         else:
             batch_loss, batch_label_loss, \
-            sim_zij, sim_zii, sim_zjj, correct_pair, weights = \
-                self.generalized_supervised_nt_xen_loss(z_i, z_j, labels)
+                sim_zij, sim_zii, sim_zjj, correct_pair, weights = \
+                    self.generalized_supervised_nt_xen_loss(z_i, z_j, labels)
 
         self.log('train_loss', float(batch_loss))
         self.log('train_label_loss', float(batch_label_loss))
@@ -165,7 +183,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                         f"Shape of file read from array = {self.sample_k[0,0,...].shape}\n"
                         f"Sum of reference file = {self.sample_ref_0.sum()}\n"
                         f"Sum of file read from array = {self.sample_k[0,...].sum()}")
-            if self.config.mode != "decoder" and self.config.mode != "classifier":
+            if self.config.mode != "decoder" and self.config.mode != "classifier" and self.config.mode != "regresser":
                 self.sim_zij = sim_zij * self.config.temperature
                 self.sim_zii = sim_zii * self.config.temperature
                 self.sim_zjj = sim_zjj * self.config.temperature
@@ -191,7 +209,11 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         This includes the projection head"""
 
         # Initialization
-        X = torch.zeros([0, self.config.num_representation_features]).cpu()
+        if self.config.mode == "regresser":
+            num_outputs = 1
+        else:
+            num_outputs = self.config.num_representation_features
+        X = torch.zeros([0, num_outputs]).cpu()
         labels_all = torch.zeros([0, len(self.config.label_names)]).cpu()
         filenames_list = []
 
@@ -204,6 +226,10 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 X_i = model.forward(inputs[:, 0, :])
                 # Second views of the whole batch
                 X_j = model.forward(inputs[:, 1, :])
+
+                # Reshape (necessary if num_outputs==1)
+                X_i = X_i.reshape(X_i.shape[0], num_outputs)
+                X_j = X_j.reshape(X_j.shape[0], num_outputs)
 
                 # We now concatenate the embeddings
 
@@ -344,8 +370,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def plotting_matrices_now(self):
         if self.config.nb_epochs_per_matrix_plot <= 0:
             return False
-        elif self.current_epoch % self.config.nb_epochs_per_matrix_plot == 0 \
-                    or self.current_epoch >= self.config.max_epochs:
+        elif (self.current_epoch % self.config.nb_epochs_per_matrix_plot == 0)\
+            or (self.current_epoch >= self.config.max_epochs):
             return True
         else:
             return False
@@ -353,7 +379,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def training_epoch_end(self, outputs):
         """Computation done at the end of the epoch"""
 
-        if self.config.mode == "encoder":
+        score = 0
+        if (self.config.mode == "encoder") or (self.config.mode == "regresser"):
             # Computes t-SNE both in representation and output space
             if self.plotting_now():
                 X_tsne, labels = self.compute_tsne(
@@ -370,36 +397,39 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             if self.plotting_matrices_now():
                 # Plots scatter matrices
                 # Plots zxx and weights histograms
-                self.plot_histograms()
+                if (self.config.mode == "encoder"):
+                    self.plot_histograms()
 
                 # Plots scatter matrices
                 self.plot_scatter_matrices()
 
                 # Plots scatter matrices with label values
-                self.plot_scatter_matrices_with_labels(
-                    self.sample_data.train_dataloader(),
-                    "train")
+                score = self.plot_scatter_matrices_with_labels(
+                            self.sample_data.train_dataloader(),
+                            "train",
+                            self.config.mode)
         
         if self.plotting_matrices_now():
+            # logs histograms
+            self.custom_histogram_adder()
             # Plots views
             self.plot_views()
 
         # calculates average loss
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        avg_label_loss = torch.stack([x['label_loss'] for x in outputs]).mean()
+        # avg_label_loss = torch.stack([x['label_loss'] for x in outputs]).mean()
 
-        # logs histograms
-        # self.custom_histogram_adder()
 
         # logging using tensorboard logger
         self.logger.experiment.add_scalar(
             "Loss/Train",
             avg_loss,
             self.current_epoch)
-        self.logger.experiment.add_scalar(
-            "Label_loss/Train",
-            avg_label_loss,
-            self.current_epoch)
+        if score != 0:
+            self.logger.experiment.add_scalar(
+                "Score/Train",
+                score,
+                self.current_epoch)
 
     def validation_step(self, val_batch, batch_idx):
         """Validation step"""
@@ -416,6 +446,9 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             batch_loss = self.cross_entropy_loss(sample, z_i, z_j)
         elif self.config.mode == "classifier":
             batch_loss = self.cross_entropy_loss_classification(z_i, z_j, labels)
+            batch_label_loss = torch.tensor(0.)
+        elif self.config.mode == "regresser":
+            batch_loss = self.mse_loss_regression(z_i, z_j, labels)
             batch_label_loss = torch.tensor(0.)
         else:
             batch_loss, batch_label_loss, \
@@ -442,8 +475,9 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def validation_epoch_end(self, outputs):
         """Computaion done at the end of each validation epoch"""
 
+        score = 0
         # Computes t-SNE
-        if self.config.mode == "encoder":
+        if (self.config.mode == "encoder") or (self.config.mode == "regresser"):
             if self.plotting_now():
                 X_tsne, labels = self.compute_tsne(
                     self.sample_data.val_dataloader(), "output")
@@ -460,21 +494,23 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                     self.current_epoch)
 
             if self.plotting_matrices_now():
-            # Plots scatter matrices
-                self.plot_scatter_matrices_with_labels(
+                # Plots scatter matrices
+                score = self.plot_scatter_matrices_with_labels(
                                                 self.sample_data.val_dataloader(),
-                                                "validation")
+                                                "validation",
+                                                self.config.mode)
 
         # calculates average loss
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        avg_label_loss = torch.stack([x['label_loss'] for x in outputs]).mean()
+        # avg_label_loss = torch.stack([x['label_loss'] for x in outputs]).mean()
 
         # logs losses using tensorboard logger
         self.logger.experiment.add_scalar(
             "Loss/Validation",
             avg_loss,
             self.current_epoch)
-        self.logger.experiment.add_scalar(
-            "Label_loss/Validation",
-            avg_label_loss,
-            self.current_epoch)
+        if score != 0:
+            self.logger.experiment.add_scalar(
+                "score/Validation",
+                score,
+                self.current_epoch)
