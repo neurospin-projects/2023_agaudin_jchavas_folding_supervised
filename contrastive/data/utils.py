@@ -40,10 +40,9 @@ import os
 import numpy as np
 import pandas as pd
 import torch
-import random
 
 from sklearn.model_selection import train_test_split
-
+from sklearn.preprocessing import MinMaxScaler
 from contrastive.utils.logs import set_file_logger
 #from contrastive.data.transforms import transform_foldlabel
 # only if foldlabel == True
@@ -314,14 +313,11 @@ def extract_data(npy_file_path, config):
         test_subjects, test_data = \
         extract_test(normal_subjects, train_val_subjects, normal_data)
 
-
-    # Restricts train_val or train length
+    # Restricts train_val length
     random_state = None if not 'random_state' in config.keys() else config.random_state
-    is_random = None if not 'random' in config.keys() else config.random
-    if 'train_csv_file' in config.keys():
-        train_subjects = restrict_length(train_subjects,
+    train_val_subjects = restrict_length(train_val_subjects,
                                          config.nb_subjects,
-                                         is_random,
+                                         config.random,
                                          random_state)
         # propagate the modification to train_val ; val is not affected
         train_val_subjects = pd.concat([train_subjects, val_subjects])
@@ -400,7 +396,7 @@ def check_if_same_shape(arr1, arr2, keyword):
                           "don't have the same shape")
 
 
-def read_labels(subject_labels_file, subject_column_name, label_names):
+def read_labels(subject_labels_file, subject_column_name, label_names, label_scaling):
     """Extracts labels from label file. Returns a dataframe with labels"""
     
     # Loads labels file
@@ -432,6 +428,11 @@ def read_labels(subject_labels_file, subject_column_name, label_names):
     subject_labels = subject_labels.dropna()
     log.info(f"Head of subject_labels:\n{subject_labels.head()}")
     log.info(f"Number of non-NaN subjects with label = {len(subject_labels)}")
+
+    # Sets min-max scaler on labels
+    if label_scaling == 'MinMax':
+        scaler = MinMaxScaler()
+        subject_labels.loc[:,label_names] = scaler.fit_transform(subject_labels[label_names])
 
     return subject_labels
 
@@ -506,7 +507,11 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
     output['test_intra'].append(test_intra_labels)
     output['test'].append(test_labels)
 
-    log.debug(len(output['train']))
+    # Restricts train_val length
+    train_val_subjects = restrict_length(train_val_subjects,
+                                         config.nb_subjects,
+                                         config.random,
+                                         config.random_state)
 
     return output
 

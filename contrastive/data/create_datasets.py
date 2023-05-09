@@ -197,7 +197,8 @@ def create_sets_with_labels(config):
     # Column subject_column_name is renamed 'Subject'
     subject_labels = read_labels(config.subject_labels_file,
                                  config.subject_column_name,
-                                 config.label_names)
+                                 config.label_names,
+                                 config.label_scaling)
 
     if config.environment == "brainvisa" and config.checking:
         quality_checks(config.subjects_all, config.numpy_all, config.crop_dir, parallel=True)

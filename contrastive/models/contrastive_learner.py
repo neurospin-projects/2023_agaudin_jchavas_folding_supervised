@@ -180,6 +180,7 @@ class ContrastiveLearner(pl.LightningModule):
 
     def plot_histograms(self):
         """Plots all zii, zjj, zij and weights histograms"""
+
         # Computes histogram of sim_zii
         histogram_sim_zii = plot_histogram(self.sim_zii, buffer=True)
         self.logger.experiment.add_image(

@@ -98,7 +98,7 @@ class ConvNet(pl.LightningModule):
 
         super(ConvNet, self).__init__()
 
-        assert mode in {'encoder', 'evaluation', 'decoder', 'classifier'},\
+        assert mode in {'encoder', 'evaluation', 'decoder', 'classifier', 'regresser'},\
             "Unknown mode selected: %s" % mode
 
 
@@ -158,17 +158,30 @@ class ConvNet(pl.LightningModule):
 
         elif self.mode == "classifier":
             modules_classifier = []
-            i=0
+            i = 0
             modules_classifier.append((f'LeakyReLU{i}', nn.LeakyReLU()))
             modules_classifier.append((f'Linear{i}', 
                     nn.Linear(self.num_representation_features,
                             self.num_representation_features)))
-            i=1
+            i = 1
             modules_classifier.append((f'LeakyReLU{i}', nn.LeakyReLU()))
             modules_classifier.append((f'Linear{i}', 
                     nn.Linear(self.num_representation_features,
                             self.num_classes)))
             self.classifier = nn.Sequential(OrderedDict(modules_classifier))
+
+        elif self.mode == "regresser":
+            modules_regresser = []
+            i = 0
+            modules_regresser.append((f'LeakyReLU{i}', nn.LeakyReLU()))
+            modules_regresser.append((f'Linear{i}', 
+                    nn.Linear(self.num_representation_features,
+                            self.num_representation_features)))
+            i = 1
+            modules_regresser.append((f'LeakyReLU{i}', nn.LeakyReLU()))
+            modules_regresser.append((f'Linear{i}', 
+                    nn.Linear(self.num_representation_features, 1)))
+            self.regresser = nn.Sequential(OrderedDict(modules_regresser))
 
         elif self.mode == "decoder":
             self.hidden_representation = nn.Linear(
@@ -232,6 +245,10 @@ class ConvNet(pl.LightningModule):
 
         elif self.mode == "classifier":
             out = self.classifier(out)
+            out = F.softmax(out)
+
+        elif self.mode == "regresser":
+            out = self.regresser(out)
 
         elif self.mode == "decoder":
             out = F.relu(out, inplace=True)
