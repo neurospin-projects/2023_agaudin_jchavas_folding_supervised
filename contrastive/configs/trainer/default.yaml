@@ -21,4 +21,3 @@ partition: [0.9, 0.1]
 nb_subjects: -1
 random: False
 random_state: 25
-pretrained_model_path: 
