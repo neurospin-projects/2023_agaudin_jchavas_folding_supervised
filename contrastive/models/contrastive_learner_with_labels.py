@@ -54,6 +54,7 @@ from contrastive.losses import MSELoss_Regression
 from contrastive.utils.plots.visualize_images \
     import plot_scatter_matrix_with_labels
 from contrastive.utils.plots.visualize_tsne import plot_tsne
+from contrastive.evaluation.auc_score import regression_roc_auc_score
 
 try:
     from soma import aims
@@ -390,10 +391,13 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         X, labels, _ = self.compute_outputs_skeletons(loader)
         # compute the mean of the two views' outputs
         X = (X[::2,...] + X[1::2,...]) / 2
-        X = nn.functional.softmax(X, dim=1)
         # remove the doubleing of labels
         labels = labels[::2]
-        auc = roc_auc_score(labels, X[:,1])
+        if self.config.mode == "regresser":
+            auc = regression_roc_auc_score(labels, X[:,0])
+        else:
+            X = nn.functional.softmax(X, dim=1)
+            auc = roc_auc_score(labels, X[:,1])
 
         return auc
     
@@ -445,7 +449,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                             "train",
                             self.config.mode)
         
-        if self.config.mode == 'classifier':
+        if (self.config.mode == 'classifier') or (self.config.mode == 'regresser'):
             train_auc = self.compute_output_auc(self.sample_data.train_dataloader())
             self.logger.experiment.add_scalar(
                     "AUC/Train",
@@ -540,9 +544,10 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 # Plots scatter matrices
                 score = self.plot_scatter_matrices_with_labels(
                                                 self.sample_data.val_dataloader(),
+                                                "val",
                                                 self.config.mode)
 
-        if self.config.mode == 'classifier':
+        if (self.config.mode == 'classifier') or (self.config.mode == 'regresser'):
             val_auc = self.compute_output_auc(self.sample_data.val_dataloader())
             self.logger.experiment.add_scalar(
                     "AUC/Val",
