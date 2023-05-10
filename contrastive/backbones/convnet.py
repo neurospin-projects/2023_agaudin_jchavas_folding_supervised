@@ -98,7 +98,7 @@ class ConvNet(pl.LightningModule):
 
         super(ConvNet, self).__init__()
 
-        assert mode in {'encoder', 'evaluation', 'decoder', 'classifier'},\
+        assert mode in {'encoder', 'evaluation', 'decoder', 'classifier', 'regresser'},\
             "Unknown mode selected: %s" % mode
 
 
@@ -158,17 +158,30 @@ class ConvNet(pl.LightningModule):
 
         elif self.mode == "classifier":
             modules_classifier = []
-            i=0
+            i = 0
             modules_classifier.append((f'LeakyReLU{i}', nn.LeakyReLU()))
             modules_classifier.append((f'Linear{i}', 
                     nn.Linear(self.num_representation_features,
                             self.num_representation_features)))
-            i=1
+            i = 1
             modules_classifier.append((f'LeakyReLU{i}', nn.LeakyReLU()))
             modules_classifier.append((f'Linear{i}', 
                     nn.Linear(self.num_representation_features,
                             self.num_classes)))
             self.classifier = nn.Sequential(OrderedDict(modules_classifier))
+
+        elif self.mode == "regresser":
+            modules_regresser = []
+            i = 0
+            modules_regresser.append((f'LeakyReLU{i}', nn.LeakyReLU()))
+            modules_regresser.append((f'Linear{i}', 
+                    nn.Linear(self.num_representation_features,
+                            self.num_representation_features)))
+            i = 1
+            modules_regresser.append((f'LeakyReLU{i}', nn.LeakyReLU()))
+            modules_regresser.append((f'Linear{i}', 
+                    nn.Linear(self.num_representation_features, 1)))
+            self.regresser = nn.Sequential(OrderedDict(modules_regresser))
 
         elif self.mode == "decoder":
             self.hidden_representation = nn.Linear(
@@ -193,24 +206,6 @@ class ConvNet(pl.LightningModule):
                             stride=2, padding=0)))
             modules_decoder.append(('conv_final', nn.Conv3d(1, 2, kernel_size=1, stride=1)))
             self.decoder = nn.Sequential(OrderedDict(modules_decoder))
-
-        if (self.mode == "encoder") or (self.mode == 'evaluation'):
-            # This loads pretrained weight if present
-            if pretrained_model_path:
-                path = pretrained_model_path
-                pretrained = torch.load(path)
-                model_dict = self.state_dict()
-                for n, p in pretrained['state_dict'].items():
-                    print(n)
-                    # The pretrained model weight is saved as backbone.conv0.weight
-                    # whereas here the key in state_dict is conv0.weight
-                    # we must remove the "bakcbone." part of the key
-                    n_model = '.'.join(n.split('.')[1:])
-                    if n_model in model_dict:
-                        model_dict[n_model] = p
-                self.load_state_dict(model_dict)
-
-        if self.mode == "decoder":
 
             # This loads pretrained weight
             # path = "/host/volatile/jc225751/Runs/33_MIDL_2022_reviews/Output/t-0.1/n-004_o-4/logs/default/version_0/checkpoints/epoch=299-step=8399.ckpt"
@@ -250,6 +245,10 @@ class ConvNet(pl.LightningModule):
 
         elif self.mode == "classifier":
             out = self.classifier(out)
+            out = F.softmax(out)
+
+        elif self.mode == "regresser":
+            out = self.regresser(out)
 
         elif self.mode == "decoder":
             out = F.relu(out, inplace=True)

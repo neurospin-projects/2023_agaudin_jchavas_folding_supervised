@@ -22,6 +22,14 @@ def embeddings_to_pandas(embeddings, csv_path=None, verbose=False):
     if verbose:
         print("embeddings:", df_embeddings.iloc[:10,:])
         print("nb of elements:", df_embeddings.shape[0])
+    
+    # Solves the case in which index type is tensor
+    if type(df_embeddings.index[0]) != str:
+        index = [idx.item() for idx in df_embeddings.index]
+        index_name = df_embeddings.index.name
+        df_embeddings.index = index
+        df_embeddings.index.names = [index_name]
+        
     if csv_path:
         df_embeddings.to_csv(csv_path)
     else:
@@ -42,6 +50,7 @@ def compute_embeddings(config):
     config = process_config(config)
 
     config.mode = 'evaluation'
+    config.apply_augmentations = False
 
     # create new models in mode visualisation
     data_module = DataModule_Evaluation(config)
@@ -103,6 +112,14 @@ def compute_embeddings(config):
     test_embeddings_df = embeddings_to_pandas(test_embeddings)
     test_embeddings_df.to_csv(embeddings_path+"/test_embeddings.csv")
 
+    # same thing for test_intra if it exists
+    if 'test_intra_csv_file' in config.keys():
+        print("TEST INTRA SET")
+        test_intra_embeddings = model.compute_representations(data_module.test_intra_dataloader())
+
+        test_intra_embeddings_df = embeddings_to_pandas(test_intra_embeddings)
+        test_intra_embeddings_df.to_csv(embeddings_path+"/test_intra_embeddings.csv")
+
     # same thing on the train_val dataset
     print("TRAIN_VAL SET")
     train_val_df = pd.concat([train_embeddings_df, val_embeddings_df],
@@ -113,6 +130,7 @@ def compute_embeddings(config):
     print("FULL SET")
     full_df = pd.concat([train_embeddings_df, val_embeddings_df, test_embeddings_df],
                          axis=0)
+    full_df = full_df.sort_values(by='ID')
     full_df.to_csv(embeddings_path+"/full_embeddings.csv")
 
     print("ALL EMBEDDINGS GENERATED: OK")

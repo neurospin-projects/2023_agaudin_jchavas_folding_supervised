@@ -40,8 +40,6 @@ import pandas as pd
 from torch.autograd import Variable
 import torch.nn as nn
 
-from deep_folding.utils.pytorchtools import EarlyStopping
-from postprocess import plot_loss
 
 
 class VAE(nn.Module):

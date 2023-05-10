@@ -37,7 +37,6 @@ import logging
 import tempfile
 
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import plotly.express as px
 import numpy as np
@@ -48,9 +47,12 @@ from .visu_utils import buffer_to_image
 from .visu_utils import png_file_to_image
 from .visu_utils import prime_factors
 
+matplotlib.use('Agg')
+
 logger = logging.getLogger(__name__)
 
 temp_dir = tempfile.mkdtemp()
+
 
 def plot_img(img, buffer):
     """Plots one 2D slice of one of the 3D images of the batch
@@ -162,6 +164,7 @@ def plot_scatter_matrix(tensor, buffer):
     else:
         plt.show()
 
+
 def plot_scatter_matrix_with_labels(embeddings, labels, buffer, jitter=False):
     """Plots scatter matrix of the values of a tensor"""
     arr_embeddings = embeddings.detach().cpu().numpy()
@@ -174,7 +177,7 @@ def plot_scatter_matrix_with_labels(embeddings, labels, buffer, jitter=False):
     # df = pd.concat([df,
     #                 df_labels.add_prefix("label_").astype(str)], axis=1)
     fig = px.scatter_matrix(df,
-                            dimensions=df.columns[0:-1],
+                            dimensions=df.columns,
                             color=df.columns[-1],
                             opacity=0.5)
     png_file = f"{temp_dir}/scatter_matrix.png"
@@ -182,3 +185,4 @@ def plot_scatter_matrix_with_labels(embeddings, labels, buffer, jitter=False):
 
     if buffer:
         return png_file_to_image(png_file)
+

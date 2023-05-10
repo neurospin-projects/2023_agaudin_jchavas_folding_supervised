@@ -1,9 +1,0 @@
-# @package _global_
-dataset_name: cingulate_HCP_1mm
-pickle_normal: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/1mm/CINGULATE/mask/Rskeleton.pkl
-numpy_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/1mm/CINGULATE/mask/Rskeleton.npy
-subjects_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/1mm/CINGULATE/mask/Rskeleton_subject.csv
-foldlabel_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/1mm/CINGULATE/mask/Rlabel.npy
-subjects_foldlabel_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/1mm/CINGULATE/mask/Rlabel_subject.csv
-pickle_benchmark: 
-train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/hcp/HCP_half_1bis.csv

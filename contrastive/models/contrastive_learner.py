@@ -43,8 +43,9 @@ import torch
 import pytorch_lightning as pl
 from sklearn.manifold import TSNE
 from toolz.itertoolz import first
-from contrastive.augmentations import ToPointnetTensor
+from collections import OrderedDict
 
+from contrastive.augmentations import ToPointnetTensor
 from contrastive.backbones.densenet import DenseNet
 from contrastive.backbones.convnet import ConvNet
 from contrastive.backbones.pointnet import PointNetCls
@@ -62,6 +63,9 @@ try:
     from contrastive.utils.plots.visualize_anatomist import Visu_Anatomist
 except ImportError:
     print("INFO: you are probably not in a brainvisa environment. Probably OK.")
+
+from contrastive.utils.logs import set_root_logger_level, set_file_logger
+log = set_file_logger(__file__)
 
     
 class SaveOutput:
@@ -141,6 +145,27 @@ class ContrastiveLearner(pl.LightningModule):
                         self.hook_handles.append(handle)
                     i += 1
 
+    def load_pretrained_model(self, pretrained_model_path, encoder_only=False):
+        """load weights stored in a state_dict at pretrained_model_path
+        """
+        
+        pretrained_state_dict = torch.load(pretrained_model_path)['state_dict']
+        if encoder_only:
+            pretrained_state_dict = OrderedDict({k: v for k, v in pretrained_state_dict.items() if 'encoder' in k})
+
+        model_dict = self.state_dict()
+        
+        loaded_layers = []
+        for n, p in pretrained_state_dict.items():
+            if n in model_dict:
+                loaded_layers.append(n)
+                model_dict[n] = p
+
+        self.load_state_dict(model_dict)
+
+        not_loaded_layers = [key for key in model_dict.keys() if key not in loaded_layers]
+        #print(f"Loaded layers = {loaded_layers}")
+        log.info(f"Layers not loaded = {not_loaded_layers}")
 
     def custom_histogram_adder(self):
         """Builds histogram for each model parameter.
@@ -155,6 +180,7 @@ class ContrastiveLearner(pl.LightningModule):
 
     def plot_histograms(self):
         """Plots all zii, zjj, zij and weights histograms"""
+
         # Computes histogram of sim_zii
         histogram_sim_zii = plot_histogram(self.sim_zii, buffer=True)
         self.logger.experiment.add_image(
@@ -454,14 +480,14 @@ class ContrastiveLearner(pl.LightningModule):
                 self.logger.experiment.add_image(
                     'TSNE representation image', image_TSNE, self.current_epoch)
 
-            # Computes histogram of sim_zij
-            histogram_sim_zij = plot_histogram(self.sim_zij, buffer=True)
-            self.logger.experiment.add_image(
-                'histo_sim_zij', histogram_sim_zij, self.current_epoch)
+                # Computes histogram of sim_zij
+                histogram_sim_zij = plot_histogram(self.sim_zij, buffer=True)
+                self.logger.experiment.add_image(
+                    'histo_sim_zij', histogram_sim_zij, self.current_epoch)
 
         # Plots views
-        if self.config.backbone_name != 'pointnet':
-            self.plot_views()
+        # if self.config.backbone_name != 'pointnet':
+        #     self.plot_views() # far too slow and I don't get what it is doing
 
         # calculates average loss
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
