@@ -165,3 +165,32 @@ def transform_both(sample_foldlabel, percentage, from_skeleton, config):
                 BinarizeTensor(),
                 ToPointnetTensor(n_max=config.n_max)
             ])
+
+def transform_foldlabel_resize(sample_foldlabel, percentage, resize_ratio, config):
+    if config.backbone_name != 'pointnet':
+        return \
+            transforms.Compose([
+                SimplifyTensor(),
+                RemoveRandomBranchTensor(sample_foldlabel=sample_foldlabel,
+                                        percentage=percentage,
+                                        variable_percentage = config.variable_percentage,
+                                        input_size=config.input_size,
+                                        keep_bottom=config.keep_bottom),
+                BinarizeTensor(),
+                ResizeTensor(resize_ratio),
+                RotateTensor(max_angle=config.max_angle)
+            ])
+    else:
+        return \
+            transforms.Compose([
+                SimplifyTensor(),
+                RemoveRandomBranchTensor(sample_foldlabel=sample_foldlabel,
+                                        percentage=percentage,
+                                        variable_percentage = config.variable_percentage,
+                                        input_size=config.input_size,
+                                        keep_bottom=config.keep_bottom),
+                RotateTensor(max_angle=config.max_angle),
+                BinarizeTensor(),
+                ResizeTensor(resize_ratio),
+                ToPointnetTensor(n_max=config.n_max)
+            ])
