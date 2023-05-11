@@ -449,11 +449,11 @@ class ContrastiveDataset_Both():
         self.transform1 = transform_both(sample_foldlabel,
                                          self.config.percentage,
                                          from_skeleton=True,
-                                         self.config)
+                                         config=self.config)
         self.transform2 = transform_both(sample_foldlabel,
                                          self.config.percentage,
                                          from_skeleton=False,
-                                         self.config)
+                                         config=self.config)
         self.transform3 = transform_only_padding(self.config)
 
         # Computes the views
@@ -523,11 +523,11 @@ class ContrastiveDataset_WithLabels_Both():
         self.transform1 = transform_both(sample_foldlabel,
                                          self.config.percentage,
                                          from_skeleton=True,
-                                         self.config)
+                                         config=self.config)
         self.transform2 = transform_both(sample_foldlabel,
                                          self.config.percentage,
                                          from_skeleton=False,
-                                         self.config)
+                                         config=self.config)
 
         # Computes the views
         try:
