@@ -1,3 +1,7 @@
+# taken from https://gist.github.com/smazzanti
+# with explanations from: 
+# https://towardsdatascience.com/how-to-calculate-roc-auc-score-for-regression-models-c0be4fdf76bb
+
 import numpy as np
 
 def regression_roc_auc_score(y_true, y_pred, num_rounds = 10000):

@@ -1,7 +1,7 @@
 defaults:
   - hydra: local
   - hydra/job_logging: custom
-  - dataset: cingulate_HCP_full_nb_voxels
+  - dataset: cingulate_HCP_full_Flanker_AgeAdj
   - model: SimCLR_supervised
   - mode: regresser
   - augmentations: foldlabel

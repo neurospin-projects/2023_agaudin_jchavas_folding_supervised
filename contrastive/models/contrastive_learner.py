@@ -264,6 +264,9 @@ class ContrastiveLearner(pl.LightningModule):
                         filter(lambda p: p.requires_grad, self.parameters()),
                         lr=self.config.lr,
                         weight_decay=self.config.weight_decay)
+        # steps = 140
+        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, steps)
+
         return optimizer
 
 
