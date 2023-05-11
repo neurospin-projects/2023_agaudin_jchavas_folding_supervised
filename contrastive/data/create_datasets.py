@@ -51,6 +51,8 @@ from contrastive.data.datasets import ContrastiveDataset_WithLabels
 from contrastive.data.datasets import ContrastiveDataset_WithFoldLabels
 from contrastive.data.datasets import \
     ContrastiveDataset_WithLabels_WithFoldLabels
+from contrastive.data.datasets import \
+    ContrastiveDataset_WithLabels_WithFoldLabels_Resize
 from contrastive.data.datasets import ContrastiveDataset_Both
 from contrastive.data.datasets import ContrastiveDataset_WithLabels_Both
 
@@ -249,18 +251,32 @@ def create_sets_with_labels(config):
         else:
             log.info("TRANSFORMATIONS ARE NOT COMBINED")
             if config.foldlabel == True:
-                test_dataset = ContrastiveDataset_WithLabels_WithFoldLabels(
-                    filenames=test_subjects,
-                    array=test_data,
-                    labels=test_labels,
-                    foldlabel_array=test_foldlabel_data,
-                    config=config)
-                train_val_dataset = ContrastiveDataset_WithLabels_WithFoldLabels(
-                    filenames=train_val_subjects,
-                    array=train_val_data,
-                    labels=train_val_labels,
-                    foldlabel_array=train_val_foldlabel_data,
-                    config=config)
+                if config.resize == True:
+                    test_dataset = ContrastiveDataset_WithLabels_WithFoldLabels_Resize(
+                        filenames=test_subjects,
+                        array=test_data,
+                        labels=test_labels,
+                        foldlabel_array=test_foldlabel_data,
+                        config=config)
+                    train_val_dataset = ContrastiveDataset_WithLabels_WithFoldLabels_Resize(
+                        filenames=train_val_subjects,
+                        array=train_val_data,
+                        labels=train_val_labels,
+                        foldlabel_array=train_val_foldlabel_data,
+                        config=config)
+                else:
+                    test_dataset = ContrastiveDataset_WithLabels_WithFoldLabels(
+                        filenames=test_subjects,
+                        array=test_data,
+                        labels=test_labels,
+                        foldlabel_array=test_foldlabel_data,
+                        config=config)
+                    train_val_dataset = ContrastiveDataset_WithLabels_WithFoldLabels(
+                        filenames=train_val_subjects,
+                        array=train_val_data,
+                        labels=train_val_labels,
+                        foldlabel_array=train_val_foldlabel_data,
+                        config=config)
             else:
                 test_dataset = ContrastiveDataset_WithLabels(
                     filenames=test_subjects,
