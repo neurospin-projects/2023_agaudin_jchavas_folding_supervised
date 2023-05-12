@@ -277,6 +277,8 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
 
         all_labels = \
             labels.view(N, -1).repeat(2, 1).detach().cpu().numpy() # [2N, *]
+        if np.sum(np.isnan(all_labels)) > 0:
+            raise ValueError("Nan detected in labels")
         weights = self.kernel(all_labels, all_labels) # [2N, 2N]
         weights = weights * (1 - np.eye(2*N)) # puts 0 on the diagonal
 
