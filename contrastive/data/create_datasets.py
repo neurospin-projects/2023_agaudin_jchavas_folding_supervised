@@ -55,10 +55,33 @@ from contrastive.data.datasets import \
     ContrastiveDataset_WithLabels_WithFoldLabels_Resize
 from contrastive.data.datasets import ContrastiveDataset_Both
 from contrastive.data.datasets import ContrastiveDataset_WithLabels_Both
+from contrastive.data.datasets_copy import ContrastiveDatasetFusion
 
 from contrastive.data.utils import *
 
 log = set_file_logger(__file__)
+
+
+def sanity_checks_without_labels(config, skeleton_output):
+    # Loads and separates in train_val/test set foldlabels if requested
+    check_subject_consistency(config.subjects_all,
+                              config.subjects_foldlabel_all)
+    # add all the other created objects in the next line
+    foldlabel_output = extract_data(config.foldlabel_all, config)
+    log.info("foldlabel data loaded")
+
+    # Makes some sanity checks
+    for subset_name in foldlabel_output.keys():
+        log.debug("skeleton", skeleton_output[subset_name][1].shape)
+        log.debug("foldlabel", foldlabel_output[subset_name][1].shape)
+        check_if_same_subjects(skeleton_output[subset_name][0],
+                               foldlabel_output[subset_name][0],
+                               subset_name)
+        check_if_same_shape(skeleton_output[subset_name][1],
+                            foldlabel_output[subset_name][1],
+                            subset_name)
+
+    return foldlabel_output
 
 
 def create_sets_without_labels(config):
@@ -71,87 +94,98 @@ def create_sets_without_labels(config):
     """
 
     # Loads and separates in train_val/test skeleton crops
-    train_val_subjects, train_val_data, test_subjects, test_data = \
-        extract_data(config.numpy_all, config)
+    skeleton_output = extract_data(config.numpy_all, config)
 
     # Loads and separates in train_val/test set foldlabels if requested
     if (config.foldlabel == True) and (config.mode != 'evaluation'):
-        check_subject_consistency(config.subjects_all,
-                                  config.subjects_foldlabel_all)
-        train_val_foldlabel_subjects, train_val_foldlabel_data, \
-            test_foldlabel_subjects, test_foldlabel_data = \
-            extract_data(config.foldlabel_all, config)
-        log.info("foldlabel data loaded")
-
-        # Makes some sanity checks
-        check_if_same_subjects(train_val_subjects,
-                               train_val_foldlabel_subjects, "train_val")
-        check_if_same_subjects(test_subjects,
-                               test_foldlabel_subjects, "test")
-        check_if_same_shape(train_val_data,
-                            train_val_foldlabel_data, "train_val")
-        check_if_same_shape(test_data,
-                            test_foldlabel_data, "test")
+        foldlabel_output = sanity_checks_without_labels(config,
+                                                        skeleton_output)
     else:
         log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
 
     # Creates the dataset from these data by doing some preprocessing
-    if config.mode == 'evaluation':
-        test_dataset = ContrastiveDataset_Visualization(
-            filenames=test_subjects,
-            array=test_data,
-            config=config)
-        train_val_dataset = ContrastiveDataset_Visualization(
-            filenames=train_val_subjects,
-            array=train_val_data,
-            config=config)
-    else:
-        if config.both == True:
-            log.info("BOTH BRANCH CLIPPING AND CUTOUT ARE USED")
-            test_dataset = ContrastiveDataset_Both(
-                filenames=test_subjects,
-                array=test_data,
-                foldlabel_array=test_foldlabel_data,
-                config=config)
-            train_val_dataset = ContrastiveDataset_Both(
-                filenames=train_val_subjects,
-                array=train_val_data,
-                foldlabel_array=train_val_foldlabel_data,
-                config=config)
-        else:
-            log.info("TRANSFORMATIONS ARE NOT COMBINED")
-            if config.foldlabel == True:
-                test_dataset = ContrastiveDataset_WithFoldLabels(
-                    filenames=test_subjects,
-                    array=test_data,
-                    foldlabel_array=test_foldlabel_data,
-                    config=config)
-                train_val_dataset = ContrastiveDataset_WithFoldLabels(
-                    filenames=train_val_subjects,
-                    array=train_val_data,
-                    foldlabel_array=train_val_foldlabel_data,
-                    config=config)
-            else:
-                test_dataset = ContrastiveDataset(
-                    filenames=test_subjects,
-                    array=test_data,
-                    config=config)
-                train_val_dataset = ContrastiveDataset(
-                    filenames=train_val_subjects,
-                    array=train_val_data,
-                    config=config)
-
-    train_dataset, val_dataset = \
-        extract_train_val_dataset(train_val_dataset,
-                                  config.partition,
-                                  config.seed)
+    datasets = {}
+    for subset_name in skeleton_output.keys():
+        # select the augmentation method
+        if config.apply_augmentations:
+            if config.foldlabel: # branch_clipping
+                foldlabel_array = foldlabel_output[subset_name][1]
+            else: # cutout
+                foldlabel_array = None  # no nedd of fold labels
+        else: # no augmentation
+            foldlabel_array = None
+        
+        datasets[subset_name] = ContrastiveDatasetFusion(
+            filenames=skeleton_output[subset_name][0],
+            array=skeleton_output[subset_name][1],
+            foldlabel_array=foldlabel_array,
+            config=config,
+            apply_transform=config.apply_augmentations)
     
-    # just to have the same data format as train and val
-    test_dataset, _ = torch.utils.data.random_split(
-        test_dataset,
-        [len(test_dataset),0])
+    # # just to have the same data format as train and val
+    # test_dataset, _ = torch.utils.data.random_split(
+    #     test_dataset,
+    #     [len(test_dataset),0])
 
-    return train_dataset, val_dataset, test_dataset, train_val_dataset
+    return datasets
+
+
+def sanity_checks_with_labels(config, skeleton_output, subject_labels):
+    # remove test_intra if not in config
+    subsets = [key for key in skeleton_output.keys()]
+    if 'test_intra_csv_file' not in config.keys():
+        subsets.pop(3)
+    log.debug(f"SANITY CHECKS {subsets}")
+
+    for subset_name in subsets:
+        check_if_skeleton(skeleton_output[subset_name][1], subset_name)
+
+    if config.environment == "brainvisa" and config.checking:
+        for subset_name in subsets:
+            compare_array_aims_files(skeleton_output[subset_name][0],
+                                     skeleton_output[subset_name][1],
+                                     config.crop_dir)
+    
+
+    # Makes some sanity checks on ordering of label subjects
+    for subset_name in subsets:
+        check_if_same_subjects(skeleton_output[subset_name][0],
+                               skeleton_output[subset_name][2][['Subject']],
+                               f"{subset_name} labels")
+
+    # Loads and separates in train_val/test set foldlabels if requested
+    if ('foldlabel' in config.keys()) and (config.foldlabel == True) and (config.mode != 'evaluation'):
+        check_subject_consistency(config.subjects_all,
+                                  config.subjects_foldlabel_all)
+        foldlabel_output = extract_data_with_labels(config.foldlabel_all,
+                                                    subject_labels,
+                                                    config.foldlabel_dir,
+                                                    config)
+        log.info("foldlabel data loaded")
+
+        # Makes some sanity checks
+        for subset_name in subsets:
+            check_if_same_subjects(skeleton_output[subset_name][0],
+                                   foldlabel_output[subset_name][0],
+                                   subset_name)
+            check_if_same_shape(skeleton_output[subset_name][1],
+                                foldlabel_output[subset_name][1],
+                                subset_name)
+            check_if_same_subjects(foldlabel_output[subset_name][0],
+                                   skeleton_output[subset_name][2][['Subject']],
+                                   f"{subset_name} labels")
+            
+        if config.environment == "brainvisa" and config.checking:
+            for subset_name in foldlabel_output.keys():
+                compare_array_aims_files(foldlabel_output[subset_name][0],
+                                         foldlabel_output[subset_name][1],
+                                         config.foldlabel_dir)
+
+    else:
+        log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
+        return None
+
+    return foldlabel_output
 
 
 def create_sets_with_labels(config):
@@ -165,133 +199,38 @@ def create_sets_with_labels(config):
 
     # Gets labels for all subjects
     # Column subject_column_name is renamed 'Subject'
+    label_scaling = None if not 'label_scaling' in config.keys() else config.label_scaling
     subject_labels = read_labels(config.subject_labels_file,
                                  config.subject_column_name,
-                                 config.label_names)
+                                 config.label_names,
+                                 label_scaling)
 
     if config.environment == "brainvisa" and config.checking:
         quality_checks(config.subjects_all, config.numpy_all, config.crop_dir, parallel=True)
 
     # Loads and separates in train_val/test skeleton crops
-    train_val_subjects, train_val_data, train_val_labels,\
-    test_subjects, test_data, test_labels = \
-        extract_data_with_labels(config.numpy_all, subject_labels, config.crop_dir, config)
+    skeleton_output = extract_data_with_labels(config.numpy_all, subject_labels, config.crop_dir, config)
 
-    check_if_skeleton(train_val_data, "train_val")
-    check_if_skeleton(test_data, "test")
-
-    if config.environment == "brainvisa" and config.checking:
-        compare_array_aims_files(train_val_subjects, train_val_data, config.crop_dir)
-        compare_array_aims_files(test_subjects, test_data, config.crop_dir)
-    
-
-    # Makes some sanity checks on ordering of label subjects
-    check_if_same_subjects(train_val_subjects,
-                           train_val_labels[['Subject']], "train_val labels")
-    check_if_same_subjects(test_subjects,
-                           test_labels[['Subject']], "test labels")
-
-    # Loads and separates in train_val/test set foldlabels if requested
-    if (config.foldlabel == True) and (config.mode != 'evaluation'):
-        check_subject_consistency(config.subjects_all,
-                                  config.subjects_foldlabel_all)
-        train_val_foldlabel_subjects, train_val_foldlabel_data, \
-        train_val_labels, test_foldlabel_subjects, \
-        test_foldlabel_data, test_labels = \
-            extract_data_with_labels(config.foldlabel_all, subject_labels,
-                                     config.foldlabel_dir, config)
-        log.info("foldlabel data loaded")
-
-        # Makes some sanity checks
-        check_if_same_subjects(train_val_subjects,
-                               train_val_foldlabel_subjects, "train_val")
-        check_if_same_subjects(test_subjects,
-                               test_foldlabel_subjects, "test")
-        check_if_same_shape(train_val_data,
-                            train_val_foldlabel_data, "train_val")
-        check_if_same_shape(test_data,
-                            test_foldlabel_data, "test")
-        check_if_same_subjects(train_val_foldlabel_subjects,
-                            train_val_labels[['Subject']], "train_val labels")
-        check_if_same_subjects(test_foldlabel_subjects,
-                            test_labels[['Subject']], "test labels")
-        if config.environment == "brainvisa" and config.checking:
-            compare_array_aims_files(train_val_foldlabel_subjects,
-                                    train_val_foldlabel_data, config.foldlabel_dir)
-            compare_array_aims_files(test_foldlabel_subjects,
-                                    test_foldlabel_data, config.foldlabel_dir)
-    else:
-        log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
+    foldlabel_output = sanity_checks_with_labels(config, skeleton_output, subject_labels)
 
     # Creates the dataset from these data by doing some preprocessing
-    if config.mode == 'evaluation':
-        test_dataset = ContrastiveDataset_Visualization(
-            filenames=test_subjects,
-            array=test_data,
-            config=config)
-        train_val_dataset = ContrastiveDataset_Visualization(
-            filenames=train_val_subjects,
-            array=train_val_data,
-            config=config)
-    else:
-        if config.both == True:
-            log.info("BOTH BRANCH CLIPPING AND CUTOUT ARE USED")
-            test_dataset = ContrastiveDataset_WithLabels_Both(
-                filenames=test_subjects,
-                array=test_data,
-                labels=test_labels,
-                foldlabel_array=test_foldlabel_data,
-                config=config)
-            train_val_dataset = ContrastiveDataset_WithLabels_Both(
-                filenames=train_val_subjects,
-                array=train_val_data,
-                labels=train_val_labels,
-                foldlabel_array=train_val_foldlabel_data,
-                config=config)
-        else:
-            log.info("TRANSFORMATIONS ARE NOT COMBINED")
-            if config.foldlabel == True:
-                if config.resize == True:
-                    test_dataset = ContrastiveDataset_WithLabels_WithFoldLabels_Resize(
-                        filenames=test_subjects,
-                        array=test_data,
-                        labels=test_labels,
-                        foldlabel_array=test_foldlabel_data,
-                        config=config)
-                    train_val_dataset = ContrastiveDataset_WithLabels_WithFoldLabels_Resize(
-                        filenames=train_val_subjects,
-                        array=train_val_data,
-                        labels=train_val_labels,
-                        foldlabel_array=train_val_foldlabel_data,
-                        config=config)
-                else:
-                    test_dataset = ContrastiveDataset_WithLabels_WithFoldLabels(
-                        filenames=test_subjects,
-                        array=test_data,
-                        labels=test_labels,
-                        foldlabel_array=test_foldlabel_data,
-                        config=config)
-                    train_val_dataset = ContrastiveDataset_WithLabels_WithFoldLabels(
-                        filenames=train_val_subjects,
-                        array=train_val_data,
-                        labels=train_val_labels,
-                        foldlabel_array=train_val_foldlabel_data,
-                        config=config)
-            else:
-                test_dataset = ContrastiveDataset_WithLabels(
-                    filenames=test_subjects,
-                    array=test_data,
-                    labels=test_labels,
-                    config=config)
-                train_val_dataset = ContrastiveDataset_WithLabels(
-                    filenames=train_val_subjects,
-                    array=train_val_data,
-                    labels=train_val_labels,
-                    config=config)
+    datasets = {}
+    for subset_name in skeleton_output.keys():
+        # select the augmentation method
+        if config.apply_augmentations:
+            if config.foldlabel: # branch_clipping
+                foldlabel_array = foldlabel_output[subset_name][1]
+            else: # cutout
+                foldlabel_array = None  # no need of fold labels
+        else: # no augmentation
+            foldlabel_array = None
+        
+        datasets[subset_name] = ContrastiveDatasetFusion(
+            filenames=skeleton_output[subset_name][0],
+            array=skeleton_output[subset_name][1],
+            foldlabel_array=foldlabel_array,
+            labels=skeleton_output[subset_name][2],
+            config=config,
+            apply_transform=config.apply_augmentations)
 
-    train_dataset, val_dataset = \
-        extract_train_val_dataset(train_val_dataset,
-                                  config.partition,
-                                  config.seed)
-
-    return train_dataset, val_dataset, test_dataset, train_val_dataset
+    return datasets

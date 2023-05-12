@@ -1,9 +1,0 @@
-# @package _global_
-pickle_normal: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/hcp/crop_10subjects/Rskeleton.pkl
-pickle_foldlabel: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/hcp/crop_10subjects/Rlabel.pkl
-pickle_benchmark: 
-train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/hcp/HCP_half_1bis.csv
-subject_labels_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/hcp/participants.csv
-#label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
-#label_names: ["NEOFAC_C"]
-label_names: ["Gender"]

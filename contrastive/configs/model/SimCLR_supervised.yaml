@@ -8,5 +8,8 @@ temperature_supervised: 0.3
 sigma_labels: 2.0
 sigma: 5
 drop_rate: 0.05
-proportion_pure_contrastive: 1.0
+proportion_pure_contrastive: 0.0
 depth_decoder: 3
+pretrained_model_path:
+# pretrained_model_path: /neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-04-25/09-31-04/logs/lightning_logs/version_0/checkpoints/epoch=49-step=1550.ckpt
+load_encoder_only: True

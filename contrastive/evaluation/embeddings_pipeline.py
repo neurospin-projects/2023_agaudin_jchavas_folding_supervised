@@ -18,6 +18,13 @@ def preprocess_config(sub_dir, dataset, classifier_name='svm', verbose=False):
     cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config.yaml')
 
     # replace the dataset
+    # first, remove some keys of the older dataset
+    keys_to_remove = ['train_val_csv_file', 'train_csv_file', 'val_csv_file',
+                      'test_intra_csv_file', 'test_csv_file']
+    for key in keys_to_remove:
+        if key in cfg.keys():
+            cfg.pop(key)
+    # add the ones of the target dataset
     with open(f'./configs/dataset/{dataset}.yaml', 'r') as file:
         dataset_yaml = yaml.load(file, yaml.FullLoader)
     for key in dataset_yaml:
@@ -42,7 +49,7 @@ def preprocess_config(sub_dir, dataset, classifier_name='svm', verbose=False):
 # creates embeddings and train classifiers for all models contained in the folder
 @ignore_warnings(category=ConvergenceWarning)
 def embeddings_pipeline(dir_path, dataset='cingulate_ACCpatterns', classifier_name='svm',
-                        overwrite=False, verbose=False):
+                        overwrite=False, verbose=False, use_best_model=False):
     """
     - dir_path: path where to apply recursively the process.
     - dataset: dataset the embeddings are generated from.
@@ -93,7 +100,7 @@ overwrite to True if you still want to compute them.")
                     
                     # compute embeddings for the best model if saved
                     # FULL BRICOLAGE
-                    if os.path.exists(sub_dir+'/logs/best_model_weights.pt'):
+                    if use_best_model and os.path.exists(sub_dir+'/logs/best_model_weights.pt'):
                         # apply the functions
                         cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config_classifiers.yaml')
                         cfg.use_best_model = True

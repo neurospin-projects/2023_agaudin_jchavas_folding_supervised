@@ -40,9 +40,12 @@ import pandas as pd
 import torchvision
 from torchsummary import summary
 from torch.utils.tensorboard import SummaryWriter
+import torch.nn as nn
 
 from beta_vae import *
 from deep_folding.utils.pytorchtools import EarlyStopping
+
+from betaVAE.postprocess import plot_loss
 
 
 def train_vae(config, trainloader, valloader, root_dir=None):
@@ -57,8 +60,8 @@ def train_vae(config, trainloader, valloader, root_dir=None):
         final_loss_val
     """
     torch.manual_seed(5)
-    writer = SummaryWriter(log_dir= f"/volatile/lg261972/collab_joel_cingulate/runs/n_30/",
-                            comment="500_ep")
+    writer = SummaryWriter(log_dir= config.save_dir+'logs/',
+                            comment="")
 
     lr = config.lr
     vae = VAE(config.in_shape, config.n, depth=3)
@@ -83,6 +86,8 @@ def train_vae(config, trainloader, valloader, root_dir=None):
 
     for epoch in range(config.nb_epoch):
         running_loss = 0.0
+        recon_loss = 0.0
+        kl_loss = 0.0
         epoch_steps = 0
         for inputs, path in trainloader:
             optimizer.zero_grad()
@@ -90,7 +95,7 @@ def train_vae(config, trainloader, valloader, root_dir=None):
             inputs = Variable(inputs).to(device, dtype=torch.float32)
             target = torch.squeeze(inputs, dim=1).long()
             output, z, logvar = vae(inputs)
-            recon_loss, kl, loss = vae_loss(output, target, z,
+            partial_recon_loss, partial_kl, loss = vae_loss(output, target, z,
                                     logvar, criterion,
                                     kl_weight=config.kl)
             output = torch.argmax(output, dim=1)
@@ -98,19 +103,28 @@ def train_vae(config, trainloader, valloader, root_dir=None):
             optimizer.step()
 
             running_loss += loss.item()
+            recon_loss += partial_recon_loss
+            kl_loss += partial_kl
             epoch_steps += 1
+        running_loss = running_loss / epoch_steps
+        recon_loss = recon_loss / epoch_steps
+        kl_loss = kl_loss / epoch_steps
 
         images = [inputs[0][0][10][:][:], output[0][10][:][:]]
         grid = torchvision.utils.make_grid(images)
         writer.add_image('inputs', images[0].unsqueeze(0), epoch)
         writer.add_image('output', images[1].unsqueeze(0), epoch)
-        writer.add_scalar('Loss/train', running_loss / epoch_steps, epoch)
-        writer.add_scalar('KL Loss/train', kl/ epoch_steps, epoch)
-        writer.add_scalar('recon Loss/train', recon_loss/ epoch_steps, epoch)
+        writer.add_scalar('Loss/train', running_loss, epoch)
+        writer.add_scalar('KL Loss/train', kl_loss, epoch)
+        writer.add_scalar('recon Loss/train', recon_loss, epoch)
         writer.close()
-        print("[%d] loss: %.3f" % (epoch + 1,
-                                        running_loss / epoch_steps))
-        list_loss_train.append(running_loss / epoch_steps)
+
+        print("[%d] KL loss: %.2e" % (epoch + 1, kl_loss))
+        print("[%d] recon loss: %.2e" % (epoch + 1, recon_loss))
+        #print(kl_loss * config.kl + recon_loss)
+        print("[%d] loss: %.2e" % (epoch + 1,
+                                        running_loss))
+        list_loss_train.append(running_loss)
         running_loss = 0.0
 
         """ Saving of reconstructions for visualization in Anatomist software """
@@ -123,6 +137,8 @@ def train_vae(config, trainloader, valloader, root_dir=None):
 
         # Validation loss
         val_loss = 0.0
+        recon_loss_val = 0.0
+        kl_val = 0.0
         val_steps = 0
         total = 0
         vae.eval()
@@ -131,28 +147,37 @@ def train_vae(config, trainloader, valloader, root_dir=None):
                 inputs = Variable(inputs).to(device, dtype=torch.float32)
                 output, z, logvar = vae(inputs)
                 target = torch.squeeze(inputs, dim=1).long()
-                recon_loss_val, kl_val, loss = vae_loss(output, target,
+                partial_recon_loss_val, partial_kl_val, loss = vae_loss(output, target,
                                         z, logvar, criterion,
                                         kl_weight=config.kl)
                 output = torch.argmax(output, dim=1)
 
                 val_loss += loss.cpu().numpy()
+                recon_loss_val += partial_recon_loss_val
+                kl_val += partial_kl_val
                 val_steps += 1
         valid_loss = val_loss / val_steps
+        recon_loss_val = recon_loss_val / val_steps
+        kl_val = kl_val / val_steps
 
         images = [inputs[0][0][10][:][:],\
                   output[0][10][:][:]]
         writer.add_scalar('Loss/val', valid_loss, epoch)
-        writer.add_scalar('KL Loss/val', kl_val/ epoch_steps, epoch)
-        writer.add_scalar('recon Loss/val', recon_loss_val/ epoch_steps, epoch)
+        writer.add_scalar('KL Loss/val', kl_val, epoch)
+        writer.add_scalar('recon Loss/val', recon_loss_val, epoch)
         writer.add_image('inputs VAL', images[0].unsqueeze(0), epoch)
         writer.add_image('output VAL', images[1].unsqueeze(0), epoch)
         writer.close()
 
-        print("[%d] validation loss: %.3f" % (epoch + 1, valid_loss))
+        # prints on the terminal
+        print("[%d] KL validation loss: %.2e" % (epoch + 1, kl_val))
+        print("[%d] recon validation loss: %.2e" % (epoch + 1, recon_loss_val))
+        #print(kl_val * config.kl + recon_loss_val)
+        print("[%d] validation loss: %.2e" % (epoch + 1, valid_loss))
         list_loss_val.append(valid_loss)
 
         early_stopping(valid_loss, vae)
+        print("")
 
         """ Saving of reconstructions for visualization in Anatomist software """
         if early_stopping.early_stop or epoch == nb_epoch-1:

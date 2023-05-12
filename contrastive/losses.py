@@ -151,7 +151,7 @@ class NTXenLoss(nn.Module):
 
 class CrossEntropyLoss_Classification(nn.Module):
     """
-    Croos entropy loss between outputs and labels
+    Cross entropy loss between outputs and labels
     """
 
     def __init__(self, device=None):
@@ -171,6 +171,32 @@ class CrossEntropyLoss_Classification(nn.Module):
 
     def __str__(self):
         return f"{type(self).__name__}"
+
+
+class MSELoss_Regression(nn.Module):
+    """
+    Regression loss between outputs and regressor
+    """
+
+    def __init__(self, device=None):
+        super().__init__()
+        self.loss = nn.MSELoss()
+
+    def forward(self, output_i, output_j, labels):
+        output_i = output_i.float()
+        output_j = output_j.float()
+        labels = labels.float()
+
+        loss_i = self.loss(output_i,
+                           labels[:, 0])
+        loss_j = self.loss(output_j,
+                           labels[:, 0])
+
+        return 100*(loss_i + loss_j)
+
+    def __str__(self):
+        return f"{type(self).__name__}"
+
 
 
 class GeneralizedSupervisedNTXenLoss(nn.Module):

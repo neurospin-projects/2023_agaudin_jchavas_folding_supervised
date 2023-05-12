@@ -22,6 +22,7 @@ setup(
                       'torch-summary',
                       'tensorboard',
                       'hydra.core',
+                      'hydra-joblib-launcher',
                       'dataclasses',
                       'OmegaConf',
                       'scikit-learn==0.24.2',
@@ -35,7 +36,9 @@ setup(
                       'pytorch_ssim',
                       'seaborn',
                       'statsmodels',
-                      'umap-learn'
+                      'umap-learn',
+                      'plotly',
+                      'pqdm'
                       ],
     extras_require={"anatomist": ['deep_folding @ \
                         git+https://git@github.com/neurospin/deep_folding',

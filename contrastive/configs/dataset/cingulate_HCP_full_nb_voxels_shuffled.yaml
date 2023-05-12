@@ -1,5 +1,5 @@
 # @package _global_
-dataset_name: cingulate_HCP_half_1
+dataset_name: cingulate_HCP_full_nb_voxels_shuffled
 pickle_normal: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton.pkl
 numpy_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton.npy
 subjects_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton_subject.csv
@@ -9,9 +9,9 @@ foldlabel_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/dataset
 subjects_foldlabel_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/2mm/CINGULATE/mask/Rlabel_subject.csv
 crop_file_suffix: _cropped_skeleton.nii.gz
 pickle_benchmark: 
-train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/hcp/HCP_half_1bis.csv
-subject_labels_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/hcp/participants.csv
+train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton_subject_full.csv
+subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/hcp/participants_with_shuffled_cingulate_voxels.csv
 subject_column_name: 'Subject'
-#label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
-label_names: ["NEOFAC_C"]
+label_names: ["nb_voxels"]
+label_scaling: 'MinMax'
 n_max: 1080

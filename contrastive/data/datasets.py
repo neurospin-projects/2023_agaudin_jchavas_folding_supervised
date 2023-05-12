@@ -671,7 +671,7 @@ class ContrastiveDataset_Visualization():
     Applies different transformations to data depending on the type of input.
     """
 
-    def __init__(self, array, filenames, config):
+    def __init__(self, array, filenames, config, labels=None):
         """
         Args:
             data (np array): contains MRIs as numpy arrays
@@ -684,6 +684,8 @@ class ContrastiveDataset_Visualization():
         log.info(f"Number of subjects = {self.nb_train}")
         self.filenames = filenames
         self.config = config
+        if labels is not None:
+            self.labels = labels
 
         # Some checks
         if 'Subject' in filenames.Subject.tolist():

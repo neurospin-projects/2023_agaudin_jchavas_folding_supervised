@@ -210,7 +210,6 @@ def remove_bottom_branches(a):
 def remove_branches_up_to_percent(arr_foldlabel, arr_skel,
                                   percentage, keep_bottom):
     """Removes from arr_skel random branches up to percentage of pixels
-
     If percentage==0, no pixel is deleted
     If percentage==100, all pixels are deleted
     """
@@ -355,12 +354,10 @@ class PartialCutOutTensor_Roll(object):
                  keep_bottom=True, patch_size=None,
                  random_size=False, localization=None):
         """[summary]
-
         If from_skeleton==True,
             takes skeleton image, cuts it out and fills with bottom_only image
         If from_skeleton==False,
             takes bottom_only image, cuts it out and fills with skeleton image
-
         Args:
             from_skeleton (bool, optional): Defaults to True.
             patch_size (either int or list of int): Defaults to None.
@@ -439,10 +436,7 @@ class CheckerboardTensor(object):
 
     def __init__(self, checkerboard_size):
         """[summary]
-
-
         Args:
-
         """
         self.checkerboard_size = checkerboard_size
 
@@ -486,12 +480,10 @@ class PartialCutOutTensor(object):
     def __init__(self, from_skeleton=True, patch_size=None, random_size=False,
                  inplace=False, localization=None):
         """[summary]
-
         If from_skeleton==True,
             takes skeleton image, cuts it out and fills with bottom_only image
         If from_skeleton==False,
             takes bottom_only image, cuts it out and fills with skeleton image
-
         Args:
             from_skeleton (bool, optional): Defaults to True.
             patch_size (either int or list of int): Defaults to None.
@@ -615,7 +607,6 @@ class ToPointnetTensor(object):
 
 def interval(obj, lower=None):
     """ Listify an object.
-
     Parameters
 o   ----------
     obj: 2-uplet or number
@@ -623,7 +614,6 @@ o   ----------
     lower: number, default None
         the lower bound of the interval. If not specified, a symetric
         interval is generated.
-
     Returns
     -------
     interval: 2-uplet
