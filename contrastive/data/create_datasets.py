@@ -174,6 +174,9 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
             check_if_same_subjects(foldlabel_output[subset_name][0],
                                    skeleton_output[subset_name][2][['Subject']],
                                    f"{subset_name} labels")
+            check_if_same_subjects(foldlabel_output[subset_name][2][['Subject']],
+                                   skeleton_output[subset_name][2][['Subject']],
+                                   f"{subset_name} labels")
             
         if config.environment == "brainvisa" and config.checking:
             for subset_name in foldlabel_output.keys():
