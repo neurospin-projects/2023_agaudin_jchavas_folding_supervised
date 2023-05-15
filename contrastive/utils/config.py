@@ -54,6 +54,7 @@ def process_config(config) -> DictConfig:
     config.input_size = eval(config.input_size)
     log.debug("config type: {}".format(type(config)))
     if "pretrained_model_path" not in config:
+        config = OmegaConf.structured(OmegaConf.to_yaml(config))
         config.pretrained_model_path = None
     return config
 

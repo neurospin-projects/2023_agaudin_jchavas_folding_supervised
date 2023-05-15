@@ -1,8 +1,8 @@
 # @package _global_
 hydra:
   run:
-    dir: ../../Output/supervised/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: ../../../Output/regresser/${now:%Y-%m-%d}/${now:%H-%M-%S}
   sweep:
-    dir: ../../Output/supervised/${now:%Y-%m-%d}
+    dir: ../../../Output/regresser/${now:%Y-%m-%d}
     subdir: ${now:%H-%M-%S}_${hydra.job.num}
 checkpoint_dir: ../../Output

@@ -22,6 +22,14 @@ def embeddings_to_pandas(embeddings, csv_path=None, verbose=False):
     if verbose:
         print("embeddings:", df_embeddings.iloc[:10,:])
         print("nb of elements:", df_embeddings.shape[0])
+    
+    # Solves the case in which index type is tensor
+    if type(df_embeddings.index[0]) != str:
+        index = [idx.item() for idx in df_embeddings.index]
+        index_name = df_embeddings.index.name
+        df_embeddings.index = index
+        df_embeddings.index.names = [index_name]
+        
     if csv_path:
         df_embeddings.to_csv(csv_path)
     else:
@@ -42,6 +50,7 @@ def compute_embeddings(config):
     config = process_config(config)
 
     config.mode = 'evaluation'
+    config.apply_augmentations = False
 
     # create new models in mode visualisation
     data_module = DataModule_Evaluation(config)

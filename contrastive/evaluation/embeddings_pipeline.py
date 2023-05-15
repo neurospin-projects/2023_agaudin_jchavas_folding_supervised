@@ -3,8 +3,8 @@ import yaml
 import json
 import omegaconf
 
-from contrastive.evaluation.generate_embeddings import compute_embeddings
-from contrastive.evaluation.train_multiple_classifiers import train_classifiers
+from generate_embeddings import compute_embeddings
+from train_multiple_classifiers import train_classifiers
 
 from sklearn.utils._testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
@@ -120,6 +120,5 @@ overwrite to True if you still want to compute them.")
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-04-25",
-dataset='cingulate_schiz', verbose=False, classifier_name='svm', overwrite=False,
-use_best_model=False)
+embeddings_pipeline("/volatile/jc225751/Runs/59_analysis_ukbiobank/Output/HCP/right",
+dataset='cingulate_ACCpatterns', verbose=True, classifier_name='svm', overwrite=False)

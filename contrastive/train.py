@@ -39,7 +39,7 @@
 # Imports and global variables definitions
 ######################################################################
 import os
-#os.environ['MPLCONFIGDIR'] = os.getcwd()+'/.config_mpl'
+# os.environ['MPLCONFIGDIR'] = os.getcwd()+'/.config_mpl'
 
 import hydra
 import torch
@@ -57,9 +57,9 @@ from contrastive.models.contrastive_learner_with_labels import \
 from contrastive.models.contrastive_learner_visualization import \
     ContrastiveLearner_Visualization
 from contrastive.utils.config import create_accessible_config, process_config,\
-get_config_diff
-from contrastive.utils.logs import set_root_logger_level, set_file_log_handler,\
-set_file_logger
+    get_config_diff
+from contrastive.utils.logs import set_root_logger_level, \
+    set_file_log_handler, set_file_logger
 
 tb_logger = pl_loggers.TensorBoardLogger('logs')
 writer = SummaryWriter()
@@ -72,6 +72,7 @@ We use the following definitions:
 - output, the space after the projection head.
   The elements are called output vectors
 """
+
 
 @hydra.main(config_name='config', config_path="configs")
 def train(config):
@@ -90,7 +91,6 @@ def train(config):
                          suffix='output')
     log.debug(f"current directory = {os.getcwd()}")
 
-
     # copies some of the config parameters in a yaml file easily accessible
     keys_to_keep = ['dataset_name', 'nb_subjects', 'model', 'with_labels', 
     'input_size', 'temperature_initial', 'temperature', 'sigma', 'drop_rate', 'depth_decoder',
@@ -98,7 +98,7 @@ def train(config):
     'growth_rate', 'block_config', 'num_init_features', 'num_representation_features', 'num_outputs',
     'environment', 'batch_size', 'pin_mem', 'partition', 'lr', 'weight_decay', 'max_epochs',
     'early_stopping_patience', 'random_state', 'seed', 'backbone_name', 'sigma_labels', 'proportion_pure_contrastive', 'n_max',
-    'train_val_csv_file']
+    'train_val_csv_file', 'percentage']
     if config.model == 'SimCLR_supervised':
         keys_to_keep.extend(['temperature_supervised', 'sigma_labels', 'pretrained_model_path'])
 
@@ -124,6 +124,12 @@ def train(config):
                                sample_data=data_module) 
     else:
         raise ValueError("Wrong combination of 'mode' and 'model'")
+
+    # load pretrained model's weights if in config
+    if 'pretrained_model_path' in config.keys() and config.pretrained_model_path != None:
+        log.info(f"Load weigths stored at {config.pretrained_model_path}")
+        model.load_pretrained_model(config.pretrained_model_path,
+                                    encoder_only=config.load_encoder_only)
 
 
     if config.backbone_name != 'pointnet':

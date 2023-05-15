@@ -51,6 +51,7 @@ from contrastive.data.datasets import ContrastiveDataset_WithLabels
 from contrastive.data.datasets import ContrastiveDataset_WithFoldLabels
 from contrastive.data.datasets import \
     ContrastiveDataset_WithLabels_WithFoldLabels
+from contrastive.data.datasets_copy import ContrastiveDatasetFusion
 
 from contrastive.data.utils import *
 
@@ -100,26 +101,22 @@ def create_sets_without_labels(config):
 
     # Creates the dataset from these data by doing some preprocessing
     datasets = {}
-    if config.mode == 'evaluation':
-        for subset_name in skeleton_output.keys():
-            datasets[subset_name] = ContrastiveDataset_Visualization(
-                filenames=skeleton_output[subset_name][0],
-                array=skeleton_output[subset_name][1],
-                config=config)
-    else:
-        if config.foldlabel == True:
-            for subset_name in skeleton_output.keys():
-                datasets[subset_name] = ContrastiveDataset_WithFoldLabels(
-                    filenames=skeleton_output[subset_name][0],
-                    array=skeleton_output[subset_name][1],
-                    foldlabel_array=foldlabel_output[subset_name][1],
-                    config=config)
-        else:
-            for subset_name in skeleton_output.keys():
-                datasets[subset_name] = ContrastiveDataset(
-                    filenames=skeleton_output[subset_name][0],
-                    array=skeleton_output[subset_name][1],
-                    config=config)
+    for subset_name in skeleton_output.keys():
+        # select the augmentation method
+        if config.apply_augmentations:
+            if config.foldlabel: # branch_clipping
+                foldlabel_array = foldlabel_output[subset_name][1]
+            else: # cutout
+                foldlabel_array = None  # no nedd of fold labels
+        else: # no augmentation
+            foldlabel_array = None
+        
+        datasets[subset_name] = ContrastiveDatasetFusion(
+            filenames=skeleton_output[subset_name][0],
+            array=skeleton_output[subset_name][1],
+            foldlabel_array=foldlabel_array,
+            config=config,
+            apply_transform=config.apply_augmentations)
     
     # # just to have the same data format as train and val
     # test_dataset, _ = torch.utils.data.random_split(
@@ -134,7 +131,7 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
     subsets = [key for key in skeleton_output.keys()]
     if 'test_intra_csv_file' not in config.keys():
         subsets.pop(3)
-    print("SANITY CHECKS", subsets)
+    log.debug(f"SANITY CHECKS {subsets}")
 
     for subset_name in subsets:
         check_if_skeleton(skeleton_output[subset_name][1], subset_name)
@@ -153,7 +150,7 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
                                f"{subset_name} labels")
 
     # Loads and separates in train_val/test set foldlabels if requested
-    if (config.foldlabel == True) and (config.mode != 'evaluation'):
+    if ('foldlabel' in config.keys()) and (config.foldlabel == True) and (config.mode != 'evaluation'):
         check_subject_consistency(config.subjects_all,
                                   config.subjects_foldlabel_all)
         foldlabel_output = extract_data_with_labels(config.foldlabel_all,
@@ -198,9 +195,11 @@ def create_sets_with_labels(config):
 
     # Gets labels for all subjects
     # Column subject_column_name is renamed 'Subject'
+    label_scaling = None if not 'label_scaling' in config.keys() else config.label_scaling
     subject_labels = read_labels(config.subject_labels_file,
                                  config.subject_column_name,
-                                 config.label_names)
+                                 config.label_names,
+                                 label_scaling)
 
     if config.environment == "brainvisa" and config.checking:
         quality_checks(config.subjects_all, config.numpy_all, config.crop_dir, parallel=True)
@@ -212,27 +211,22 @@ def create_sets_with_labels(config):
 
     # Creates the dataset from these data by doing some preprocessing
     datasets = {}
-    if config.mode == 'evaluation':
-        for subset_name in skeleton_output.keys():
-            datasets[subset_name] = ContrastiveDataset_Visualization(
-                filenames=skeleton_output[subset_name][0],
-                array=skeleton_output[subset_name][1],
-                config=config)
-    else:
-        if config.foldlabel == True:
-            for subset_name in skeleton_output.keys():
-                datasets[subset_name] = ContrastiveDataset_WithLabels_WithFoldLabels(
-                    filenames=skeleton_output[subset_name][0],
-                    array=skeleton_output[subset_name][1],
-                    labels=skeleton_output[subset_name][2],
-                    foldlabel_array=foldlabel_output[subset_name][1],
-                    config=config)
-        else:
-            for subset_name in skeleton_output.keys():
-                datasets[subset_name] = ContrastiveDataset_WithLabels(
-                    filenames=skeleton_output[subset_name][0],
-                    array=skeleton_output[subset_name][1],
-                    labels=skeleton_output[subset_name][2],
-                    config=config)
+    for subset_name in skeleton_output.keys():
+        # select the augmentation method
+        if config.apply_augmentations:
+            if config.foldlabel: # branch_clipping
+                foldlabel_array = foldlabel_output[subset_name][1]
+            else: # cutout
+                foldlabel_array = None  # no need of fold labels
+        else: # no augmentation
+            foldlabel_array = None
+        
+        datasets[subset_name] = ContrastiveDatasetFusion(
+            filenames=skeleton_output[subset_name][0],
+            array=skeleton_output[subset_name][1],
+            foldlabel_array=foldlabel_array,
+            labels=skeleton_output[subset_name][2],
+            config=config,
+            apply_transform=config.apply_augmentations)
 
     return datasets

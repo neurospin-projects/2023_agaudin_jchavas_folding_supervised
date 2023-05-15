@@ -4,32 +4,34 @@ from datetime import datetime
 from contrastive.utils.models_database import *
 
 
-dataset = 'cingulate_ACCpatterns_1'
+dataset = 'cingulate_ACCpatterns'
 
 ## construct the database
-folders = ["/neurospin/dico/agaudin/Runs/05_rigourous/Output/nb_epochs"]
+folders = ["/volatile/jc225751/Runs/59_analysis_ukbiobank/Output/HCP/right"]
 bdd = []
 visited = []
 
 # parameter to use or not the model with the best validation loss
 best_model=False
 
-generate_bdd_models(folders, bdd, visited, verbose=False, dataset=dataset, best_model=best_model)
+generate_bdd_models(folders, bdd, visited, verbose=False, dataset=dataset)
 
 bdd = pd.DataFrame(bdd)
 print("Number of subjects:", bdd.shape[0])
+if bdd.empty:
+    raise ValueError("Empty dataframe => no subject selected: you should check 'folders' or 'dataset'")
 
 for col in bdd.columns:
     print(col, bdd[col][0])
 
 # remove useless columns
-bdd = post_process_bdd_models(bdd, hard_remove=["partition", "patch_size"], git_branch=True)
+bdd = post_process_bdd_models(bdd, hard_remove=["partition"], git_branch=True)
 # the hard remove are the ones containing [] char in their fields. They are (for now) patch_size, partition, numpy_all
 
 
 # save the database
-name = "nb_epochs"
-save_path = "/neurospin/dico/agaudin/Runs/05_rigourous/Output/nb_epochs/"
+name = "HCP_right"
+save_path = "/volatile/jc225751/Runs/59_analysis_ukbiobank/Output/checks/summary/"
 bdd.to_csv(save_path+f"bdd_{name}.csv", index=True)
 
 

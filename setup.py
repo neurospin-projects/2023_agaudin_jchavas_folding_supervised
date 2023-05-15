@@ -17,10 +17,10 @@ setup(
                       'matplotlib',
                       'torch',
                       'tqdm==4.51.0',
+                      'pqdm',
                       'torchvision',
                       'torch-summary',
                       'tensorboard',
-                      #'hydra',
                       'hydra.core',
                       'hydra-joblib-launcher',
                       'dataclasses',
@@ -29,6 +29,7 @@ setup(
                       'scikit-image',
                       'pytorch-lightning',
                       'lightly',
+                      'plotly',
                       'toolz',
 		              'ipykernel',
                       'kaleido',
@@ -43,7 +44,7 @@ setup(
                         git+https://git@github.com/neurospin/deep_folding',
                       ],
     },
-    url='https://github.com/neurospin-projects/2022_jchavas_cingulate_inhibitory_control',
-    author='Joël Chavas, Aymeric Gaudin',
-    author_email='joel.chavas@cea.fr, aymeric.gaudin@cea.fr'
+    url='https://github.com/neurospin-projects/2023_agaudin_jchavas_folding_supervised',
+    author='Joël Chavas, Aymeric Gaudin, Julien Laval',
+    author_email='joel.chavas@cea.fr, aymeric.gaudin@cea.fr, julien.laval@cea.fr'
 )
