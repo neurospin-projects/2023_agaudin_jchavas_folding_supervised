@@ -1,12 +1,12 @@
 defaults:
   - hydra: local
-  - hydra/job_logging: custom
-  - dataset: cingulate_HCP_full_Flanker_AgeAdj
-  - model: SimCLR_supervised
-  - mode: regresser
+  - dataset: cingulate_HCP_full
+  - model: SimCLR
+  - mode: encoder
   - augmentations: foldlabel
   - backbone: ConvNet
   - platform: cuda_not_brainvisa
   - trainer: default
   - classifier: svm
   - embeddings: embeddings
+  - override hydra/job_logging: custom

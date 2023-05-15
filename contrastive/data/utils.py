@@ -39,12 +39,10 @@ import os
 
 import numpy as np
 import pandas as pd
-import torch
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from contrastive.utils.logs import set_file_logger
-#from contrastive.data.transforms import transform_foldlabel
 # only if foldlabel == True
 try:
     from deep_folding.brainvisa.utils.save_data import compare_array_aims_files
@@ -125,7 +123,7 @@ def check_if_skeleton(a: np.array, key: str):
                    (a == 100)+
                    (a == 110)+
                    (a == 120)).all()
-    log.info(f"Values of {key} crops are in: {np.unique(a)}")
+    log.debug(f"Values of {key} crops are in: {np.unique(a)}")
     if not is_skeleton:
         raise ValueError(
             f"Input array values of {key} are not compatible with skeletons"
@@ -145,19 +143,6 @@ def read_subset_csv(csv_file_path: str, name='train_val') -> pd.DataFrame:
     return subjects
 
 
-# ## Shouldn't be used anymore, replaced by read_subset_csv
-# def read_train_val_csv(csv_file_path: str) -> pd.DataFrame:
-#     """Reads train_val csv.
-    
-#     This csv has a unisque column.
-#     The resulting dataframe gives the name 'Subject' to this column
-#     """
-#     train_val_subjects = pd.read_csv(csv_file_path, names=['Subject'])
-#     log.debug(f"train_val_subjects = {train_val_subjects}")
-#     print("TRAIN_VAL_SUBJECTS",train_val_subjects.head())
-#     return train_val_subjects
-
-
 def extract_test(normal_subjects, train_val_subjects, normal_data):
     """Extracts test subjects and test data from normal_data.
     
@@ -170,7 +155,7 @@ def extract_test(normal_subjects, train_val_subjects, normal_data):
     test_subjects_index = test_subjects.index
     len_test = len(test_subjects_index)
     log.debug(f"length of test = {len_test}")
-    log.info(f"test_subjects = {test_subjects[:5]}")
+    log.debug(f"test_subjects = {test_subjects[:5]}")
 
     # /!\ copy the data to construct test_data
     test_data = normal_data[test_subjects_index]
@@ -208,21 +193,6 @@ def extract_partial_numpy(normal_subjects, target_subjects, normal_data, name='t
     target_data = normal_data[target_normal_index]
     target_normal_subjects = target_normal_subjects.reset_index(drop=True)
     return target_normal_subjects, target_data
-
-
-# ## Shouldn't be used anymore, replaced by extract_partial_numpy
-# def extract_train_val(normal_subjects, train_val_subjects, normal_data):
-#     """Returns data corresponding to subjects listed in train_val_subjects"""
-
-#     log.info(f"Length of train/val dataframe = {len(train_val_subjects)}")
-#     # Determines train/val dataframe
-#     new_train_val_subjects = normal_subjects[normal_subjects.Subject.isin(
-#                                 train_val_subjects.Subject)]
-#     new_train_val_subjects_index = new_train_val_subjects.index
-#     # /!\ copy the data to construct train_val_data
-#     train_val_data = normal_data[new_train_val_subjects_index]
-#     new_train_val_subjects = new_train_val_subjects.reset_index(drop=True)
-#     return new_train_val_subjects, train_val_data
 
 
 def extract_labels(subject_labels, subjects):
@@ -355,30 +325,6 @@ def extract_data(npy_file_path, config):
     return output
 
 
-# ## Shouldn'y be used anymore, separation made earlier (see extract_train_and_val_subjects)
-# def extract_train_val_dataset(train_val_dataset, partition, seed):
-#     """Extracts traing and validation dataset from a train_val dataset"""
-#     # Split training/val set into train and validation set
-#     size_partitions = [round(i * (len(train_val_dataset))) for i in partition]
-#     # to be sure all the elements are actually taken
-#     size_partitions[-1] = len(train_val_dataset) - sum(size_partitions[:-1])
-
-#     log.info(f"size partitions = {size_partitions}")
-
-#     # Fixates seed if it is defined
-#     if seed:
-#         torch.manual_seed(seed)
-#         log.info(f"Seed for train/val split is {seed}")
-#     else:
-#         log.info("Train/val split has not fixed seed")
-
-#     train_dataset, val_dataset = torch.utils.data.random_split(
-#         train_val_dataset,
-#         size_partitions)
-
-#     return train_dataset, val_dataset
-
-
 def check_if_same_subjects(subjects_1, subjects_2, keyword):
     """Checks if the dataframes subjects_1 and subjects_2 are equal"""
     log.debug(f"Both heads (must be equal) of {keyword} subjects = \n"
@@ -413,7 +359,7 @@ def read_labels(subject_labels_file, subject_column_name, label_names, label_sca
     subject_column_name = subject_column_name
     desired_columns = [subject_column_name,]
     desired_columns.extend(label_names)
-    log.info(f"columns in subject_labels = {subject_labels.columns}")
+    log.debug(f"columns in subject_labels = {subject_labels.columns}")
     subject_labels = subject_labels[desired_columns]
     subject_labels = subject_labels.rename({subject_column_name: 'Subject'},
                                             axis = 'columns')
@@ -428,8 +374,8 @@ def read_labels(subject_labels_file, subject_column_name, label_names, label_sca
 
     # Drops rows containing na and sets subject as index
     subject_labels = subject_labels.dropna()
-    log.info(f"Head of subject_labels:\n{subject_labels.head()}")
-    log.info(f"Number of non-NaN subjects with label = {len(subject_labels)}")
+    log.debug(f"Head of subject_labels:\n{subject_labels.head()}")
+    log.debug(f"Number of non-NaN subjects with label = {len(subject_labels)}")
 
     # Sets min-max scaler on labels
     if label_scaling == 'MinMax':
@@ -449,8 +395,8 @@ def sort_labels_according_to_normal(subject_labels, normal_subjects):
     subject_labels = subject_labels.reset_index('Subject')
 
     # Checks if label subject names and subjects names are the same
-    log.info(f"Head of normal_subjects = \n{normal_subjects.head()}")
-    log.info(f"Head of subject_labels = \n{subject_labels.head()}")
+    log.debug(f"Head of normal_subjects = \n{normal_subjects.head()}")
+    log.debug(f"Head of subject_labels = \n{subject_labels.head()}")
     if not normal_subjects.Subject.reset_index(drop=True).\
         equals(subject_labels.Subject):
         raise ValueError(\
