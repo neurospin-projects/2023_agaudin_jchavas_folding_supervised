@@ -267,6 +267,35 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 del inputs
 
         return X, labels_all, filenames_list
+    
+    
+    def compute_output_probabilities(self, loader):
+        if self.config.mode == 'classifier':
+            X, labels_all, filenames_list = self.compute_output_skeletons(loader)
+            # compute the mean of the two views' outputs
+            X = (X[::2,...] + X[1::2,...]) / 2
+            # remove the doubleing of labels
+            labels = labels[::2]
+            filenames_list = filenames_list[::2]
+            X = nn.functional.softmax(X, dim=1)
+            return X, labels_all, filenames_list
+        else:
+            raise ValueError("The config.mode is not 'classifier'. You should'nt compute "
+                             "probabilities with another mode.")
+    
+    def compute_output_auc(self, loader):
+        X, labels, _ = self.compute_outputs_skeletons(loader)
+        # compute the mean of the two views' outputs
+        X = (X[::2,...] + X[1::2,...]) / 2
+        # remove the doubleing of labels
+        labels = labels[::2]
+        if self.config.mode == "regresser":
+            auc = regression_roc_auc_score(labels, X[:,0])
+        else:
+            X = nn.functional.softmax(X, dim=1)
+            auc = roc_auc_score(labels, X[:,1])
+
+        return auc
 
     def compute_decoder_outputs_skeletons(self, loader):
         """Computes the outputs of the model for each crop.
@@ -386,20 +415,6 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             return True
         else:
             return False
-        
-    def compute_output_auc(self, loader):
-        X, labels, _ = self.compute_outputs_skeletons(loader)
-        # compute the mean of the two views' outputs
-        X = (X[::2,...] + X[1::2,...]) / 2
-        # remove the doubleing of labels
-        labels = labels[::2]
-        if self.config.mode == "regresser":
-            auc = regression_roc_auc_score(labels, X[:,0])
-        else:
-            X = nn.functional.softmax(X, dim=1)
-            auc = roc_auc_score(labels, X[:,1])
-
-        return auc
     
     def save_best_auc_model(self, current_auc, save_path='./logs/'):
         if self.current_epoch == 0:

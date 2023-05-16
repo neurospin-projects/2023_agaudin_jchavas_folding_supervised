@@ -132,7 +132,12 @@ class ContrastiveDatasetFusion():
         self.config = config
         self.transform = apply_transform
 
-        log.info(self.nb_train)
+        log.debug(self.nb_train)
+        log.debug(filenames[:5])
+        if labels is not None and labels.shape[0] > 0:
+            log.debug(labels[:5])
+            log.debug(f"There are {labels[labels[config.label_names[0]].isna()].shape[0]} NaN labels")
+            log.debug(labels[labels[config.label_names[0]].isna()])
 
     def __len__(self):
         return (self.nb_train)
