@@ -27,32 +27,32 @@ def checks_before_compute(sub_dir, dataset, overwrite=False, use_best_model=True
     if config['mode'] != 'classifier':
         print(f"{sub_dir} is not a classifier. Continue.")
         return False
-    
+
     # check if test values are already saved
     if os.path.exists(sub_dir + f"/{dataset}_results") and (not overwrite):
         print("Model already treated (existing folder with results). Set \
 overwrite to True if you still want to evaluate it.")
         return False
-        
+
     # check if the model is not excluded by hand
     if '#' in sub_dir:
         print("Model with an incompatible structure with the current one. Pass.")
         return False
-    
+
     # check if the best_model has been saved
     if use_best_model:
         if not os.path.exists(os.path.abspath(sub_dir)+"/logs/best_model_weights.pt"):
             print("The best model's weigths have not been saved for this model.\
 Set the keyword use_best_model to False if you want to evaluate it with its lasts weights.")
             return False
-    
+
     return True
 
 
 # Auxilary function used to process the config linked to the model.
 # For instance, change the embeddings save path to being next to the model.
 def preprocess_config(sub_dir, dataset):
-    
+
     log.debug(os.getcwd())
     cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config.yaml')
 
@@ -69,7 +69,6 @@ def preprocess_config(sub_dir, dataset):
     for key in dataset_yaml:
         cfg[key] = dataset_yaml[key]
 
-
     # replace the possibly incorrect config parameters
     cfg.with_labels = True
     cfg.apply_augmentations = False
@@ -84,8 +83,8 @@ def compute_test_auc(model, dataloader):
     log.debug(f"prediction = {Y_pred[:10]}")
     log.debug(f"filenames {filenames[:10]}")
     log.debug(f"labels {labels[:10]}")
-    # take only one view (normally both are the same) 
-    Y_pred = Y_pred[::2,:]
+    # take only one view (normally both are the same)
+    Y_pred = Y_pred[::2, :]
     filenames = filenames[::2]
     labels = labels[::2]
 
@@ -93,7 +92,7 @@ def compute_test_auc(model, dataloader):
     Y_pred = torch.nn.functional.softmax(Y_pred, dim=1)
 
     # compute auc
-    test_auc = roc_auc_score(labels, Y_pred[:,1])
+    test_auc = roc_auc_score(labels, Y_pred[:, 1])
 
     return test_auc
 
@@ -168,24 +167,26 @@ def pipeline(dir_path, dataset, overwrite=False, use_best_model=True):
                 print("\n")
                 print(f"Treating {sub_dir}")
                 # checks to know if the model should be treated
-                cont_bool = checks_before_compute(sub_dir, dataset, overwrite=overwrite, use_best_model=use_best_model)
+                cont_bool = checks_before_compute(
+                    sub_dir, dataset, overwrite=overwrite, use_best_model=use_best_model)
                 if cont_bool:
                     print("Start post processing")
                     # get the config and correct it to suit what is needed for classifiers
                     cfg = preprocess_config(sub_dir, dataset)
                     log.debug(f"CONFIG FILE {type(cfg)}")
-                    log.debug(json.dumps(omegaconf.OmegaConf.to_container(cfg, resolve=True), indent=4, sort_keys=True))
+                    log.debug(json.dumps(omegaconf.OmegaConf.to_container(
+                        cfg, resolve=True), indent=4, sort_keys=True))
                     # save the modified config next to the real one
                     with open(sub_dir+'/.hydra/config_evaluation.yaml', 'w') as file:
                         yaml.dump(omegaconf.OmegaConf.to_yaml(cfg), file)
-                    
+
                     supervised_test_eval(cfg, os.path.abspath(sub_dir),
                                          use_best_model=use_best_model)
 
-
             else:
                 print(f"{sub_dir} not associated to a model. Continue")
-                pipeline(sub_dir, dataset, overwrite=False, test_intra=False, use_best_model=True)
+                pipeline(sub_dir, dataset, overwrite=False,
+                         test_intra=False, use_best_model=True)
         else:
             print(f"{sub_dir} is a file. Continue.")
 

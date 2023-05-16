@@ -92,21 +92,21 @@ def train(config):
     log.debug(f"current directory = {os.getcwd()}")
 
     # copies some of the config parameters in a yaml file easily accessible
-    keys_to_keep = ['dataset_name', 'nb_subjects', 'model', 'with_labels', 
-    'input_size', 'temperature_initial', 'temperature', 'sigma', 'drop_rate', 'depth_decoder',
-    'mode', 'both', 'foldlabel', 'resize', 'fill_value', 'patch_size', 'max_angle', 'checkerboard_size', 'keep_bottom',
-    'growth_rate', 'block_config', 'num_init_features', 'num_representation_features', 'num_outputs',
-    'environment', 'batch_size', 'pin_mem', 'partition', 'lr', 'weight_decay', 'max_epochs',
-    'early_stopping_patience', 'random_state', 'seed', 'backbone_name', 'sigma_labels', 'proportion_pure_contrastive', 'n_max',
-    'train_val_csv_file', 'percentage']
+    keys_to_keep = ['dataset_name', 'nb_subjects', 'model', 'with_labels',
+                    'input_size', 'temperature_initial', 'temperature', 'sigma', 'drop_rate', 'depth_decoder',
+                    'mode', 'both', 'foldlabel', 'resize', 'fill_value', 'patch_size', 'max_angle', 'checkerboard_size', 'keep_bottom',
+                    'growth_rate', 'block_config', 'num_init_features', 'num_representation_features', 'num_outputs',
+                    'environment', 'batch_size', 'pin_mem', 'partition', 'lr', 'weight_decay', 'max_epochs',
+                    'early_stopping_patience', 'random_state', 'seed', 'backbone_name', 'sigma_labels', 'proportion_pure_contrastive', 'n_max',
+                    'train_val_csv_file', 'percentage']
     if config.model == 'SimCLR_supervised':
-        keys_to_keep.extend(['temperature_supervised', 'sigma_labels', 'pretrained_model_path'])
+        keys_to_keep.extend(
+            ['temperature_supervised', 'sigma_labels', 'pretrained_model_path'])
 
     create_accessible_config(keys_to_keep, os.getcwd()+"/.hydra/config.yaml")
 
     # create a csv file where the parameters changing between runs are stored
-    get_config_diff(os.getcwd()+'/..', whole_config=False, save=True)    
-
+    get_config_diff(os.getcwd()+'/..', whole_config=False, save=True)
 
     if config.mode == 'evaluation':
         data_module = DataModule_Evaluation(config)
@@ -115,13 +115,13 @@ def train(config):
 
     if config.mode == 'evaluation':
         model = ContrastiveLearner_Visualization(config,
-                               sample_data=data_module)   
+                                                 sample_data=data_module)
     elif config.model == "SimCLR_supervised":
         model = ContrastiveLearner_WithLabels(config,
-                               sample_data=data_module)
+                                              sample_data=data_module)
     elif config.model == 'SimCLR':
         model = ContrastiveLearner(config,
-                               sample_data=data_module) 
+                                   sample_data=data_module)
     else:
         raise ValueError("Wrong combination of 'mode' and 'model'")
 
@@ -131,14 +131,13 @@ def train(config):
         model.load_pretrained_model(config.pretrained_model_path,
                                     encoder_only=config.load_encoder_only)
 
-
     if config.backbone_name != 'pointnet':
         summary(model, tuple(config.input_size), device="cpu")
     else:
         summary(model, device='cpu')
 
     early_stop_callback = EarlyStopping(monitor="val_loss",
-          patience=config.early_stopping_patience)
+                                        patience=config.early_stopping_patience)
 
     trainer = pl.Trainer(
         gpus=1,

@@ -18,18 +18,19 @@ def embeddings_to_pandas(embeddings, csv_path=None, verbose=False):
     labels = embeddings[1]
     labels = pd.DataFrame(labels, columns=['ID'])
     df_embeddings = pd.concat([labels, values], axis=1)
-    df_embeddings = df_embeddings.groupby('ID').mean()  # remove one copy each ID
+    df_embeddings = df_embeddings.groupby(
+        'ID').mean()  # remove one copy each ID
     if verbose:
-        print("embeddings:", df_embeddings.iloc[:10,:])
+        print("embeddings:", df_embeddings.iloc[:10, :])
         print("nb of elements:", df_embeddings.shape[0])
-    
+
     # Solves the case in which index type is tensor
     if type(df_embeddings.index[0]) != str:
         index = [idx.item() for idx in df_embeddings.index]
         index_name = df_embeddings.index.name
         df_embeddings.index = index
         df_embeddings.index.names = [index_name]
-        
+
     if csv_path:
         df_embeddings.to_csv(csv_path)
     else:
@@ -45,6 +46,8 @@ handles the needed modifications in order to load the right model).
 This method is also relying on the current DataModule and ContrastiveLearner implementations, which means
 its retro compatibility leaves a lot to be desired. 
 """
+
+
 @hydra.main(config_name='config_no_save', config_path="../configs")
 def compute_embeddings(config):
     config = process_config(config)
@@ -76,7 +79,8 @@ def compute_embeddings(config):
     files = glob.glob(paths)
     print("model_weights:", files[0])
     cpkt_path = files[0]
-    checkpoint = torch.load(cpkt_path, map_location=torch.device(config.device))
+    checkpoint = torch.load(
+        cpkt_path, map_location=torch.device(config.device))
     model.load_state_dict(checkpoint['state_dict'])
 
     model.eval()
@@ -93,7 +97,8 @@ def compute_embeddings(config):
 
     # calculate embeddings for training set and save them somewhere
     print("TRAIN SET")
-    train_embeddings = model.compute_representations(data_module.train_dataloader())
+    train_embeddings = model.compute_representations(
+        data_module.train_dataloader())
 
     # convert the embeddings to pandas df and save them
     train_embeddings_df = embeddings_to_pandas(train_embeddings)
@@ -101,14 +106,16 @@ def compute_embeddings(config):
 
     # same thing for validation set
     print("VAL SET")
-    val_embeddings = model.compute_representations(data_module.val_dataloader())
+    val_embeddings = model.compute_representations(
+        data_module.val_dataloader())
 
     val_embeddings_df = embeddings_to_pandas(val_embeddings)
     val_embeddings_df.to_csv(embeddings_path+"/val_embeddings.csv")
 
     # same thing for test set
     print("TEST SET")
-    test_embeddings = model.compute_representations(data_module.test_dataloader())
+    test_embeddings = model.compute_representations(
+        data_module.test_dataloader())
 
     test_embeddings_df = embeddings_to_pandas(test_embeddings)
     test_embeddings_df.to_csv(embeddings_path+"/test_embeddings.csv")
@@ -116,21 +123,23 @@ def compute_embeddings(config):
     # same thing for test_intra if it exists
     if 'test_intra_csv_file' in config.keys():
         print("TEST INTRA SET")
-        test_intra_embeddings = model.compute_representations(data_module.test_intra_dataloader())
+        test_intra_embeddings = model.compute_representations(
+            data_module.test_intra_dataloader())
 
         test_intra_embeddings_df = embeddings_to_pandas(test_intra_embeddings)
-        test_intra_embeddings_df.to_csv(embeddings_path+"/test_intra_embeddings.csv")
+        test_intra_embeddings_df.to_csv(
+            embeddings_path+"/test_intra_embeddings.csv")
 
     # same thing on the train_val dataset
     print("TRAIN_VAL SET")
     train_val_df = pd.concat([train_embeddings_df, val_embeddings_df],
-                         axis=0)
+                             axis=0)
     train_val_df.to_csv(embeddings_path+"/train_val_embeddings.csv")
 
     # same thing on the entire dataset
     print("FULL SET")
     full_df = pd.concat([train_embeddings_df, val_embeddings_df, test_embeddings_df],
-                         axis=0)
+                        axis=0)
     full_df = full_df.sort_values(by='ID')
     full_df.to_csv(embeddings_path+"/full_embeddings.csv")
 

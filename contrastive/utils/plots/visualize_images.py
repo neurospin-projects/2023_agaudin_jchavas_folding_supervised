@@ -129,6 +129,7 @@ def plot_histogram(tensor, buffer):
     else:
         plt.show()
 
+
 def plot_histogram_weights(tensor, buffer):
     """Plots histogram of the values of a tensor"""
     arr = tensor.detach().cpu().numpy() * 100
@@ -150,10 +151,11 @@ def plot_histogram_weights(tensor, buffer):
     else:
         plt.show()
 
+
 def plot_scatter_matrix(tensor, buffer):
     """Plots scatter matrix of the values of a tensor"""
     arr = tensor.detach().cpu().numpy()
-    embeddings = pd.DataFrame(arr[:,0:4])
+    embeddings = pd.DataFrame(arr[:, 0:4])
 
     pd.plotting.scatter_matrix(embeddings,
                                alpha=0.2,
@@ -168,12 +170,12 @@ def plot_scatter_matrix(tensor, buffer):
 def plot_scatter_matrix_with_labels(embeddings, labels, buffer, jitter=False):
     """Plots scatter matrix of the values of a tensor"""
     arr_embeddings = embeddings.detach().cpu().numpy()
-    arr_labels = labels.detach().cpu().numpy() 
-    df_embeddings = pd.DataFrame(arr_embeddings[:,0:4])
+    arr_labels = labels.detach().cpu().numpy()
+    df_embeddings = pd.DataFrame(arr_embeddings[:, 0:4])
     df_labels = pd.DataFrame(arr_labels)
     df = pd.concat([df_embeddings,
                     df_labels.add_prefix("lab_")],
-                    axis=1)
+                   axis=1)
     # df = pd.concat([df,
     #                 df_labels.add_prefix("label_").astype(str)], axis=1)
     fig = px.scatter_matrix(df,
@@ -185,4 +187,3 @@ def plot_scatter_matrix_with_labels(embeddings, labels, buffer, jitter=False):
 
     if buffer:
         return png_file_to_image(png_file)
-

@@ -126,7 +126,6 @@ def postprocessing_results(config: DictConfig) -> None:
     outputs, filenames_output = model.compute_decoder_outputs_skeletons(
         data_module.train_val_dataloader())
 
-
     # Makes Kmeans and represents it on a t-SNE plot
     X_tsne = model.compute_tsne(
         data_module.train_val_dataloader(),
@@ -183,6 +182,7 @@ def postprocessing_results(config: DictConfig) -> None:
     torch.save(outputs, f"{config.analysis_path}/train_val_outputs.pt")
     with open(f"{config.analysis_path}/train_val_filenames_output.json", 'w') as f:
         json.dump(filenames_output, f, indent=2)
+
 
 if __name__ == "__main__":
     postprocessing_results()

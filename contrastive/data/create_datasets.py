@@ -69,11 +69,11 @@ def sanity_checks_without_labels(config, skeleton_output):
     check_subject_consistency(config.subjects_all,
                               config.subjects_foldlabel_all)
     # in order to avoid logging twice the same information
-    if root.level == 20: # root logger in INFO mode
+    if root.level == 20:  # root logger in INFO mode
         set_root_logger_level(0)
     # add all the other created objects in the next line
     foldlabel_output = extract_data(config.foldlabel_all, config)
-    if root.level == 10: # root logger in WARNING mode
+    if root.level == 10:  # root logger in WARNING mode
         set_root_logger_level(1)
     log.info("foldlabel data loaded")
 
@@ -115,20 +115,20 @@ def create_sets_without_labels(config):
     for subset_name in skeleton_output.keys():
         # select the augmentation method
         if config.apply_augmentations:
-            if config.foldlabel: # branch_clipping
+            if config.foldlabel:  # branch_clipping
                 foldlabel_array = foldlabel_output[subset_name][1]
-            else: # cutout
+            else:  # cutout
                 foldlabel_array = None  # no nedd of fold labels
-        else: # no augmentation
+        else:  # no augmentation
             foldlabel_array = None
-        
+
         datasets[subset_name] = ContrastiveDatasetFusion(
             filenames=skeleton_output[subset_name][0],
             array=skeleton_output[subset_name][1],
             foldlabel_array=foldlabel_array,
             config=config,
             apply_transform=config.apply_augmentations)
-    
+
     # # just to have the same data format as train and val
     # test_dataset, _ = torch.utils.data.random_split(
     #     test_dataset,
@@ -152,7 +152,6 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
             compare_array_aims_files(skeleton_output[subset_name][0],
                                      skeleton_output[subset_name][1],
                                      config.crop_dir)
-    
 
     # Makes some sanity checks on ordering of label subjects
     for subset_name in subsets:
@@ -165,13 +164,13 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
         check_subject_consistency(config.subjects_all,
                                   config.subjects_foldlabel_all)
         # in order to avoid logging twice the same information
-        if root.level == 20: # root logger in INFO mode
+        if root.level == 20:  # root logger in INFO mode
             set_root_logger_level(0)
         foldlabel_output = extract_data_with_labels(config.foldlabel_all,
                                                     subject_labels,
                                                     config.foldlabel_dir,
                                                     config)
-        if root.level == 10: # root logger in WARNING mode
+        if root.level == 10:  # root logger in WARNING mode
             set_root_logger_level(1)
         log.info("foldlabel data loaded")
 
@@ -184,12 +183,14 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
                                 foldlabel_output[subset_name][1],
                                 subset_name)
             check_if_same_subjects(foldlabel_output[subset_name][0],
-                                   skeleton_output[subset_name][2][['Subject']],
+                                   skeleton_output[subset_name][2][[
+                                       'Subject']],
                                    f"{subset_name} labels")
             check_if_same_subjects(foldlabel_output[subset_name][2][['Subject']],
-                                   skeleton_output[subset_name][2][['Subject']],
+                                   skeleton_output[subset_name][2][[
+                                       'Subject']],
                                    f"{subset_name} labels")
-            
+
         if config.environment == "brainvisa" and config.checking:
             for subset_name in foldlabel_output.keys():
                 compare_array_aims_files(foldlabel_output[subset_name][0],
@@ -221,25 +222,28 @@ def create_sets_with_labels(config):
                                  label_scaling)
 
     if config.environment == "brainvisa" and config.checking:
-        quality_checks(config.subjects_all, config.numpy_all, config.crop_dir, parallel=True)
+        quality_checks(config.subjects_all, config.numpy_all,
+                       config.crop_dir, parallel=True)
 
     # Loads and separates in train_val/test skeleton crops
-    skeleton_output = extract_data_with_labels(config.numpy_all, subject_labels, config.crop_dir, config)
+    skeleton_output = extract_data_with_labels(
+        config.numpy_all, subject_labels, config.crop_dir, config)
 
-    foldlabel_output = sanity_checks_with_labels(config, skeleton_output, subject_labels)
+    foldlabel_output = sanity_checks_with_labels(
+        config, skeleton_output, subject_labels)
 
     # Creates the dataset from these data by doing some preprocessing
     datasets = {}
     for subset_name in skeleton_output.keys():
         # select the augmentation method
         if config.apply_augmentations:
-            if config.foldlabel: # branch_clipping
+            if config.foldlabel:  # branch_clipping
                 foldlabel_array = foldlabel_output[subset_name][1]
-            else: # cutout
+            else:  # cutout
                 foldlabel_array = None  # no need of fold labels
-        else: # no augmentation
+        else:  # no augmentation
             foldlabel_array = None
-        
+
         log.debug(subset_name)
         datasets[subset_name] = ContrastiveDatasetFusion(
             filenames=skeleton_output[subset_name][0],

@@ -56,7 +56,7 @@ for hdlr in log_full_model.handlers[:]:
 
 def set_root_logger_level(verbose_level):
     """Sets root logger level
-    
+
     if verbose_level is:
         - 0: logging.WARNING is selected
         - 1: logging.INFO is selected
@@ -65,14 +65,14 @@ def set_root_logger_level(verbose_level):
     Args:
         verbose_level: int giving verbose level"""
     levels = [logging.WARNING, logging.INFO, logging.DEBUG]
-    level = levels[min(verbose_level, len(levels) - 1)] # cap to last level
+    level = levels[min(verbose_level, len(levels) - 1)]  # cap to last level
     root = logging.getLogger()
     root.setLevel(level)
 
 
 def set_file_logger(path_file):
     """Returns specific file logger
-    
+
     Args:
         path_file: string giving file name with path (__file__)
 
@@ -84,7 +84,7 @@ def set_file_logger(path_file):
 
 def set_file_log_handler(file_dir, suffix):
     """Sets file handler for all logs.
-    
+
     Args:
         file_dir: string with folder for file log
         suffix: string -> name of log file = log_{suffix}.log
@@ -118,7 +118,7 @@ def set_file_log_handler(file_dir, suffix):
 
 def simple_critical_log(log, log_message):
     """Prints simple log with only message printed out
-    
+
     Args:
         log: logger
         log_message: string being log message to be printed

@@ -49,7 +49,7 @@ from sklearn.metrics import r2_score
 
 from contrastive.models.contrastive_learner import ContrastiveLearner
 from contrastive.losses import GeneralizedSupervisedNTXenLoss,\
-                               CrossEntropyLoss_Classification
+    CrossEntropyLoss_Classification
 from contrastive.losses import MSELoss_Regression
 from contrastive.utils.plots.visualize_images \
     import plot_scatter_matrix_with_labels
@@ -112,13 +112,12 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             self.current_epoch)
 
         return score
-        
 
     def generalized_supervised_nt_xen_loss(self, z_i, z_j, labels):
         """Loss function for contrastive"""
         # temperature = max(
         #     self.config.temperature,
-        #     self.config.temperature_initial 
+        #     self.config.temperature_initial
         #     - self.current_epoch/50.
         #     * (self.config.temperature_initial - self.config.temperature))
         temperature = self.config.temperature
@@ -136,7 +135,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         """Loss function for decoder"""
         loss = CrossEntropyLoss_Classification(device=self.device)
         return loss.forward(output_i, output_j, labels)
-    
+
     def mse_loss_regression(self, output_i, output_j, labels):
         """Loss function for decoder"""
         loss = MSELoss_Regression(device=self.device)
@@ -155,7 +154,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             sample = inputs[:, 2, :]
             batch_loss = self.cross_entropy_loss(sample, z_i, z_j)
         elif self.config.mode == "classifier":
-            batch_loss = self.cross_entropy_loss_classification(z_i, z_j, labels)
+            batch_loss = self.cross_entropy_loss_classification(
+                z_i, z_j, labels)
             batch_label_loss = torch.tensor(0.)
         elif self.config.mode == "regresser":
             batch_loss = self.mse_loss_regression(z_i, z_j, labels)
@@ -163,7 +163,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         else:
             batch_loss, batch_label_loss, \
                 sim_zij, sim_zii, sim_zjj, correct_pair, weights = \
-                    self.generalized_supervised_nt_xen_loss(z_i, z_j, labels)
+                self.generalized_supervised_nt_xen_loss(z_i, z_j, labels)
 
         self.log('train_loss', float(batch_loss))
         self.log('train_label_loss', float(batch_label_loss))
@@ -183,13 +183,13 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 vol_file = f"{self.config.crop_dir}/{filenames[0]}{self.config.crop_file_suffix}"
                 vol = aims.read(vol_file)
                 self.sample_ref_0 = np.asarray(vol)
-                if not np.array_equal(self.sample_ref_0[...,0], self.sample_k[0,0,...]):
+                if not np.array_equal(self.sample_ref_0[..., 0], self.sample_k[0, 0, ...]):
                     raise ValueError("Images files don't match!!!\n"
-                        f"Subject name = {filenames[0]}\n"
-                        f"Shape of reference file = {self.sample_ref_0[...,0].shape}\n"
-                        f"Shape of file read from array = {self.sample_k[0,0,...].shape}\n"
-                        f"Sum of reference file = {self.sample_ref_0.sum()}\n"
-                        f"Sum of file read from array = {self.sample_k[0,...].sum()}")
+                                     f"Subject name = {filenames[0]}\n"
+                                     f"Shape of reference file = {self.sample_ref_0[...,0].shape}\n"
+                                     f"Shape of file read from array = {self.sample_k[0,0,...].shape}\n"
+                                     f"Sum of reference file = {self.sample_ref_0.sum()}\n"
+                                     f"Sum of file read from array = {self.sample_k[0,...].sum()}")
             if self.config.mode != "decoder" and self.config.mode != "classifier" and self.config.mode != "regresser":
                 self.sim_zij = sim_zij * self.config.temperature
                 self.sim_zii = sim_zii * self.config.temperature
@@ -267,13 +267,13 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 del inputs
 
         return X, labels_all, filenames_list
-    
-    
+
     def compute_output_probabilities(self, loader):
         if self.config.mode == 'classifier':
-            X, labels_all, filenames_list = self.compute_output_skeletons(loader)
+            X, labels_all, filenames_list = self.compute_output_skeletons(
+                loader)
             # compute the mean of the two views' outputs
-            X = (X[::2,...] + X[1::2,...]) / 2
+            X = (X[::2, ...] + X[1::2, ...]) / 2
             # remove the doubleing of labels
             labels = labels[::2]
             filenames_list = filenames_list[::2]
@@ -282,18 +282,18 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         else:
             raise ValueError("The config.mode is not 'classifier'. You should'nt compute "
                              "probabilities with another mode.")
-    
+
     def compute_output_auc(self, loader):
         X, labels, _ = self.compute_outputs_skeletons(loader)
         # compute the mean of the two views' outputs
-        X = (X[::2,...] + X[1::2,...]) / 2
+        X = (X[::2, ...] + X[1::2, ...]) / 2
         # remove the doubleing of labels
         labels = labels[::2]
         if self.config.mode == "regresser":
-            auc = regression_roc_auc_score(labels, X[:,0])
+            auc = regression_roc_auc_score(labels, X[:, 0])
         else:
             X = nn.functional.softmax(X, dim=1)
-            auc = roc_auc_score(labels, X[:,1])
+            auc = roc_auc_score(labels, X[:, 1])
 
         return auc
 
@@ -402,7 +402,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         if self.config.nb_epochs_per_tSNE <= 0:
             return False
         elif self.current_epoch % self.config.nb_epochs_per_tSNE == 0 \
-                    or self.current_epoch >= self.config.max_epochs:
+                or self.current_epoch >= self.config.max_epochs:
             return True
         else:
             return False
@@ -411,11 +411,11 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         if self.config.nb_epochs_per_matrix_plot <= 0:
             return False
         elif (self.current_epoch % self.config.nb_epochs_per_matrix_plot == 0)\
-            or (self.current_epoch >= self.config.max_epochs):
+                or (self.current_epoch >= self.config.max_epochs):
             return True
         else:
             return False
-    
+
     def save_best_auc_model(self, current_auc, save_path='./logs/'):
         if self.current_epoch == 0:
             best_auc = 0
@@ -423,13 +423,14 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             with open(save_path+"best_model_params.json", 'r') as file:
                 best_model_params = json.load(file)
                 best_auc = best_model_params['best_auc']
-        
+
         if current_auc > best_auc:
-            torch.save({'state_dict': self.state_dict()}, save_path+'best_model_weights.pt')
-            best_model_params = {'epoch': self.current_epoch, 'best_auc': current_auc}
+            torch.save({'state_dict': self.state_dict()},
+                       save_path+'best_model_weights.pt')
+            best_model_params = {
+                'epoch': self.current_epoch, 'best_auc': current_auc}
             with open(save_path+"best_model_params.json", 'w') as file:
                 json.dump(best_model_params, file)
-
 
     def training_epoch_end(self, outputs):
         """Computation done at the end of the epoch"""
@@ -460,16 +461,17 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
                 # Plots scatter matrices with label values
                 score = self.plot_scatter_matrices_with_labels(
-                            self.sample_data.train_dataloader(),
-                            "train",
-                            self.config.mode)
-        
+                    self.sample_data.train_dataloader(),
+                    "train",
+                    self.config.mode)
+
         if (self.config.mode == 'classifier') or (self.config.mode == 'regresser'):
-            train_auc = self.compute_output_auc(self.sample_data.train_dataloader())
+            train_auc = self.compute_output_auc(
+                self.sample_data.train_dataloader())
             self.logger.experiment.add_scalar(
-                    "AUC/Train",
-                    train_auc,
-                    self.current_epoch)
+                "AUC/Train",
+                train_auc,
+                self.current_epoch)
 
         if self.plotting_matrices_now():
             # logs histograms
@@ -480,7 +482,6 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         # calculates average loss
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         # avg_label_loss = torch.stack([x['label_loss'] for x in outputs]).mean()
-
 
         # logging using tensorboard logger
         self.logger.experiment.add_scalar(
@@ -507,14 +508,15 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             sample = inputs[:, 2, :]
             batch_loss = self.cross_entropy_loss(sample, z_i, z_j)
         elif self.config.mode == "classifier":
-            batch_loss = self.cross_entropy_loss_classification(z_i, z_j, labels)
+            batch_loss = self.cross_entropy_loss_classification(
+                z_i, z_j, labels)
             batch_label_loss = torch.tensor(0.)
         elif self.config.mode == "regresser":
             batch_loss = self.mse_loss_regression(z_i, z_j, labels)
             batch_label_loss = torch.tensor(0.)
         else:
             batch_loss, batch_label_loss, \
-            sim_zij, sim_sii, sim_sjj, correct_pairs, weights = \
+                sim_zij, sim_sii, sim_sjj, correct_pairs, weights = \
                 self.generalized_supervised_nt_xen_loss(z_i, z_j, labels)
 
         self.log('val_loss', float(batch_loss))
@@ -558,16 +560,17 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             if self.plotting_matrices_now():
                 # Plots scatter matrices
                 score = self.plot_scatter_matrices_with_labels(
-                                                self.sample_data.val_dataloader(),
-                                                "val",
-                                                self.config.mode)
+                    self.sample_data.val_dataloader(),
+                    "val",
+                    self.config.mode)
 
         if (self.config.mode == 'classifier') or (self.config.mode == 'regresser'):
-            val_auc = self.compute_output_auc(self.sample_data.val_dataloader())
+            val_auc = self.compute_output_auc(
+                self.sample_data.val_dataloader())
             self.logger.experiment.add_scalar(
-                    "AUC/Val",
-                    val_auc,
-                    self.current_epoch)
+                "AUC/Val",
+                val_auc,
+                self.current_epoch)
 
             # save the model that has the best val auc during train
             self.save_best_auc_model(val_auc, save_path='./logs/')

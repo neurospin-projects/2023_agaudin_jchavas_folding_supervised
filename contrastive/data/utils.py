@@ -71,7 +71,7 @@ def read_subject_csv(csv_file_path: str) -> pd.DataFrame:
         return subjects
     else:
         raise ValueError(f"Column name of csv file {csv_file_path} must be "
-                        f"\'Subject\'. Instead it is {subjects.columns}")
+                         f"\'Subject\'. Instead it is {subjects.columns}")
 
 
 def length_object(object):
@@ -83,7 +83,7 @@ def is_equal_length(object_1, object_2):
     """Checks of the two objects have equal length"""
     len_1 = length_object(object_1)
     len_2 = length_object(object_2)
-    return (len_1==len_2)
+    return (len_1 == len_2)
 
 
 def read_numpy_data_and_subject_csv(npy_file_path, csv_file_path):
@@ -92,7 +92,7 @@ def read_numpy_data_and_subject_csv(npy_file_path, csv_file_path):
     if not is_equal_length(npy_data, subjects):
         raise ValueError(
             f"numpy array {npy_file_path} "
-            f"and csv subject file {csv_file_path} " 
+            f"and csv subject file {csv_file_path} "
              "don't have the same length.")
     return npy_data, subjects
 
@@ -120,8 +120,8 @@ def check_if_skeleton(a: np.array, key: str):
                    (a == 70) +
                    (a == 80) +
                    (a == 90) +
-                   (a == 100)+
-                   (a == 110)+
+                   (a == 100) +
+                   (a == 110) +
                    (a == 120)).all()
     log.debug(f"Values of {key} crops are in: {np.unique(a)}")
     if not is_skeleton:
@@ -133,7 +133,7 @@ def check_if_skeleton(a: np.array, key: str):
 
 def read_subset_csv(csv_file_path: str, name='train_val') -> pd.DataFrame:
     """Reads a subset subject csv.
-    
+
     This csv has a unique column.
     The resulting dataframe gives the name 'Subject' to this column
     """
@@ -145,7 +145,7 @@ def read_subset_csv(csv_file_path: str, name='train_val') -> pd.DataFrame:
 
 def extract_test(normal_subjects, train_val_subjects, normal_data):
     """Extracts test subjects and test data from normal_data.
-    
+
     Test subjects are all subjects from normal_subjects that are not listed
     in train_val_subjects.
     normal_data is a numpy array corresponding to normal_subjects."""
@@ -165,7 +165,7 @@ def extract_test(normal_subjects, train_val_subjects, normal_data):
     return test_subjects, test_data
 
 
-def restrict_length(subjects:pd.DataFrame, nb_subjects: int, is_random: bool=False, random_state: int=1) -> pd.DataFrame:
+def restrict_length(subjects: pd.DataFrame, nb_subjects: int, is_random: bool=False, random_state: int=1) -> pd.DataFrame:
     """Restrict length by nb_subjects if requested"""
     if nb_subjects == _ALL_SUBJECTS:
         length = len(subjects)
@@ -187,8 +187,9 @@ def extract_partial_numpy(normal_subjects, target_subjects, normal_data, name='t
     log.info(f"Length of {name} dataframe = {len(target_subjects)}")
     # Filter to keep only the target subjects
     target_normal_subjects = normal_subjects[normal_subjects.Subject.isin(
-                                target_subjects.Subject)]
-    target_normal_index = target_normal_subjects.index # corresponding indices in the npy file
+        target_subjects.Subject)]
+    # corresponding indices in the npy file
+    target_normal_index = target_normal_subjects.index
     # /!\ copy the data to construct the target_data
     target_data = normal_data[target_normal_index]
     target_normal_subjects = target_normal_subjects.reset_index(drop=True)
@@ -197,11 +198,11 @@ def extract_partial_numpy(normal_subjects, target_subjects, normal_data, name='t
 
 def extract_labels(subject_labels, subjects):
     """Extracts subject_labels corresponding to test_subject
-    
+
     For this, we compare the subjects listed in column 'Subject'
     """
     selected_subject_labels = subject_labels[subject_labels.Subject.isin(
-                                subjects.Subject)]
+        subjects.Subject)]
     selected_subject_labels = \
         sort_labels_according_to_normal(selected_subject_labels, subjects)
     return selected_subject_labels
@@ -239,11 +240,13 @@ def split_data(normal_data, normal_subjects, sample_dir, config):
 
     # Gets train_val subjects as dataframe from csv file
     if 'train_val_csv_file' in config.keys():
-        train_val_subjects = read_subset_csv(config.train_val_csv_file, name='train_val')
+        train_val_subjects = read_subset_csv(
+            config.train_val_csv_file, name='train_val')
         if 'train_csv_file' not in config.keys():
             # define train and val from here
             train_subjects, val_subjects = \
-                extract_train_and_val_subjects(train_val_subjects, config.partition, config.seed)
+                extract_train_and_val_subjects(
+                    train_val_subjects, config.partition, config.seed)
     # get train & val separately if in config
     if 'train_csv_file' in config.keys():
         train_subjects = read_subset_csv(config.train_csv_file, name='train')
@@ -251,24 +254,25 @@ def split_data(normal_data, normal_subjects, sample_dir, config):
         if 'train_val_csv_file' not in config.keys():
             # reconstruct train_val from train + val if not already done
             train_val_subjects = pd.concat([train_subjects, val_subjects])
-    
+
     # get test_intra subjects and data if in config
     if 'test_intra_csv_file' in config.keys():
-        test_intra_subjects = read_subset_csv(config.test_intra_csv_file, name='test_intra')
+        test_intra_subjects = read_subset_csv(
+            config.test_intra_csv_file, name='test_intra')
         test_intra_subjects, test_intra_data = extract_partial_numpy(normal_subjects, test_intra_subjects,
-                                                normal_data, name='test_intra')
+                                                                     normal_data, name='test_intra')
     else:
         test_intra_subjects = pd.DataFrame([], columns=['Subject'])
         test_intra_data = np.array([])
 
     # Extracts test subject names and corresponding data
-    if 'test_csv_file' in config.keys(): # if specified in config
+    if 'test_csv_file' in config.keys():  # if specified in config
         test_subjects = read_subset_csv(config.test_csv_file, name='test')
         test_subjects, test_data = extract_partial_numpy(normal_subjects, test_subjects,
                                                          normal_data, name='test')
-    else: # define it as complementary to train_val
+    else:  # define it as complementary to train_val
         test_subjects, test_data = \
-        extract_test(normal_subjects, train_val_subjects, normal_data)
+            extract_test(normal_subjects, train_val_subjects, normal_data)
 
     # Restricts train_val length
     random_state = None if not 'random_state' in config.keys() else config.random_state
@@ -286,7 +290,6 @@ def split_data(normal_data, normal_subjects, sample_dir, config):
                                              is_random,
                                              random_state)
 
-
     # Extracts train, val and train_val from normal_data
     train_subjects, train_data = extract_partial_numpy(normal_subjects, train_subjects,
                                                        normal_data, name='train')
@@ -299,15 +302,17 @@ def split_data(normal_data, normal_subjects, sample_dir, config):
     if config.environment == "brainvisa" and config.checking:
         compare_array_aims_files(train_subjects, train_data, sample_dir)
         compare_array_aims_files(val_subjects, val_data, sample_dir)
-        compare_array_aims_files(train_val_subjects, train_val_data, sample_dir)
-        compare_array_aims_files(test_intra_subjects, test_intra_data, sample_dir)
+        compare_array_aims_files(
+            train_val_subjects, train_val_data, sample_dir)
+        compare_array_aims_files(
+            test_intra_subjects, test_intra_data, sample_dir)
         compare_array_aims_files(test_subjects, test_data, sample_dir)
-    
+
     output = {'train': [train_subjects, train_data],
               'val': [val_subjects, val_data],
               'train_val': [train_val_subjects, train_val_data],
               'test_intra': [test_intra_subjects, test_intra_data],
-              'test': [test_subjects, test_data],}
+              'test': [test_subjects, test_data], }
 
     return output
 
@@ -325,7 +330,7 @@ def extract_data(npy_file_path, sample_dir, config):
     # normal_data corresponds to all data ('normal' != 'benchmark')
     normal_data, normal_subjects = \
         read_numpy_data_and_subject_csv(npy_file_path, config.subjects_all)
-    
+
     return split_data(normal_data, normal_subjects, sample_dir, config)
 
 
@@ -350,7 +355,7 @@ def check_if_same_shape(arr1, arr2, keyword):
 
 def read_labels(subject_labels_file, subject_column_name, label_names, label_scaling):
     """Extracts labels from label file. Returns a dataframe with labels"""
-    
+
     # Loads labels file
     subject_labels_file = subject_labels_file
     subject_labels = pd.read_csv(subject_labels_file)
@@ -361,12 +366,12 @@ def read_labels(subject_labels_file, subject_column_name, label_names, label_sca
 
     # Extracts only columns with subject name and labels
     subject_column_name = subject_column_name
-    desired_columns = [subject_column_name,]
+    desired_columns = [subject_column_name, ]
     desired_columns.extend(label_names)
     log.debug(f"columns in subject_labels = {subject_labels.columns}")
     subject_labels = subject_labels[desired_columns]
     subject_labels = subject_labels.rename({subject_column_name: 'Subject'},
-                                            axis = 'columns')
+                                           axis='columns')
 
     # Factorizes the column if they are categories (strings for example)
     for col in label_names:
@@ -384,7 +389,8 @@ def read_labels(subject_labels_file, subject_column_name, label_names, label_sca
     # Sets min-max scaler on labels
     if label_scaling == 'MinMax':
         scaler = MinMaxScaler()
-        subject_labels.loc[:,label_names] = scaler.fit_transform(subject_labels[label_names])
+        subject_labels.loc[:, label_names] = scaler.fit_transform(
+            subject_labels[label_names])
 
     return subject_labels
 
@@ -395,16 +401,17 @@ def select_subject_also_present_in_subject_labels(subject_labels, normal_subject
         normal_subjects.Subject.isin(subject_labels.Subject)].index
     normal_subjects = normal_subjects.loc[normal_subjects_index]
     normal_subjects = normal_subjects.reset_index(drop=True)
-    
+
     return normal_subjects, normal_subjects_index
 
 
 def sort_labels_according_to_normal(subject_labels, normal_subjects):
     """Sort subject labels according to normal_subjects order
-    
+
     Returns reordered subject_labels
     """
-    normal_subjects, _ = select_subject_also_present_in_subject_labels(subject_labels, normal_subjects)
+    normal_subjects, _ = select_subject_also_present_in_subject_labels(
+        subject_labels, normal_subjects)
     subject_labels = subject_labels.set_index('Subject')
     subject_labels = subject_labels.reindex(index=normal_subjects.Subject)
 
@@ -427,7 +434,7 @@ def sort_labels_according_to_normal(subject_labels, normal_subjects):
     log.debug(f"Head of normal_subjects = \n{normal_subjects.head()}")
     log.debug(f"Head of subject_labels = \n{subject_labels.head()}")
     if not normal_subjects.Subject.reset_index(drop=True).\
-        equals(subject_labels.Subject):
+            equals(subject_labels.Subject):
         raise ValueError(
             "Names of subject in subject labels are not included "
             "or are not in the same order as the csv file of the subjects")
@@ -452,7 +459,8 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
     # Selects subjects also present in subject_labels
     log.debug(f"Head of normal_subjects before label selection = \n"
               f"{normal_subjects.head()}")
-    normal_subjects, normal_subjects_index = select_subject_also_present_in_subject_labels(subject_labels, normal_subjects)
+    normal_subjects, normal_subjects_index = select_subject_also_present_in_subject_labels(
+        subject_labels, normal_subjects)
     normal_data = normal_data[normal_subjects_index]
 
     output = split_data(normal_data, normal_subjects, sample_dir, config)
@@ -469,7 +477,8 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
     val_labels = extract_labels(subject_labels, output['val'][0])
     train_val_labels = extract_labels(subject_labels, output['train_val'][0])
     if 'test_intra_csv_file' in config.keys():
-        test_intra_labels = extract_labels(subject_labels, output['test_intra'][0])
+        test_intra_labels = extract_labels(
+            subject_labels, output['test_intra'][0])
     else:
         test_intra_labels = pd.DataFrame([])
     test_labels = extract_labels(subject_labels, output['test'][0])
@@ -481,30 +490,34 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
     output['test'].append(test_labels)
 
     log.debug(f"length of output train = {len(output['train'])}")
-    
-    return output
 
+    return output
 
 
 # auxilary functions for ToPointnetTensor
 def zero_padding(cloud, n_max, shuffle=False):
-    return np.pad(cloud, ((0,0),(0,n_max-cloud.shape[1])))
+    return np.pad(cloud, ((0, 0), (0, n_max-cloud.shape[1])))
+
 
 def repeat_padding(cloud, n_max, replace=False):
-    while n_max - cloud.shape[1] > 0: # loop in case len(cloud) < n_max/2
+    while n_max - cloud.shape[1] > 0:  # loop in case len(cloud) < n_max/2
         n = min(n_max - cloud.shape[1], cloud.shape[1])
         if n < 0:
-            raise ValueError("the vector is too long compared to the desired vector size")
-        
+            raise ValueError(
+                "the vector is too long compared to the desired vector size")
+
         idx = np.random.choice(cloud.shape[1], size=n, replace=replace)
         padded_part = cloud[:, idx]
 
         cloud = np.concatenate([cloud, padded_part], axis=1)
-    
+
     return cloud
+
 
 def pad(clouds, padding_method=zero_padding, n_max=None):
     if not n_max:
-        n_max = np.max([clouds[i].shape[1] for i in range(len(clouds))]) # max length of a sequence
-    padded_clouds = np.array([padding_method(cloud, n_max) for cloud in clouds])
+        n_max = np.max([clouds[i].shape[1]
+                        for i in range(len(clouds))])  # max length of a sequence
+    padded_clouds = np.array([padding_method(cloud, n_max)
+                              for cloud in clouds])
     return padded_clouds

@@ -72,7 +72,7 @@ def create_accessible_config(keys_to_keep, config_path):
     for key in config_dict.keys():
         if key in keys_to_keep:
             partial_config[key] = config_dict[key]
-    
+
     save_path = '/' + os.path.join(*config_path.split("/")[:-2])
     print(save_path)
     with open(save_path+'/partial_config.yaml', 'w') as file:
@@ -89,9 +89,9 @@ def get_config_diff(dir_path, whole_config=False, save=True, verbose=False):
         the ones in the partial_config are compared."""
 
     # number of sub directories (excluding files)
-    only_dirs = [name for name in os.listdir(dir_path) 
+    only_dirs = [name for name in os.listdir(dir_path)
                  if (not (os.path.isfile(dir_path+'/'+name))  # condition to be a folder
-                 and (glob.glob(dir_path+'/'+name + r'/*config.yaml') != []))] # condition to be a model
+                     and (glob.glob(dir_path+'/'+name + r'/*config.yaml') != []))]  # condition to be a model
     n_subdir = len(only_dirs)
     if verbose:
         print(f'{n_subdir} subdirs:', only_dirs)
@@ -116,17 +116,17 @@ def get_config_diff(dir_path, whole_config=False, save=True, verbose=False):
     as only the file you want ends by "config.yaml".')
             else:
                 config_file = config_file[0]
-        
+
         # load and convert dict values into strings
         with open(config_file, 'r') as file:
             config_dict = yaml.load(file,  Loader=yaml.FullLoader)
         for key in config_dict:
             config_dict[key] = str(config_dict[key])
-        
-        # add config to a global dataframe
-        config_df = pd.DataFrame.from_dict({subdir: config_dict}, orient='index')
-        global_df = pd.concat([global_df, config_df], axis=0)
 
+        # add config to a global dataframe
+        config_df = pd.DataFrame.from_dict(
+            {subdir: config_dict}, orient='index')
+        global_df = pd.concat([global_df, config_df], axis=0)
 
     # get columns that have variations
     diff_keys = []
@@ -136,7 +136,7 @@ def get_config_diff(dir_path, whole_config=False, save=True, verbose=False):
             print(key)
         if (global_df[key] != global_df[key][0]).any():
             diff_keys.append(key)
-    
+
     # keep only these columns and sort the indexes
     global_df = global_df[diff_keys].sort_index()
 

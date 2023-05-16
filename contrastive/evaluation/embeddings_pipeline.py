@@ -29,7 +29,7 @@ def preprocess_config(sub_dir, dataset, classifier_name='svm', verbose=False):
         dataset_yaml = yaml.load(file, yaml.FullLoader)
     for key in dataset_yaml:
         cfg[key] = dataset_yaml[key]
-    
+
     # get the right classifiers parameters
     with open(f'./configs/classifier/{classifier_name}.yaml', 'r') as file:
         dataset_yaml = yaml.load(file, yaml.FullLoader)
@@ -77,38 +77,45 @@ def embeddings_pipeline(dir_path, dataset='cingulate_ACCpatterns', classifier_na
 overwrite to True if you still want to compute them.")
 
                 elif '#' in sub_dir:
-                    print("Model with an incompatible structure with the current one. Pass.")
+                    print(
+                        "Model with an incompatible structure with the current one. Pass.")
 
                 else:
                     print("Start post processing")
                     # get the config and correct it to suit what is needed for classifiers
-                    cfg = preprocess_config(sub_dir, dataset, classifier_name=classifier_name)
+                    cfg = preprocess_config(
+                        sub_dir, dataset, classifier_name=classifier_name)
                     if verbose:
                         print("CONFIG FILE", type(cfg))
-                        print(json.dumps(omegaconf.OmegaConf.to_container(cfg, resolve=True), indent=4, sort_keys=True))
+                        print(json.dumps(omegaconf.OmegaConf.to_container(
+                            cfg, resolve=True), indent=4, sort_keys=True))
                     # save the modified config next to the real one
                     with open(sub_dir+'/.hydra/config_classifiers.yaml', 'w') as file:
                         yaml.dump(omegaconf.OmegaConf.to_yaml(cfg), file)
-                    
+
                     print(f"\nbefore compute_embeddings: training_labels = {cfg.training_labels}\n")
 
                     # apply the functions
                     compute_embeddings(cfg)
                     # reload config for train_classifiers to work properly
-                    cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config_classifiers.yaml')
+                    cfg = omegaconf.OmegaConf.load(
+                        sub_dir+'/.hydra/config_classifiers.yaml')
                     train_classifiers(cfg)
-                    
+
                     # compute embeddings for the best model if saved
                     # FULL BRICOLAGE
                     if use_best_model and os.path.exists(sub_dir+'/logs/best_model_weights.pt'):
                         # apply the functions
-                        cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config_classifiers.yaml')
+                        cfg = omegaconf.OmegaConf.load(
+                            sub_dir+'/.hydra/config_classifiers.yaml')
                         cfg.use_best_model = True
                         compute_embeddings(cfg)
                         # reload config for train_classifiers to work properly
-                        cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config_classifiers.yaml')
+                        cfg = omegaconf.OmegaConf.load(
+                            sub_dir+'/.hydra/config_classifiers.yaml')
                         cfg.use_best_model = True
-                        cfg.training_embeddings = cfg.embeddings_save_path+'_best_model/full_embeddings.csv'
+                        cfg.training_embeddings = cfg.embeddings_save_path + \
+                            '_best_model/full_embeddings.csv'
                         cfg.embeddings_save_path = cfg.embeddings_save_path+'_best_model'
                         train_classifiers(cfg)
 
@@ -118,6 +125,7 @@ overwrite to True if you still want to compute them.")
                                     overwrite=overwrite, verbose=verbose)
         else:
             print(f"{sub_dir} is a file. Continue.")
+
 
 #'cingulate_ACCpatterns_1'
 #'cingulate_Utrecht_dHCP'

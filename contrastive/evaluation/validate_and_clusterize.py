@@ -172,7 +172,7 @@ def postprocessing_results(config: DictConfig) -> None:
         x_cluster_label = af.predict(embeddings)
         n_clusters_ = len(af.cluster_centers_indices_)
         print(n_clusters_)
-    plot_tsne(X_tsne=X_tsne[index,:],
+    plot_tsne(X_tsne=X_tsne[index, :],
               buffer=False,
               labels=x_cluster_label,
               savepath=config.analysis_path,
@@ -192,7 +192,7 @@ def postprocessing_results(config: DictConfig) -> None:
         json.dump(result_dict, fp)
     torch.save(embeddings, f"{config.analysis_path}/train_val_embeddings.pt")
     with open(f"{config.analysis_path}/train_val_filenames.json", 'w') as f:
-       f.write(json.dumps(filenames, indent=2))
+        f.write(json.dumps(filenames, indent=2))
 
 
 if __name__ == "__main__":

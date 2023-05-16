@@ -55,7 +55,7 @@ log = set_file_logger(__file__)
 
 def get_sample(arr, idx, type_el):
     """Returns sub-numpy torch tensors corresponding to array of indices idx.
-    
+
     First axis of arr (numpy array) corresponds to subject numbers from 0 to N-1
     type_el is 'float32' for input, 'int32' for foldlabel
     """
@@ -68,7 +68,7 @@ def get_sample(arr, idx, type_el):
 
 def get_filename(filenames, idx):
     """"Returns filenames corresponding to indices idx
-    
+
     filenames: dataframe with column name 'ID'
     """
     filename = filenames.Subject[idx]
@@ -82,7 +82,7 @@ def get_filename(filenames, idx):
 
 def get_label(labels, idx):
     """"Returns labels corresponding to indices idx
-    
+
     labels: dataframe with column name 'Subject'
     """
     label = labels.drop(columns='Subject').values[idx]
@@ -104,8 +104,8 @@ def check_consistency(filename, labels, idx):
 def padd_foldlabel(sample_foldlabel, input_size):
     """Padds foldlabel according to input_size"""
     transform_foldlabel = PaddingTensor(
-                            input_size,
-                            fill_value=0)
+        input_size,
+        fill_value=0)
     sample_foldlabel = transform_foldlabel(sample_foldlabel)
     return sample_foldlabel
 
@@ -145,7 +145,7 @@ class ContrastiveDataset():
             idx = idx.tolist()
 
         # Gets data corresponding to idx
-        sample   = get_sample(self.arr, idx, 'float32')
+        sample = get_sample(self.arr, idx, 'float32')
         filename = get_filename(self.filenames, idx)
 
         # Computes the transforms
@@ -206,10 +206,10 @@ class ContrastiveDataset_WithLabels():
             idx = idx.tolist()
 
         # Gets data corresponding to idx
-        sample   = get_sample(self.arr, idx, 'float32')
+        sample = get_sample(self.arr, idx, 'float32')
         filename = get_filename(self.filenames, idx)
         check_consistency(filename, self.labels, idx)
-        labels   = get_label(self.labels, idx)
+        labels = get_label(self.labels, idx)
 
         # Computes the transforms
         self.transform1 = transform_no_foldlabel(from_skeleton=True,
@@ -372,7 +372,7 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
             # view1 = self.transform1(sample)
             # view2 = self.transform2(sample)
             log.info("Something happens in view generation. "
-                    f"It happens for index {idx} and filename {filename}")
+                     f"It happens for index {idx} and filename {filename}")
             raise ValueError("Something happens in view generation. "
                              f"It happens for index {idx} and filename {filename}") from e
         except:
@@ -381,9 +381,9 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
             # view1 = self.transform1(sample)
             # view2 = self.transform2(sample)
             log.info("Something happens in view generation. "
-                    f"It happens for index {idx} and filename {filename}")
+                     f"It happens for index {idx} and filename {filename}")
             raise ValueError("Something happens in view generation. "
-                       f"It happens for index {idx} and filename {filename}")
+                             f"It happens for index {idx} and filename {filename}")
 
         if self.config.mode == "decoder":
             self.transform3 = transform_only_padding(self.config)
@@ -397,7 +397,7 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
             views = torch.stack((view1, view2), dim=0)
             tuple_with_path = (views, labels, filename, view3)
             return tuple_with_path
-        
+
 
 class ContrastiveDataset_Both():
     """Custom dataset that includes images and foldlabels
@@ -468,7 +468,7 @@ class ContrastiveDataset_Both():
 
         tuple_with_path = (views, filename)
         return tuple_with_path
-    
+
 
 class ContrastiveDataset_WithLabels_Both():
     """Custom dataset that includes images and labels
@@ -539,7 +539,7 @@ class ContrastiveDataset_WithLabels_Both():
             # view1 = self.transform1(sample)
             # view2 = self.transform2(sample)
             log.info("Something happens in view generation. "
-                    f"It happens for index {idx} and filename {filename}")
+                     f"It happens for index {idx} and filename {filename}")
             raise ValueError("Something happens in view generation. "
                              f"It happens for index {idx} and filename {filename}") from e
         except:
@@ -548,9 +548,9 @@ class ContrastiveDataset_WithLabels_Both():
             # view1 = self.transform1(sample)
             # view2 = self.transform2(sample)
             log.info("Something happens in view generation. "
-                    f"It happens for index {idx} and filename {filename}")
+                     f"It happens for index {idx} and filename {filename}")
             raise ValueError("Something happens in view generation. "
-                       f"It happens for index {idx} and filename {filename}")
+                             f"It happens for index {idx} and filename {filename}")
 
         if self.config.mode == "decoder":
             self.transform3 = transform_only_padding(self.config)
@@ -564,6 +564,7 @@ class ContrastiveDataset_WithLabels_Both():
             views = torch.stack((view1, view2), dim=0)
             tuple_with_path = (views, labels, filename, view3)
             return tuple_with_path
+
 
 class ContrastiveDataset_WithLabels_WithFoldLabels_Resize():
     """Custom dataset that includes images and labels
@@ -611,8 +612,8 @@ class ContrastiveDataset_WithLabels_WithFoldLabels_Resize():
         filename = get_filename(self.filenames, idx)
 
         # Compute resize_ratio
-        #log.info(f"Target input size: {self.config.input_size}")
-        #log.info(f"Original input size: {sample.size()}")
+        # log.info(f"Target input size: {self.config.input_size}")
+        # log.info(f"Original input size: {sample.size()}")
 
         # Dimensions in Tensor and numpy array are ordered differently
         target_size = self.config.input_size[1:] + [self.config.input_size[0]]
@@ -621,13 +622,13 @@ class ContrastiveDataset_WithLabels_WithFoldLabels_Resize():
 
         # Computes the transforms
         self.transform1 = transform_foldlabel_resize(sample_foldlabel,
-                                                    self.config.percentage,
-                                                    resize_ratio,
-                                                    self.config)
+                                                     self.config.percentage,
+                                                     resize_ratio,
+                                                     self.config)
         self.transform2 = transform_foldlabel_resize(sample_foldlabel,
-                                                    self.config.percentage,
-                                                    resize_ratio,
-                                                    self.config)
+                                                     self.config.percentage,
+                                                     resize_ratio,
+                                                     self.config)
 
         # Computes the views
         try:
@@ -639,7 +640,7 @@ class ContrastiveDataset_WithLabels_WithFoldLabels_Resize():
             # view1 = self.transform1(sample)
             # view2 = self.transform2(sample)
             log.info("Something happens in view generation. "
-                    f"It happens for index {idx} and filename {filename}")
+                     f"It happens for index {idx} and filename {filename}")
             raise ValueError("Something happens in view generation. "
                              f"It happens for index {idx} and filename {filename}") from e
         except:
@@ -648,9 +649,9 @@ class ContrastiveDataset_WithLabels_WithFoldLabels_Resize():
             # view1 = self.transform1(sample)
             # view2 = self.transform2(sample)
             log.info("Something happens in view generation. "
-                    f"It happens for index {idx} and filename {filename}")
+                     f"It happens for index {idx} and filename {filename}")
             raise ValueError("Something happens in view generation. "
-                       f"It happens for index {idx} and filename {filename}")
+                             f"It happens for index {idx} and filename {filename}")
 
         if self.config.mode == "decoder":
             self.transform3 = transform_only_padding(self.config)
@@ -664,6 +665,7 @@ class ContrastiveDataset_WithLabels_WithFoldLabels_Resize():
             views = torch.stack((view1, view2), dim=0)
             tuple_with_path = (views, labels, filename, view3)
             return tuple_with_path
+
 
 class ContrastiveDataset_Visualization():
     """Custom dataset that includes image file paths.
