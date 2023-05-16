@@ -262,10 +262,10 @@ def extract_train_and_val_subjects(train_val_subjects, partition, seed):
     return train_subjects, val_subjects
 
 
-def split_data(normal_data, normal_subjects, config):
+def split_data(normal_data, normal_subjects, sample_dir, config):
 
     if config.environment == "brainvisa" and config.checking:
-        compare_array_aims_files(normal_subjects, normal_data, config.crop_dir)
+        compare_array_aims_files(normal_subjects, normal_data, sample_dir)
 
     # Gets train_val subjects as dataframe from csv file
     if 'train_val_csv_file' in config.keys():
@@ -327,11 +327,11 @@ def split_data(normal_data, normal_subjects, config):
                               normal_data, name='train_val')
 
     if config.environment == "brainvisa" and config.checking:
-        compare_array_aims_files(train_subjects, train_data, config.crop_dir)
-        compare_array_aims_files(val_subjects, val_data, config.crop_dir)
-        compare_array_aims_files(train_val_subjects, train_val_data, config.crop_dir)
-        compare_array_aims_files(test_intra_subjects, test_intra_data, config.crop_dir)
-        compare_array_aims_files(test_subjects, test_data, config.crop_dir)
+        compare_array_aims_files(train_subjects, train_data, sample_dir)
+        compare_array_aims_files(val_subjects, val_data, sample_dir)
+        compare_array_aims_files(train_val_subjects, train_val_data, sample_dir)
+        compare_array_aims_files(test_intra_subjects, test_intra_data, sample_dir)
+        compare_array_aims_files(test_subjects, test_data, sample_dir)
     
     output = {'train': [train_subjects, train_data],
               'val': [val_subjects, val_data],
@@ -342,7 +342,7 @@ def split_data(normal_data, normal_subjects, config):
     return output
 
 
-def extract_data(npy_file_path, config):
+def extract_data(npy_file_path, sample_dir, config):
     """Extracts train_val and test data and subjects from npy and csv file
 
     Args:
@@ -356,7 +356,7 @@ def extract_data(npy_file_path, config):
     normal_data, normal_subjects = \
         read_numpy_data_and_subject_csv(npy_file_path, config.subjects_all)
     
-    return split_data(normal_data, normal_subjects, config)
+    return split_data(normal_data, normal_subjects, sample_dir, config)
 
 
 
@@ -510,7 +510,7 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
     normal_subjects, normal_subjects_index = select_subject_also_present_in_subject_labels(subject_labels, normal_subjects)
     normal_data = normal_data[normal_subjects_index]
 
-    output = split_data(normal_data, normal_subjects, config)
+    output = split_data(normal_data, normal_subjects, sample_dir, config)
 
     if config.environment == "brainvisa" and config.checking:
         compare_array_aims_files(normal_subjects, normal_data, sample_dir)

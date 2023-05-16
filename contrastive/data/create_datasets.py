@@ -67,7 +67,7 @@ def sanity_checks_without_labels(config, skeleton_output):
     check_subject_consistency(config.subjects_all,
                               config.subjects_foldlabel_all)
     # add all the other created objects in the next line
-    foldlabel_output = extract_data(config.foldlabel_all, config)
+    foldlabel_output = extract_data(config.foldlabel_all, config.foldlabel_dir, config)
     log.info("foldlabel data loaded")
 
     # Makes some sanity checks
@@ -94,7 +94,7 @@ def create_sets_without_labels(config):
     """
 
     # Loads and separates in train_val/test skeleton crops
-    skeleton_output = extract_data(config.numpy_all, config)
+    skeleton_output = extract_data(config.numpy_all, config.crop_dir, config)
 
     # Loads and separates in train_val/test set foldlabels if requested
     if (config.foldlabel == True) and (config.mode != 'evaluation'):
