@@ -62,12 +62,12 @@ from contrastive.utils.test_timeit import timeit
 try:
     from contrastive.utils.plots.visualize_anatomist import Visu_Anatomist
 except ImportError:
-    print("INFO: you are probably not in a brainvisa environment. Probably OK.")
+    print("INFO: you are probably not in a brainvisa env. Probably OK.")
 
 from contrastive.utils.logs import set_root_logger_level, set_file_logger
 log = set_file_logger(__file__)
 
-    
+
 class SaveOutput:
     def __init__(self):
         self.outputs = {}
@@ -90,7 +90,7 @@ class ContrastiveLearner(pl.LightningModule):
                 num_init_features=config.num_init_features,
                 num_representation_features=config.num_representation_features,
                 num_outputs=config.num_representation_features,
-                #projection_head_type=config.projection_head_type,
+                # projection_head_type=config.projection_head_type,
                 mode=config.mode,
                 drop_rate=config.drop_rate,
                 in_shape=config.input_size,
@@ -124,7 +124,6 @@ class ContrastiveLearner(pl.LightningModule):
         if self.config.environment == "brainvisa":
             self.visu_anatomist = Visu_Anatomist()
 
-
     def forward(self, x):
         return self.backbone.forward(x)
 
@@ -137,7 +136,7 @@ class ContrastiveLearner(pl.LightningModule):
                     self.hook_handles.append(handle)
             elif self.config.backbone_name == 'pointnet':
                 # for the moment, keep the same method
-                # need to pass the wanted representation layer to the first place
+                # need to pass the wanted representation layer to the 1st place
                 # => remove the first five layers
                 if isinstance(layer, torch.nn.Linear):
                     if i >= 5:
@@ -148,13 +147,15 @@ class ContrastiveLearner(pl.LightningModule):
     def load_pretrained_model(self, pretrained_model_path, encoder_only=False):
         """load weights stored in a state_dict at pretrained_model_path
         """
-        
+
         pretrained_state_dict = torch.load(pretrained_model_path)['state_dict']
         if encoder_only:
-            pretrained_state_dict = OrderedDict({k: v for k, v in pretrained_state_dict.items() if 'encoder' in k})
+            pretrained_state_dict = OrderedDict(
+                {k: v for k, v in pretrained_state_dict.items()
+                 if 'encoder' in k})
 
         model_dict = self.state_dict()
-        
+
         loaded_layers = []
         for n, p in pretrained_state_dict.items():
             if n in model_dict:
@@ -163,8 +164,9 @@ class ContrastiveLearner(pl.LightningModule):
 
         self.load_state_dict(model_dict)
 
-        not_loaded_layers = [key for key in model_dict.keys() if key not in loaded_layers]
-        #print(f"Loaded layers = {loaded_layers}")
+        not_loaded_layers = [
+            key for key in model_dict.keys() if key not in loaded_layers]
+        # print(f"Loaded layers = {loaded_layers}")
         log.info(f"Layers not loaded = {not_loaded_layers}")
 
     def custom_histogram_adder(self):
@@ -176,7 +178,6 @@ class ContrastiveLearner(pl.LightningModule):
                 name,
                 params,
                 self.current_epoch)
-
 
     def plot_histograms(self):
         """Plots all zii, zjj, zij and weights histograms"""
@@ -198,17 +199,16 @@ class ContrastiveLearner(pl.LightningModule):
 
         # Computes histogram of weights
         histogram_weights = plot_histogram_weights(self.weights,
-                                                    buffer=True)
+                                                   buffer=True)
         self.logger.experiment.add_image(
             'histo_weights', histogram_weights, self.current_epoch)
-
 
     def plot_scatter_matrices(self):
         """Plots scatter matrices of output and representations spaces"""
         # Makes scatter matrix of output space
         r = self.compute_outputs_skeletons(
             self.sample_data.train_dataloader())
-        X = r[0] # First element of tuple
+        X = r[0]  # First element of tuple
         scatter_matrix_outputs = plot_scatter_matrix(X, buffer=True)
         self.logger.experiment.add_image(
             'scatter_matrix_outputs',
@@ -218,14 +218,13 @@ class ContrastiveLearner(pl.LightningModule):
         # Makes scatter matrix of representation space
         r = self.compute_representations(
             self.sample_data.train_dataloader())
-        X = r[0] # First element of tuple
+        X = r[0]  # First element of tuple
         scatter_matrix_representations = plot_scatter_matrix(
             X, buffer=True)
         self.logger.experiment.add_image(
             'scatter_matrix_representations',
             scatter_matrix_representations,
             self.current_epoch)
-
 
     def plot_views(self):
         """Plots different 3D views"""
@@ -257,18 +256,16 @@ class ContrastiveLearner(pl.LightningModule):
                     'input_ana_k: ',
                     image_input_k, self.current_epoch)
 
-
     def configure_optimizers(self):
         """Adam optimizer"""
-        optimizer = torch.optim.Adam(\
-                        filter(lambda p: p.requires_grad, self.parameters()),
-                        lr=self.config.lr,
-                        weight_decay=self.config.weight_decay)
+        optimizer = torch.optim.Adam(
+            filter(lambda p: p.requires_grad, self.parameters()),
+            lr=self.config.lr,
+            weight_decay=self.config.weight_decay)
         # steps = 140
         # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, steps)
 
         return optimizer
-
 
     def nt_xen_loss(self, z_i, z_j):
         """Loss function for contrastive"""
@@ -276,12 +273,10 @@ class ContrastiveLearner(pl.LightningModule):
                          return_logits=True)
         return loss.forward(z_i, z_j)
 
-
     def cross_entropy_loss(self, sample, output_i, output_j):
         """Loss function for decoder"""
         loss = CrossEntropyLoss(device=self.device)
         return loss.forward(sample, output_i, output_j)
-
 
     def training_step(self, train_batch, batch_idx):
         """Training step.
@@ -289,7 +284,8 @@ class ContrastiveLearner(pl.LightningModule):
         (inputs, filenames) = train_batch
         if self.config.backbone_name == 'pointnet':
             inputs = torch.squeeze(inputs).to(torch.float)
-        #print("TRAINING STEP", inputs.shape)
+
+        # print("TRAINING STEP", inputs.shape)
         input_i = inputs[:, 0, :]
         input_j = inputs[:, 1, :]
         z_i = self.forward(input_i)
@@ -329,7 +325,6 @@ class ContrastiveLearner(pl.LightningModule):
 
         return batch_dictionary
 
-
     def compute_outputs_skeletons(self, loader):
         """Computes the outputs of the model for each crop.
 
@@ -367,7 +362,6 @@ class ContrastiveLearner(pl.LightningModule):
 
         return X, filenames_list
 
-
     def compute_decoder_outputs_skeletons(self, loader):
         """Computes the outputs of the model for each crop.
 
@@ -393,7 +387,6 @@ class ContrastiveLearner(pl.LightningModule):
                 del inputs
 
         return X, filenames_list
-
 
     def compute_representations(self, loader):
         """Computes representations for each crop.
@@ -422,15 +415,17 @@ class ContrastiveLearner(pl.LightningModule):
                 input_j = inputs[:, 1, :]
                 model.forward(input_i)
                 X_i = first(self.save_output.outputs.values())
+
                 # Second views of the whole batch
                 model.forward(input_j)
                 X_j = first(self.save_output.outputs.values())
-                #print("representations", X_i.shape, X_j.shape)
+
+                # print("representations", X_i.shape, X_j.shape)
                 # First views and second views are put side by side
                 X_reordered = torch.cat([X_i, X_j], dim=-1)
                 X_reordered = X_reordered.view(-1, X_i.shape[-1])
                 X = torch.cat((X, X_reordered.cpu()), dim=0)
-                #print(f"filenames = {filenames}")
+                # print(f"filenames = {filenames}")
                 filenames_duplicate = [
                     item for item in filenames
                     for repetitions in range(2)]
@@ -438,7 +433,6 @@ class ContrastiveLearner(pl.LightningModule):
                 del inputs
 
         return X, filenames_list
-
 
     def compute_tsne(self, loader, register):
         """Computes t-SNE.
@@ -464,7 +458,6 @@ class ContrastiveLearner(pl.LightningModule):
         # Returns tsne embeddings
         return X_tsne
 
-
     def training_epoch_end(self, outputs):
         """Computation done at the end of the epoch"""
 
@@ -481,7 +474,8 @@ class ContrastiveLearner(pl.LightningModule):
                     self.sample_data.train_dataloader(), "representation")
                 image_TSNE = plot_tsne(X_tsne, buffer=True)
                 self.logger.experiment.add_image(
-                    'TSNE representation image', image_TSNE, self.current_epoch)
+                    'TSNE representation image',
+                    image_TSNE, self.current_epoch)
 
                 # Computes histogram of sim_zij
                 histogram_sim_zij = plot_histogram(self.sim_zij, buffer=True)
@@ -504,7 +498,6 @@ class ContrastiveLearner(pl.LightningModule):
             avg_loss,
             self.current_epoch)
 
-
     def validation_step(self, val_batch, batch_idx):
         """Validation step"""
 
@@ -513,7 +506,6 @@ class ContrastiveLearner(pl.LightningModule):
             inputs = torch.squeeze(inputs).to(torch.float)
         input_i = inputs[:, 0, :]
         input_j = inputs[:, 1, :]
-        #print("INPUT I", input_i)
         z_i = self.forward(input_i)
         z_j = self.forward(input_j)
 
@@ -536,7 +528,6 @@ class ContrastiveLearner(pl.LightningModule):
         }
 
         return batch_dictionary
-
 
     def validation_epoch_end(self, outputs):
         """Computaion done at the end of each validation epoch"""
@@ -576,10 +567,12 @@ class ContrastiveLearner(pl.LightningModule):
             with open(save_path+"best_model_params.json", 'r') as file:
                 best_model_params = json.load(file)
                 best_loss = best_model_params['best_loss']
-        
+
         avg_loss = avg_loss.cpu().item()
         if avg_loss < best_loss:
-            torch.save({'state_dict': self.state_dict()}, save_path+'best_model_weights.pt')
-            best_model_params = {'epoch': self.current_epoch, 'best_loss': avg_loss}
+            torch.save({'state_dict': self.state_dict()},
+                       save_path+'best_model_weights.pt')
+            best_model_params = {
+                'epoch': self.current_epoch, 'best_loss': avg_loss}
             with open(save_path+"best_model_params.json", 'w') as file:
                 json.dump(best_model_params, file)

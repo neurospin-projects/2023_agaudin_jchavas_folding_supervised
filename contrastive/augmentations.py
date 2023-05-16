@@ -175,20 +175,23 @@ class BinarizeTensor(object):
         arr[arr > 0] = 1
         return torch.from_numpy(arr)
 
+
 def count_non_null(arr):
     return (arr != 0).sum()
+
 
 def remove_branch(arr_foldlabel, arr_skel, selected_branch):
     """It masks the selected branch in arr_skel
     """
-    mask = ( (arr_foldlabel != 0) & (arr_foldlabel != selected_branch))  
+    mask = ((arr_foldlabel != 0) & (arr_foldlabel != selected_branch))
     mask = mask.astype(int)
     return arr_skel * mask
+
 
 def intersection_skeleton_foldlabel(arr_foldlabel, arr_skel):
     """It returns the intersection between skeleton and foldlabel
     """
-    mask = ( (arr_foldlabel != 0) ).astype(int) 
+    mask = ((arr_foldlabel != 0)).astype(int)
     intersec = arr_skel*mask
     count_intersec = count_non_null(intersec)
     count_skel = count_non_null(arr_skel)
@@ -198,13 +201,13 @@ def intersection_skeleton_foldlabel(arr_foldlabel, arr_skel):
                          f"has {count_intersec} non-null elements.\n"
                          f"Skeleton has {count_skel} non-null elements")
     return count_intersec
-    
+
 
 def remove_bottom_branches(a):
     """Removes bottom branches from foldlabel.
-    
+
     Bottom branches are numerated between 2000 and 2999"""
-    return a*((a<2000) | (a>=3000)).astype(int)
+    return a*((a < 2000) | (a >= 3000)).astype(int)
 
 
 def remove_branches_up_to_percent(arr_foldlabel, arr_skel,
@@ -251,7 +254,7 @@ def remove_branches_up_to_percent(arr_foldlabel, arr_skel,
     percent_pixels_removed = (total_pixels-total_pixels_after)/total_pixels*100
     log.debug(f"Minimum expected % removed pixels = {percentage}")
     log.debug(f"% removed pixels = {percent_pixels_removed}")
-    assert(percent_pixels_removed >= percentage)
+    assert (percent_pixels_removed >= percentage)
 
     return arr_skel_without_branches
 
@@ -275,24 +278,26 @@ class RemoveRandomBranchTensor(object):
 
         # log.debug(f"arr_skel.shape = {arr_skel.shape}")
         # log.debug(f"arr_foldlabel.shape = {arr_foldlabel.shape}")
-        assert(arr_skel.shape==arr_foldlabel.shape)
-        assert(self.percentage>=0)
+        assert (arr_skel.shape == arr_foldlabel.shape)
+        assert (self.percentage >= 0)
 
         if self.variable_percentage:
-            percentage = np.random.uniform(0,self.percentage)
+            percentage = np.random.uniform(0, self.percentage)
         else:
             percentage = self.percentage
-        log.debug(f"expected percentage (RemoveRandomBranchTensor) = {percentage}")
+        log.debug("expected percentage "
+                  f"(RemoveRandomBranchTensor) = {percentage}")
 
         arr_skel_without_branches = np.zeros(arr_skel.shape)
-        log.debug(f"Shape of arr_skel before calling transform: {arr_skel_without_branches.shape}")
+        log.debug("Shape of arr_skel before calling transform: "
+                  f"{arr_skel_without_branches.shape}")
 
         # Checks if it is only one image or a batch of images
         if len(arr_skel.shape) == len(self.input_size)+1:
             for num_img in np.arange(arr_skel.shape[0]):
-                arr_skel_without_branches[num_img,...] = \
-                    remove_branches_up_to_percent(arr_foldlabel[num_img,...],
-                                                  arr_skel[num_img,...],
+                arr_skel_without_branches[num_img, ...] = \
+                    remove_branches_up_to_percent(arr_foldlabel[num_img, ...],
+                                                  arr_skel[num_img, ...],
                                                   percentage,
                                                   self.keep_bottom)
         elif len(arr_skel.shape) == len(self.input_size):
@@ -302,7 +307,8 @@ class RemoveRandomBranchTensor(object):
                                               percentage,
                                               self.keep_bottom)
         else:
-            raise RuntimeError(f"Unexpected skeleton shape."
+            raise RuntimeError(
+                f"Unexpected skeleton shape."
                 f"Compare arr_skel shape {arr_skel.shape} "
                 f"with input_size shape {self.input_size.shape}")
 
@@ -320,7 +326,7 @@ class RotateTensor(object):
 
     def __call__(self, tensor):
         arr = tensor.numpy()
-        log.debug("Shapes before rotation",tensor.shape, arr.shape)
+        log.debug("Shapes before rotation", tensor.shape, arr.shape)
         rot_array = np.copy(arr)
 
         for axes in (0, 1), (0, 2), (1, 2):
@@ -350,7 +356,7 @@ class PartialCutOutTensor_Roll(object):
     We assume that the rectangle to be cut is inside the image.
     """
 
-    def __init__(self, from_skeleton=True, 
+    def __init__(self, from_skeleton=True,
                  keep_bottom=True, patch_size=None,
                  random_size=False, localization=None):
         """[summary]
@@ -595,13 +601,13 @@ class ToPointnetTensor(object):
         arr = tensor.numpy()
 
         clouds = []
-        for i in range(arr.shape[0]): # loop over batch elements
+        for i in range(arr.shape[0]):  # loop over batch elements
             point_cloud = np.array(arr[i].nonzero()[:3])
             clouds.append(point_cloud)
-        
+
         padded_clouds = pad(clouds, padding_method=self.padding_method,
                             n_max=self.n_max)
-        
+
         return torch.from_numpy(padded_clouds)
 
 
@@ -671,6 +677,7 @@ class Transformer(object):
         for trf in self.transforms:
             s += '\n\t- ' + trf.__str__()
         return s
+
 
 class ResizeTensor(object):
     """Apply resize to a 3D image

@@ -56,7 +56,8 @@ class Visu_Anatomist:
         """Plots as 3D buckets the first 3D image of the batch
 
         Args:
-            img: batch of images of size [size_batch, 1, size_X, size_Y, size_Z]
+            img: batch of images of size
+                [size_batch, 1, size_X, size_Y, size_Z]
             buffer (boolean): True -> returns PNG image buffer
                             False -> plots the figure
         """

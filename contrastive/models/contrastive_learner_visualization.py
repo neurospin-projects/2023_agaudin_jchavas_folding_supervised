@@ -44,7 +44,8 @@ from contrastive.models.contrastive_learner import ContrastiveLearner
 try:
     from contrastive.utils.plots.visualize_anatomist import Visu_Anatomist
 except ImportError:
-    print("INFO: you are probably not in a brainvisa environment. Probably OK.")
+    print("INFO: you are probably not in a brainvisa environment. "
+          "Probably OK.")
 
 
 class ContrastiveLearner_Visualization(ContrastiveLearner):

@@ -53,11 +53,11 @@ class DataModule(pl.LightningDataModule):
         self.config = config
 
     def setup(self, stage=None, mode=None):
-        if self.config.with_labels == True:
+        if self.config.with_labels:
             datasets = create_sets_with_labels(self.config)
         else:
             datasets = create_sets_without_labels(self.config)
-        
+
         self.dataset_train = datasets['train']
         self.dataset_val = datasets['val']
         self.dataset_train_val = datasets['train_val']
@@ -76,11 +76,11 @@ class DataModule_Learning(DataModule):
     def train_dataloader(self):
         loader_train = DataLoader(self.dataset_train,
                                   batch_size=self.config.batch_size,
-                                  sampler=RandomSampler(data_source=self.dataset_train),
+                                  sampler=RandomSampler(
+                                      data_source=self.dataset_train),
                                   pin_memory=self.config.pin_mem,
                                   multiprocessing_context='fork',
                                   num_workers=self.config.num_cpu_workers
-                                  # worker_init_fn = lambda _: np.random.seed(int(time.time()))
                                   )
         return loader_train
 
@@ -103,19 +103,21 @@ class DataModule_Learning(DataModule):
                                  shuffle=False
                                  )
         return loader_test
-    
+
     def test_intra_dataloader(self):
         if 'test_intra_csv_file' in self.config.keys():
-            loader_test_intra = DataLoader(self.dataset_test_intra,
-                                          batch_size=self.config.batch_size,
-                                          pin_memory=self.config.pin_mem,
-                                          multiprocessing_context='fork',
-                                          num_workers=self.config.num_cpu_workers,
-                                          shuffle=False
-                                          )
+            loader_test_intra = DataLoader(
+                self.dataset_test_intra,
+                batch_size=self.config.batch_size,
+                pin_memory=self.config.pin_mem,
+                multiprocessing_context='fork',
+                num_workers=self.config.num_cpu_workers,
+                shuffle=False
+            )
             return loader_test_intra
         else:
-            raise ValueError("The datamodule used does not have a test_intra set.")
+            raise ValueError(
+                "The datamodule used does not have a test_intra set.")
 
 
 class DataModule_Evaluation(DataModule):
@@ -160,15 +162,17 @@ class DataModule_Evaluation(DataModule):
                                  shuffle=False
                                  )
         return loader_test
-    
+
     def test_intra_dataloader(self):
         if 'test_intra_csv_file' in self.config.keys():
-            loader_test_intra = DataLoader(self.dataset_test_intra,
-                                          batch_size=self.config.batch_size,
-                                          pin_memory=self.config.pin_mem,
-                                          num_workers=self.config.num_cpu_workers,
-                                          shuffle=False
-                                          )
+            loader_test_intra = DataLoader(
+                self.dataset_test_intra,
+                batch_size=self.config.batch_size,
+                pin_memory=self.config.pin_mem,
+                num_workers=self.config.num_cpu_workers,
+                shuffle=False
+            )
             return loader_test_intra
         else:
-            raise ValueError("The datamodule used does not have a test_intra set.")
+            raise ValueError(
+                "The datamodule used does not have a test_intra set.")

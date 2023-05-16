@@ -17,7 +17,7 @@ print('129634' in list(half_1[0].astype(str)))
 subjects = []
 cpt = 0
 for file in os.listdir('/neurospin/dico/data/deep_folding/current/crops/CINGULATE/mask/sulcus_based/2mm/centered_combined/hcp/Rcrops/'):
-    if '.minf' not in file :
+    if '.minf' not in file:
         sub = file[:6]
         if str(sub) not in list(half_1[0].astype(str)):
             subjects.append(sub)
@@ -25,5 +25,5 @@ for file in os.listdir('/neurospin/dico/data/deep_folding/current/crops/CINGULAT
 print('cpt', cpt)
 print(len(subjects))
 
-np.savetxt(f"/neurospin/dico/data/deep_folding/current/HCP_half_2_2.csv", np.array(subjects), delimiter =", ", fmt ='% s')
+np.savetxt(f"/neurospin/dico/data/deep_folding/current/HCP_half_2_2.csv", np.array(subjects), delimiter=", ", fmt='% s')
 print('saved')

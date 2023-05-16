@@ -51,6 +51,7 @@ def buffer_to_image(buffer):
     image = ToTensor()(image).unsqueeze(0)[0]
     return image
 
+
 def png_file_to_image(png_file):
     """Transforms PNG file into tensor representing PNG image"""
 

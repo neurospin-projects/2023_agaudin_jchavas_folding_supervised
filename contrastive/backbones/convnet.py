@@ -8,6 +8,7 @@ import torch.utils.checkpoint as cp
 
 from torch import Tensor
 
+
 class _DropoutNd(nn.Module):
     __constants__ = ['p', 'inplace']
     p: float
@@ -51,7 +52,8 @@ class Dropout3d_always(_DropoutNd):
 
     Shape:
         - Input: :math:`(N, C, D, H, W)` or :math:`(C, D, H, W)`.
-        - Output: :math:`(N, C, D, H, W)` or :math:`(C, D, H, W)` (same shape as input).
+        - Output: :math:`(N, C, D, H, W)` or :math:`(C, D, H, W)`
+                  (same shape as input).
 
     Examples::
 
@@ -77,7 +79,7 @@ class ConvNet(pl.LightningModule):
             convolution layer
         bn_size (int) - multiplicative factor for number of bottle neck layers
             (i.e. bn_size * k features in the bottleneck layer)
-        drop_rate (float) - dropout rate 
+        drop_rate (float) - dropout rate
         num_classes (int) - number of classification classes
             (if 'classifier' mode)
         in_channels (int) - number of input channels (1 for sMRI)
@@ -98,9 +100,12 @@ class ConvNet(pl.LightningModule):
 
         super(ConvNet, self).__init__()
 
-        assert mode in {'encoder', 'evaluation', 'decoder', 'classifier', 'regresser'},\
+        assert mode in {'encoder',
+                        'evaluation',
+                        'decoder',
+                        'classifier',
+                        'regresser'},\
             "Unknown mode selected: %s" % mode
-
 
         self.mode = mode
         self.num_representation_features = num_representation_features
@@ -116,33 +121,46 @@ class ConvNet(pl.LightningModule):
         self.in_shape = in_shape
         c, h, w, d = in_shape
         self.encoder_depth = encoder_depth
-        self.z_dim_h = h//2**self.encoder_depth # receptive field downsampled 2 times
+
+        # receptive field downsampled 2 times
+        self.z_dim_h = h//2**self.encoder_depth
         self.z_dim_w = w//2**self.encoder_depth
         self.z_dim_d = d//2**self.encoder_depth
-
 
         modules_encoder = []
         for step in range(encoder_depth):
             in_channels = 1 if step == 0 else out_channels
-            out_channels = 16 if step == 0  else 16 * (2**step)
-            modules_encoder.append(('conv%s' %step, nn.Conv3d(in_channels, out_channels,
-                    kernel_size=3, stride=1, padding=1)))
-            modules_encoder.append(('norm%s' %step, nn.BatchNorm3d(out_channels)))
-            modules_encoder.append(('LeakyReLU%s' %step, nn.LeakyReLU()))
-            modules_encoder.append(('DropOut%s' %step, nn.Dropout3d(p=drop_rate)))
-            modules_encoder.append(('conv%sa' %step, nn.Conv3d(out_channels, out_channels,
-                    kernel_size=4, stride=2, padding=1)))
-            modules_encoder.append(('norm%sa' %step, nn.BatchNorm3d(out_channels)))
-            modules_encoder.append(('LeakyReLU%sa' %step, nn.LeakyReLU()))
-            modules_encoder.append(('DropOut%sa' %step, nn.Dropout3d(p=drop_rate)))
+            out_channels = 16 if step == 0 else 16 * (2**step)
+            modules_encoder.append(
+                ('conv%s' % step,
+                 nn.Conv3d(in_channels, out_channels,
+                           kernel_size=3, stride=1, padding=1)
+                 ))
+            modules_encoder.append(
+                ('norm%s' % step, nn.BatchNorm3d(out_channels)))
+            modules_encoder.append(('LeakyReLU%s' % step, nn.LeakyReLU()))
+            modules_encoder.append(
+                ('DropOut%s' % step, nn.Dropout3d(p=drop_rate)))
+            modules_encoder.append(
+                ('conv%sa' % step,
+                 nn.Conv3d(out_channels, out_channels,
+                           kernel_size=4, stride=2, padding=1)
+                 ))
+            modules_encoder.append(
+                ('norm%sa' % step, nn.BatchNorm3d(out_channels)))
+            modules_encoder.append(('LeakyReLU%sa' % step, nn.LeakyReLU()))
+            modules_encoder.append(
+                ('DropOut%sa' % step, nn.Dropout3d(p=drop_rate)))
             self.num_features = out_channels
         # flatten and reduce to the desired dimension
         modules_encoder.append(('Flatten', nn.Flatten()))
-        modules_encoder.append(('Linear', 
-                    nn.Linear(self.num_features*self.z_dim_h*self.z_dim_w*self.z_dim_d,
-                              self.num_representation_features)))
+        modules_encoder.append(
+            ('Linear',
+             nn.Linear(
+                 self.num_features*self.z_dim_h*self.z_dim_w*self.z_dim_d,
+                 self.num_representation_features)
+             ))
         self.encoder = nn.Sequential(OrderedDict(modules_encoder))
-
 
         if (self.mode == "encoder") or (self.mode == 'evaluation'):
             # build a projection head
@@ -150,66 +168,89 @@ class ConvNet(pl.LightningModule):
             input_size = self.num_representation_features
             for i, dim_i in enumerate(self.projection_head_hidden_layers):
                 output_size = dim_i
-                projection_head.append(('Linear%s' %i, nn.Linear(input_size, output_size)))
+                projection_head.append(
+                    ('Linear%s' % i, nn.Linear(input_size, output_size)))
                 input_size = output_size
-            projection_head.append(('Output layer' ,nn.Linear(input_size,
-                                                             self.num_outputs)))
+            projection_head.append(
+                ('Output layer',
+                 nn.Linear(input_size, self.num_outputs)
+                 ))
             self.projection_head = nn.Sequential(OrderedDict(projection_head))
 
         elif self.mode == "classifier":
             modules_classifier = []
             i = 0
             modules_classifier.append((f'LeakyReLU{i}', nn.LeakyReLU()))
-            modules_classifier.append((f'Linear{i}', 
-                    nn.Linear(self.num_representation_features,
-                            self.num_representation_features)))
+            modules_classifier.append(
+                (f'Linear{i}',
+                 nn.Linear(self.num_representation_features,
+                           self.num_representation_features)
+                 ))
             i = 1
             modules_classifier.append((f'LeakyReLU{i}', nn.LeakyReLU()))
-            modules_classifier.append((f'Linear{i}', 
-                    nn.Linear(self.num_representation_features,
-                            self.num_classes)))
+            modules_classifier.append(
+                (f'Linear{i}',
+                 nn.Linear(self.num_representation_features,
+                           self.num_classes)
+                 ))
             self.classifier = nn.Sequential(OrderedDict(modules_classifier))
 
         elif self.mode == "regresser":
             modules_regresser = []
             i = 0
             modules_regresser.append((f'LeakyReLU{i}', nn.LeakyReLU()))
-            modules_regresser.append((f'Linear{i}', 
-                    nn.Linear(self.num_representation_features,
-                            self.num_representation_features)))
+            modules_regresser.append(
+                (f'Linear{i}',
+                 nn.Linear(self.num_representation_features,
+                           self.num_representation_features)
+                 ))
             i = 1
             modules_regresser.append((f'LeakyReLU{i}', nn.LeakyReLU()))
-            modules_regresser.append((f'Linear{i}', 
-                    nn.Linear(self.num_representation_features, 1)))
+            modules_regresser.append(
+                (f'Linear{i}',
+                 nn.Linear(self.num_representation_features, 1)
+                 ))
             self.regresser = nn.Sequential(OrderedDict(modules_regresser))
 
         elif self.mode == "decoder":
             self.hidden_representation = nn.Linear(
                 self.num_features, self.num_representation_features)
-            self.develop = nn.Linear(self.num_representation_features,
-                                     64 *self.z_dim_h * self.z_dim_w* self.z_dim_d)
+            self.develop = nn.Linear(
+                self.num_representation_features,
+                64 * self.z_dim_h * self.z_dim_w * self.z_dim_d)
             modules_decoder = []
             out_channels = 64
             for step in range(self.depth-1):
                 in_channels = out_channels
                 out_channels = in_channels // 2
-                ini = 1 if step==0 else 0
-                modules_decoder.append(('convTrans3d%s' %step, nn.ConvTranspose3d(in_channels,
-                            out_channels, kernel_size=2, stride=2, padding=0, output_padding=(ini,0,0))))
-                modules_decoder.append(('normup%s' %step, nn.BatchNorm3d(out_channels)))
-                modules_decoder.append(('ReLU%s' %step, nn.ReLU()))
-                modules_decoder.append(('convTrans3d%sa' %step, nn.ConvTranspose3d(out_channels,
-                            out_channels, kernel_size=3, stride=1, padding=1)))
-                modules_decoder.append(('normup%sa' %step, nn.BatchNorm3d(out_channels)))
-                modules_decoder.append(('ReLU%sa' %step, nn.ReLU()))
-            modules_decoder.append(('convtrans3dn', nn.ConvTranspose3d(16, 1, kernel_size=2,
-                            stride=2, padding=0)))
-            modules_decoder.append(('conv_final', nn.Conv3d(1, 2, kernel_size=1, stride=1)))
+                ini = 1 if step == 0 else 0
+                modules_decoder.append(
+                    ('convTrans3d%s' % step,
+                     nn.ConvTranspose3d(in_channels, out_channels,
+                                        kernel_size=2, stride=2, padding=0,
+                                        output_padding=(ini, 0, 0))
+                     ))
+                modules_decoder.append(
+                    ('normup%s' % step, nn.BatchNorm3d(out_channels)))
+                modules_decoder.append(('ReLU%s' % step, nn.ReLU()))
+                modules_decoder.append(
+                    ('convTrans3d%sa' % step,
+                     nn.ConvTranspose3d(out_channels, out_channels,
+                                        kernel_size=3, stride=1, padding=1)
+                     ))
+                modules_decoder.append(
+                    ('normup%sa' % step, nn.BatchNorm3d(out_channels)))
+                modules_decoder.append(('ReLU%sa' % step, nn.ReLU()))
+            modules_decoder.append(
+                ('convtrans3dn',
+                 nn.ConvTranspose3d(16, 1, kernel_size=2, stride=2, padding=0)
+                 ))
+            modules_decoder.append(
+                ('conv_final', nn.Conv3d(1, 2, kernel_size=1, stride=1)))
             self.decoder = nn.Sequential(OrderedDict(modules_decoder))
 
             # This loads pretrained weight
-            # path = "/host/volatile/jc225751/Runs/33_MIDL_2022_reviews/Output/t-0.1/n-004_o-4/logs/default/version_0/checkpoints/epoch=299-step=8399.ckpt"
-            pretrained = torch.load(path)
+            pretrained = torch.load(pretrained_model_path)
             model_dict = self.state_dict()
             for n, p in pretrained['state_dict'].items():
                 if n in model_dict:
@@ -226,12 +267,14 @@ class ConvNet(pl.LightningModule):
                     for layer in module.children():
                         for param in layer.parameters():
                             param.requires_grad = False
-                        
-                        print('Layer "{}" in module "{}" was frozen!'.format(layer_counter, name))
-                        layer_counter+=1
+
+                        print('Layer "{}" in module "{}" was frozen!'.format(
+                            layer_counter, name))
+                        layer_counter += 1
             for param in self.hidden_representation.parameters():
                 param.requires_grad = False
-            print('Layer "{}" in module "{}" was frozen!'.format(layer_counter, "representation"))
+            print('Layer "{}" in module "{}" was frozen!'.format(
+                layer_counter, "representation"))
             for (name, param) in self.named_parameters():
                 print(f"{name}: learning = {param.requires_grad}")
 
@@ -256,10 +299,11 @@ class ConvNet(pl.LightningModule):
             out = F.adaptive_avg_pool3d(out, 1)
             out = torch.flatten(out, 1)
 
-            out = self.hidden_representation(out)    
+            out = self.hidden_representation(out)
             out = F.relu(out, inplace=True)
             out = self.develop(out)
-            out = out.view(out.size(0), 16 * 2**(self.depth-1), self.z_dim_h, self.z_dim_w, self.z_dim_d)
+            out = out.view(out.size(0), 16 * 2**(self.depth-1),
+                           self.z_dim_h, self.z_dim_w, self.z_dim_d)
             out = self.decoder(out)
 
         return out.squeeze(dim=1)

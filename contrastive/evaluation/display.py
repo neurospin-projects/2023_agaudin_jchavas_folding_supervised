@@ -74,19 +74,19 @@ if __name__ == '__main__':
 
     # Using output distances
     block_smallest = display_several_buckets(bucket_dir,
-        ['568963', '107422',
-         '318637', '174437',
-         '792766', '248339',
-         '644044', '198653'
-         ],
-        'smallest')
+                                             ['568963', '107422',
+                                              '318637', '174437',
+                                              '792766', '248339',
+                                              '644044', '198653'
+                                              ],
+                                             'smallest')
 
     block_biggest = display_several_buckets(bucket_dir,
-        ['833148', '406836',
-         '150928', '707749',
-         '111009', '159845',
-         '723141', '212015'],
-        'biggest')
+                                            ['833148', '406836',
+                                             '150928', '707749',
+                                             '111009', '159845',
+                                             '723141', '212015'],
+                                            'biggest')
 
     from soma.qt_gui.qt_backend import Qt
     Qt.qApp.exec_()

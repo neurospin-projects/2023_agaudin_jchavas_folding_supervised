@@ -70,7 +70,8 @@ def loop_over_directory(src_dir, csv_file):
     # Gets and creates all filenames
     dirnames = glob.glob(f"{src_dir}/*")
     # keep only directories (not files)
-    dirnames = [directory for directory in dirnames if not os.path.isfile(directory)]
+    dirnames = [
+        directory for directory in dirnames if not os.path.isfile(directory)]
     print(dirnames)
     for deep_dir in dirnames:
         deep_dir = os.path.abspath(deep_dir)

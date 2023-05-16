@@ -55,8 +55,8 @@ log = set_file_logger(__file__)
 
 def get_sample(arr, idx, type_el):
     """Returns sub-numpy torch tensors corresponding to array of indices idx.
-    
-    First axis of arr (numpy array) corresponds to subject numbers from 0 to N-1
+
+    First axis of arr (numpy array) corresponds to subject nbs from 0 to N-1
     type_el is 'float32' for input, 'int32' for foldlabel
     """
     log.debug(f"idx (in get_sample) = {idx}")
@@ -68,7 +68,7 @@ def get_sample(arr, idx, type_el):
 
 def get_filename(filenames, idx):
     """"Returns filenames corresponding to indices idx
-    
+
     filenames: dataframe with column name 'ID'
     """
     filename = filenames.Subject[idx]
@@ -82,7 +82,7 @@ def get_filename(filenames, idx):
 
 def get_label(labels, idx):
     """"Returns labels corresponding to indices idx
-    
+
     labels: dataframe with column name 'Subject'
     """
     label = labels.drop(columns='Subject').values[idx]
@@ -104,8 +104,8 @@ def check_consistency(filename, labels, idx):
 def padd_foldlabel(sample_foldlabel, input_size):
     """Padds foldlabel according to input_size"""
     transform_foldlabel = PaddingTensor(
-                            input_size,
-                            fill_value=0)
+        input_size,
+        fill_value=0)
     sample_foldlabel = transform_foldlabel(sample_foldlabel)
     return sample_foldlabel
 
