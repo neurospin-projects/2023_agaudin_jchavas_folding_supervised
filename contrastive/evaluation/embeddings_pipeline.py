@@ -121,5 +121,5 @@ overwrite to True if you still want to compute them.")
 
 #'cingulate_ACCpatterns_1'
 #'cingulate_Utrecht_dHCP'
-embeddings_pipeline("/neurospin/dico/jlaval/Runs/01_deep_supervised/Program/Output/2023-05-02/",
-dataset='cingulate_ACCpatterns_1', verbose=True, classifier_name='svm', overwrite=False)
+embeddings_pipeline("/volatile/jc225751/Runs/61_classifier_regresser/Output/self-supervised",
+                    dataset='cingulate_ACCpatterns_1', verbose=True, classifier_name='svm', overwrite=False)
