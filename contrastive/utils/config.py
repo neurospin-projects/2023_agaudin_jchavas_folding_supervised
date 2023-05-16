@@ -36,17 +36,16 @@ import logging
 import os
 import glob
 import yaml
+import pandas as pd
 
 import omegaconf
 from omegaconf import DictConfig
 from omegaconf import OmegaConf
 log = logging.getLogger(__name__)
 
-import pandas as pd
-
 
 def process_config(config) -> DictConfig:
-    """Does whatever operations on the config file
+    """Does whatever operations on the config file.
     """
 
     log.debug(OmegaConf.to_yaml(config))
@@ -60,10 +59,15 @@ def process_config(config) -> DictConfig:
 
 
 def create_accessible_config(keys_to_keep, config_path):
-    """Create a yaml file with only targeted keys at the root of the training folder.
+    """Create a yaml file with only targeted keys.
+
+    The yaml file is created at the root of the training folder.
+
     Inputs:
         - keys_to_keep: config parameters you want to have access to easily.
-        - config_path: path where is stored the full config file."""
+        - config_path: path where is stored the full config file.
+    """
+
     with open(config_path, 'r') as file:
         config_dict = yaml.load(file, Loader=yaml.FullLoader)
 
@@ -80,13 +84,16 @@ def create_accessible_config(keys_to_keep, config_path):
 
 
 def get_config_diff(dir_path, whole_config=False, save=True, verbose=False):
-    """Get the parameters in config (or only in the partial config) that changed between the models
-    of the targeted folder.
-    /!\ Probably poorly optimised.
+    """Get the parameters in config (or only in the partial config)
+    that changed between the models of the targeted folder.
+
+    /!\\ Probably poorly optimised.
     Inputs:
         - dir_path: path to directory where models to compare are stored
-        - whole_config: bool telling if all the config parameters have to be compared. If not, only 
-        the ones in the partial_config are compared."""
+        - whole_config: bool telling if all the config parameters
+            have to be compared.
+            If not, only the ones in partial_config are compared.
+    """
 
     # number of sub directories (excluding files)
     only_dirs = [name for name in os.listdir(dir_path)
@@ -98,7 +105,8 @@ def get_config_diff(dir_path, whole_config=False, save=True, verbose=False):
 
     if n_subdir == 1:
         # return and not error not to stop the train function
-        return("The chosen directory contains only one training: can't compare the parameters.")
+        return ("The chosen directory contains only one training: "
+                "can't compare the parameters.")
 
     global_df = pd.DataFrame()
 
@@ -110,10 +118,13 @@ def get_config_diff(dir_path, whole_config=False, save=True, verbose=False):
         else:
             config_file = glob.glob(dir_path+'/'+subdir + r'/*config.yaml')
             if len(config_file) == 0:
-                raise ValueError(f'No summarized config file in {subdir} folder.')
+                raise ValueError(
+                    f'No summarized config file in {subdir} folder.')
             elif len(config_file) > 1:
-                raise ValueError(f'Several possible config in {subdir} folder. Change names such \
-    as only the file you want ends by "config.yaml".')
+                raise ValueError(
+                    f"Several possible config in {subdir} folder. "
+                    "Change names such as only the file "
+                    "you want ends by 'config.yaml'.")
             else:
                 config_file = config_file[0]
 

@@ -93,15 +93,24 @@ def train(config):
 
     # copies some of the config parameters in a yaml file easily accessible
     keys_to_keep = ['dataset_name', 'nb_subjects', 'model', 'with_labels',
-                    'input_size', 'temperature_initial', 'temperature', 'sigma', 'drop_rate', 'depth_decoder',
-                    'mode', 'both', 'foldlabel', 'resize', 'fill_value', 'patch_size', 'max_angle', 'checkerboard_size', 'keep_bottom',
-                    'growth_rate', 'block_config', 'num_init_features', 'num_representation_features', 'num_outputs',
-                    'environment', 'batch_size', 'pin_mem', 'partition', 'lr', 'weight_decay', 'max_epochs',
-                    'early_stopping_patience', 'random_state', 'seed', 'backbone_name', 'sigma_labels', 'proportion_pure_contrastive', 'n_max',
+                    'input_size', 'temperature_initial', 'temperature',
+                    'sigma', 'drop_rate', 'depth_decoder',
+                    'mode', 'both', 'foldlabel', 'resize', 'fill_value',
+                    'patch_size', 'max_angle', 'checkerboard_size',
+                    'keep_bottom',
+                    'growth_rate', 'block_config', 'num_init_features',
+                    'num_representation_features', 'num_outputs',
+                    'environment', 'batch_size', 'pin_mem', 'partition',
+                    'lr', 'weight_decay', 'max_epochs',
+                    'early_stopping_patience', 'random_state', 'seed',
+                    'backbone_name', 'sigma_labels',
+                    'proportion_pure_contrastive', 'n_max',
                     'train_val_csv_file', 'percentage']
     if config.model == 'SimCLR_supervised':
         keys_to_keep.extend(
-            ['temperature_supervised', 'sigma_labels', 'pretrained_model_path'])
+            ['temperature_supervised',
+             'sigma_labels',
+             'pretrained_model_path'])
 
     create_accessible_config(keys_to_keep, os.getcwd()+"/.hydra/config.yaml")
 
@@ -126,7 +135,10 @@ def train(config):
         raise ValueError("Wrong combination of 'mode' and 'model'")
 
     # load pretrained model's weights if in config
-    if 'pretrained_model_path' in config.keys() and config.pretrained_model_path != None:
+    if (
+        'pretrained_model_path' in config.keys()
+        and config.pretrained_model_path is not None
+    ):
         log.info(f"Load weigths stored at {config.pretrained_model_path}")
         model.load_pretrained_model(config.pretrained_model_path,
                                     encoder_only=config.load_encoder_only)
@@ -136,8 +148,9 @@ def train(config):
     else:
         summary(model, device='cpu')
 
-    early_stop_callback = EarlyStopping(monitor="val_loss",
-                                        patience=config.early_stopping_patience)
+    early_stop_callback = \
+        EarlyStopping(monitor="val_loss",
+                      patience=config.early_stopping_patience)
 
     trainer = pl.Trainer(
         gpus=1,
@@ -149,7 +162,9 @@ def train(config):
 
     trainer.fit(model, data_module, ckpt_path=config.checkpoint_path)
     log.info("Fitting is done")
-    log.info(f"Number of hooks: {len(model.save_output.outputs)} ; {len(model.hook_handles)}")
+    log.info("Number of hooks: "
+             f"{len(model.save_output.outputs)} ; "
+             f"{len(model.hook_handles)}")
 
     # save model with structure
     save_path = './logs/trained_model.pt'

@@ -254,7 +254,7 @@ def remove_branches_up_to_percent(arr_foldlabel, arr_skel,
     percent_pixels_removed = (total_pixels-total_pixels_after)/total_pixels*100
     log.debug(f"Minimum expected % removed pixels = {percentage}")
     log.debug(f"% removed pixels = {percent_pixels_removed}")
-    assert(percent_pixels_removed >= percentage)
+    assert (percent_pixels_removed >= percentage)
 
     return arr_skel_without_branches
 
@@ -278,17 +278,19 @@ class RemoveRandomBranchTensor(object):
 
         # log.debug(f"arr_skel.shape = {arr_skel.shape}")
         # log.debug(f"arr_foldlabel.shape = {arr_foldlabel.shape}")
-        assert(arr_skel.shape == arr_foldlabel.shape)
-        assert(self.percentage >= 0)
+        assert (arr_skel.shape == arr_foldlabel.shape)
+        assert (self.percentage >= 0)
 
         if self.variable_percentage:
             percentage = np.random.uniform(0, self.percentage)
         else:
             percentage = self.percentage
-        log.debug(f"expected percentage (RemoveRandomBranchTensor) = {percentage}")
+        log.debug("expected percentage "
+                  f"(RemoveRandomBranchTensor) = {percentage}")
 
         arr_skel_without_branches = np.zeros(arr_skel.shape)
-        log.debug(f"Shape of arr_skel before calling transform: {arr_skel_without_branches.shape}")
+        log.debug("Shape of arr_skel before calling transform: "
+                  f"{arr_skel_without_branches.shape}")
 
         # Checks if it is only one image or a batch of images
         if len(arr_skel.shape) == len(self.input_size)+1:
@@ -305,9 +307,10 @@ class RemoveRandomBranchTensor(object):
                                               percentage,
                                               self.keep_bottom)
         else:
-            raise RuntimeError(f"Unexpected skeleton shape."
-                               f"Compare arr_skel shape {arr_skel.shape} "
-                               f"with input_size shape {self.input_size.shape}")
+            raise RuntimeError(
+                f"Unexpected skeleton shape."
+                f"Compare arr_skel shape {arr_skel.shape} "
+                f"with input_size shape {self.input_size.shape}")
 
         arr_skel_without_branches = arr_skel_without_branches.astype('float32')
 

@@ -56,7 +56,7 @@ log = set_file_logger(__file__)
 def get_sample(arr, idx, type_el):
     """Returns sub-numpy torch tensors corresponding to array of indices idx.
 
-    First axis of arr (numpy array) corresponds to subject numbers from 0 to N-1
+    First axis of arr (numpy array) corresponds to subject nbs from 0 to N-1
     type_el is 'float32' for input, 'int32' for foldlabel
     """
     log.debug(f"idx (in get_sample) = {idx}")

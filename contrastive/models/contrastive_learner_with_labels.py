@@ -82,7 +82,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         super(ContrastiveLearner_WithLabels, self).__init__(
             config=config, sample_data=sample_data)
 
-    def plot_scatter_matrices_with_labels(self, dataloader, key, mode="encoder"):
+    def plot_scatter_matrices_with_labels(self, dataloader, key,
+                                          mode="encoder"):
         """Plots scatter matrices with label values."""
         # Makes scatter matrix of output space
         r = self.compute_outputs_skeletons(dataloader)
@@ -180,17 +181,29 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             self.sample_filenames = filenames
             self.sample_labels = labels
             if self.config.environment == 'brainvisa' and self.config.checking:
-                vol_file = f"{self.config.crop_dir}/{filenames[0]}{self.config.crop_file_suffix}"
+                vol_file = \
+                    f"{self.config.crop_dir}/{filenames[0]}" +\
+                    f"{self.config.crop_file_suffix}"
                 vol = aims.read(vol_file)
                 self.sample_ref_0 = np.asarray(vol)
-                if not np.array_equal(self.sample_ref_0[..., 0], self.sample_k[0, 0, ...]):
-                    raise ValueError("Images files don't match!!!\n"
-                                     f"Subject name = {filenames[0]}\n"
-                                     f"Shape of reference file = {self.sample_ref_0[...,0].shape}\n"
-                                     f"Shape of file read from array = {self.sample_k[0,0,...].shape}\n"
-                                     f"Sum of reference file = {self.sample_ref_0.sum()}\n"
-                                     f"Sum of file read from array = {self.sample_k[0,...].sum()}")
-            if self.config.mode != "decoder" and self.config.mode != "classifier" and self.config.mode != "regresser":
+                if not np.array_equal(self.sample_ref_0[..., 0],
+                                      self.sample_k[0, 0, ...]):
+                    raise ValueError(
+                        "Images files don't match!!!\n"
+                        f"Subject name = {filenames[0]}\n"
+                        f"Shape of reference file = "
+                        f"{self.sample_ref_0[...,0].shape}\n"
+                        f"Shape of file read from array = "
+                        f"{self.sample_k[0,0,...].shape}\n"
+                        f"Sum of reference file = "
+                        f"{self.sample_ref_0.sum()}\n"
+                        f"Sum of file read from array = "
+                        f"{self.sample_k[0,...].sum()}")
+            if (
+                self.config.mode != "decoder"
+                and self.config.mode != "classifier"
+                and self.config.mode != "regresser"
+            ):
                 self.sim_zij = sim_zij * self.config.temperature
                 self.sim_zii = sim_zii * self.config.temperature
                 self.sim_zjj = sim_zjj * self.config.temperature
@@ -280,8 +293,9 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             X = nn.functional.softmax(X, dim=1)
             return X, labels_all, filenames_list
         else:
-            raise ValueError("The config.mode is not 'classifier'. You should'nt compute "
-                             "probabilities with another mode.")
+            raise ValueError(
+                "The config.mode is not 'classifier'. "
+                "You shouldn't compute probabilities with another mode.")
 
     def compute_output_auc(self, loader):
         X, labels, _ = self.compute_outputs_skeletons(loader)
@@ -436,7 +450,10 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         """Computation done at the end of the epoch"""
 
         score = 0
-        if (self.config.mode == "encoder") or (self.config.mode == "regresser"):
+        if (
+            (self.config.mode == "encoder")
+            or (self.config.mode == "regresser")
+        ):
             # Computes t-SNE both in representation and output space
             if self.plotting_now():
                 X_tsne, labels = self.compute_tsne(
@@ -448,7 +465,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                     self.sample_data.train_dataloader(), "representation")
                 image_TSNE = plot_tsne(X_tsne, labels=labels, buffer=True)
                 self.logger.experiment.add_image(
-                    'TSNE representation image', image_TSNE, self.current_epoch)
+                    'TSNE representation image', image_TSNE,
+                    self.current_epoch)
 
             if self.plotting_matrices_now():
                 # Plots scatter matrices
@@ -465,7 +483,10 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                     "train",
                     self.config.mode)
 
-        if (self.config.mode == 'classifier') or (self.config.mode == 'regresser'):
+        if (
+            (self.config.mode == 'classifier')
+            or (self.config.mode == 'regresser')
+        ):
             train_auc = self.compute_output_auc(
                 self.sample_data.train_dataloader())
             self.logger.experiment.add_scalar(
@@ -481,7 +502,6 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # calculates average loss
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        # avg_label_loss = torch.stack([x['label_loss'] for x in outputs]).mean()
 
         # logging using tensorboard logger
         self.logger.experiment.add_scalar(
@@ -541,13 +561,17 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         score = 0
         # Computes t-SNE
-        if (self.config.mode == "encoder") or (self.config.mode == "regresser"):
+        if (
+            (self.config.mode == "encoder")
+            or (self.config.mode == "regresser")
+        ):
             if self.plotting_now():
                 X_tsne, labels = self.compute_tsne(
                     self.sample_data.val_dataloader(), "output")
                 image_TSNE = plot_tsne(X_tsne, labels=labels, buffer=True)
                 self.logger.experiment.add_image(
-                    'TSNE output validation image', image_TSNE, self.current_epoch)
+                    'TSNE output validation image', image_TSNE,
+                    self.current_epoch)
                 X_tsne, labels = self.compute_tsne(
                     self.sample_data.val_dataloader(),
                     "representation")
@@ -564,7 +588,10 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                     "val",
                     self.config.mode)
 
-        if (self.config.mode == 'classifier') or (self.config.mode == 'regresser'):
+        if (
+            (self.config.mode == 'classifier')
+            or (self.config.mode == 'regresser')
+        ):
             val_auc = self.compute_output_auc(
                 self.sample_data.val_dataloader())
             self.logger.experiment.add_scalar(
@@ -577,7 +604,6 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # calculates average loss
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
-        # avg_label_loss = torch.stack([x['label_loss'] for x in outputs]).mean()
 
         # logs losses using tensorboard logger
         self.logger.experiment.add_scalar(

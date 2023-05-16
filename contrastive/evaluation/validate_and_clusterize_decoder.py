@@ -180,7 +180,8 @@ def postprocessing_results(config: DictConfig) -> None:
 
     # Saves output results in files
     torch.save(outputs, f"{config.analysis_path}/train_val_outputs.pt")
-    with open(f"{config.analysis_path}/train_val_filenames_output.json", 'w') as f:
+    with open(f"{config.analysis_path}/train_val_filenames_output.json", 'w') \
+            as f:
         json.dump(filenames_output, f, indent=2)
 
 

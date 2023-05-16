@@ -15,7 +15,8 @@ def test_things(config):
 
     print(subject_labels.head())
 
-    output = extract_data_with_labels(config.numpy_all, subject_labels, config.crop_dir, config)
+    output = extract_data_with_labels(
+        config.numpy_all, subject_labels, config.crop_dir, config)
 
     print(output.keys())
     for key in output.keys():

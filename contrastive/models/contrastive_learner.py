@@ -62,7 +62,7 @@ from contrastive.utils.test_timeit import timeit
 try:
     from contrastive.utils.plots.visualize_anatomist import Visu_Anatomist
 except ImportError:
-    print("INFO: you are probably not in a brainvisa environment. Probably OK.")
+    print("INFO: you are probably not in a brainvisa env. Probably OK.")
 
 from contrastive.utils.logs import set_root_logger_level, set_file_logger
 log = set_file_logger(__file__)
@@ -136,7 +136,7 @@ class ContrastiveLearner(pl.LightningModule):
                     self.hook_handles.append(handle)
             elif self.config.backbone_name == 'pointnet':
                 # for the moment, keep the same method
-                # need to pass the wanted representation layer to the first place
+                # need to pass the wanted representation layer to the 1st place
                 # => remove the first five layers
                 if isinstance(layer, torch.nn.Linear):
                     if i >= 5:
@@ -151,7 +151,8 @@ class ContrastiveLearner(pl.LightningModule):
         pretrained_state_dict = torch.load(pretrained_model_path)['state_dict']
         if encoder_only:
             pretrained_state_dict = OrderedDict(
-                {k: v for k, v in pretrained_state_dict.items() if 'encoder' in k})
+                {k: v for k, v in pretrained_state_dict.items()
+                 if 'encoder' in k})
 
         model_dict = self.state_dict()
 
@@ -283,7 +284,8 @@ class ContrastiveLearner(pl.LightningModule):
         (inputs, filenames) = train_batch
         if self.config.backbone_name == 'pointnet':
             inputs = torch.squeeze(inputs).to(torch.float)
-        #print("TRAINING STEP", inputs.shape)
+
+        # print("TRAINING STEP", inputs.shape)
         input_i = inputs[:, 0, :]
         input_j = inputs[:, 1, :]
         z_i = self.forward(input_i)
@@ -413,10 +415,12 @@ class ContrastiveLearner(pl.LightningModule):
                 input_j = inputs[:, 1, :]
                 model.forward(input_i)
                 X_i = first(self.save_output.outputs.values())
+
                 # Second views of the whole batch
                 model.forward(input_j)
                 X_j = first(self.save_output.outputs.values())
-                #print("representations", X_i.shape, X_j.shape)
+
+                # print("representations", X_i.shape, X_j.shape)
                 # First views and second views are put side by side
                 X_reordered = torch.cat([X_i, X_j], dim=-1)
                 X_reordered = X_reordered.view(-1, X_i.shape[-1])
@@ -470,7 +474,8 @@ class ContrastiveLearner(pl.LightningModule):
                     self.sample_data.train_dataloader(), "representation")
                 image_TSNE = plot_tsne(X_tsne, buffer=True)
                 self.logger.experiment.add_image(
-                    'TSNE representation image', image_TSNE, self.current_epoch)
+                    'TSNE representation image',
+                    image_TSNE, self.current_epoch)
 
                 # Computes histogram of sim_zij
                 histogram_sim_zij = plot_histogram(self.sim_zij, buffer=True)
@@ -501,7 +506,6 @@ class ContrastiveLearner(pl.LightningModule):
             inputs = torch.squeeze(inputs).to(torch.float)
         input_i = inputs[:, 0, :]
         input_j = inputs[:, 1, :]
-        #print("INPUT I", input_i)
         z_i = self.forward(input_i)
         z_j = self.forward(input_j)
 

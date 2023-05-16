@@ -56,7 +56,7 @@ log = set_file_logger(__file__)
 def get_sample(arr, idx, type_el):
     """Returns sub-numpy torch tensors corresponding to array of indices idx.
 
-    First axis of arr (numpy array) corresponds to subject numbers from 0 to N-1
+    First axis of arr (numpy array) corresponds to subject from 0 to N-1
     type_el is 'float32' for input, 'int32' for foldlabel
     """
     log.debug(f"idx (in get_sample) = {idx}")
@@ -367,23 +367,17 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
             view1 = self.transform1(sample)
             view2 = self.transform2(sample)
         except ValueError as e:
-            # self.transform1 = transform_nothing_done()
-            # self.transform2 = transform_nothing_done()
-            # view1 = self.transform1(sample)
-            # view2 = self.transform2(sample)
             log.info("Something happens in view generation. "
                      f"It happens for index {idx} and filename {filename}")
             raise ValueError("Something happens in view generation. "
-                             f"It happens for index {idx} and filename {filename}") from e
+                             f"It happens for index {idx} "
+                             f"and filename {filename}") from e
         except:
-            # self.transform1 = transform_nothing_done()
-            # self.transform2 = transform_nothing_done()
-            # view1 = self.transform1(sample)
-            # view2 = self.transform2(sample)
             log.info("Something happens in view generation. "
                      f"It happens for index {idx} and filename {filename}")
-            raise ValueError("Something happens in view generation. "
-                             f"It happens for index {idx} and filename {filename}")
+            raise ValueError(
+                "Something happens in view generation. "
+                f"It happens for index {idx} and filename {filename}")
 
         if self.config.mode == "decoder":
             self.transform3 = transform_only_padding(self.config)
@@ -540,8 +534,9 @@ class ContrastiveDataset_WithLabels_Both():
             # view2 = self.transform2(sample)
             log.info("Something happens in view generation. "
                      f"It happens for index {idx} and filename {filename}")
-            raise ValueError("Something happens in view generation. "
-                             f"It happens for index {idx} and filename {filename}") from e
+            raise ValueError(
+                "Something happens in view generation. "
+                f"It happens for index {idx} and filename {filename}") from e
         except:
             # self.transform1 = transform_nothing_done()
             # self.transform2 = transform_nothing_done()
@@ -549,8 +544,9 @@ class ContrastiveDataset_WithLabels_Both():
             # view2 = self.transform2(sample)
             log.info("Something happens in view generation. "
                      f"It happens for index {idx} and filename {filename}")
-            raise ValueError("Something happens in view generation. "
-                             f"It happens for index {idx} and filename {filename}")
+            raise ValueError(
+                "Something happens in view generation. "
+                f"It happens for index {idx} and filename {filename}")
 
         if self.config.mode == "decoder":
             self.transform3 = transform_only_padding(self.config)
@@ -635,23 +631,17 @@ class ContrastiveDataset_WithLabels_WithFoldLabels_Resize():
             view1 = self.transform1(sample)
             view2 = self.transform2(sample)
         except ValueError as e:
-            # self.transform1 = transform_nothing_done()
-            # self.transform2 = transform_nothing_done()
-            # view1 = self.transform1(sample)
-            # view2 = self.transform2(sample)
             log.info("Something happens in view generation. "
                      f"It happens for index {idx} and filename {filename}")
-            raise ValueError("Something happens in view generation. "
-                             f"It happens for index {idx} and filename {filename}") from e
+            raise ValueError(
+                "Something happens in view generation. "
+                f"It happens for index {idx} and filename {filename}") from e
         except:
-            # self.transform1 = transform_nothing_done()
-            # self.transform2 = transform_nothing_done()
-            # view1 = self.transform1(sample)
-            # view2 = self.transform2(sample)
             log.info("Something happens in view generation. "
                      f"It happens for index {idx} and filename {filename}")
-            raise ValueError("Something happens in view generation. "
-                             f"It happens for index {idx} and filename {filename}")
+            raise ValueError(
+                "Something happens in view generation. "
+                f"It happens for index {idx} and filename {filename}")
 
         if self.config.mode == "decoder":
             self.transform3 = transform_only_padding(self.config)

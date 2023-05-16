@@ -20,14 +20,16 @@ bdd = pd.DataFrame(bdd)
 print("Number of subjects:", bdd.shape[0])
 if bdd.empty:
     raise ValueError(
-        "Empty dataframe => no subject selected: you should check 'folders' or 'dataset'")
+        "Empty dataframe => no subject selected: "
+        "you should check 'folders' or 'dataset'")
 
 for col in bdd.columns:
     print(col, bdd[col][0])
 
 # remove useless columns
 bdd = post_process_bdd_models(bdd, hard_remove=["partition"], git_branch=True)
-# the hard remove are the ones containing [] char in their fields. They are (for now) patch_size, partition, numpy_all
+# the hard remove are the ones containing [] char in their fields.
+# They are (for now) patch_size, partition, numpy_all
 
 
 # save the database
@@ -38,12 +40,16 @@ bdd.to_csv(save_path+f"bdd_{name}.csv", index=True)
 
 # write the little readme
 with open(save_path+f"README_{name}.txt", 'w') as file:
-    file.write("Contient les paramètres de tous les modèles d'intérêt (dossiers précisés en-dessous). La base est faite en sorte que \
-seuls les paramètres qui changent entre les modèles soient enregistrés.\n")
+    file.write("Contient les paramètres de tous les modèles d'intérêt "
+               "(dossiers précisés en-dessous). "
+               "La base est faite en sorte que seuls les paramètres "
+               "qui changent entre les modèles soient enregistrés.\n")
     if best_model:
         file.write("\n")
         file.write(
-            "The given values are for the 'best models', ie the models saved when the validation loss is the lowest during training.\n")
+            "The given values are for the 'best models', "
+            "ie the models saved when the validation loss "
+            "is the lowest during training.\n")
     file.write("\n")
     file.write(f"Peformances données pour le dataset {dataset}\n")
     file.write("\n")

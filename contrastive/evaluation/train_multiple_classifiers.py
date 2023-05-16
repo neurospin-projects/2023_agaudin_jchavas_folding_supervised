@@ -40,8 +40,9 @@ def define_njobs():
     return max(nb_cpus - 2, 1)
 
 
-# load the embeddings and the labels
 def load_embeddings(dir_path, labels_path, config):
+    """Load the embeddings and the labels.
+    """
     # load embeddings
     # if targeting directly the target csv file
     if not os.path.isdir(dir_path):
@@ -63,15 +64,19 @@ def load_embeddings(dir_path, labels_path, config):
                 dir_path+'/test_embeddings.csv', index_col=0)
 
             # regroup them in one dataframe (discuss with Joël)
-            embeddings = pd.concat([train_embeddings, val_embeddings, test_embeddings],
+            embeddings = pd.concat([train_embeddings,
+                                    val_embeddings,
+                                    test_embeddings],
                                    axis=0, ignore_index=False)
 
     embeddings.sort_index(inplace=True)
     print("sorted embeddings:", embeddings.head())
 
-    # get the labels (0 = no paracingulate, 1 = paracingulate) and match them to the embeddings
+    # get the labels (0 = no paracingulate, 1 = paracingulate)
+    # and match them to the embeddings
     # /!\ use read_labels
-    label_scaling = None if not 'label_scaling' in config.keys() else config.label_scaling
+    label_scaling = (None if 'label_scaling' not in config.keys()
+                     else config.label_scaling)
     labels = read_labels(labels_path, config.subject_column_name,
                          config.label_names, label_scaling)
     labels.rename(columns={config.label_names[0]: 'label'}, inplace=True)
@@ -97,17 +102,20 @@ def load_and_format_embeddings(dir_path, labels_path, config):
     # create train-test datasets
     if config.classifier_test_size:
         embeddings_train, embeddings_test, labels_train, labels_test = \
-            train_test_split(embeddings, labels, test_size=config.classifier_test_size,
+            train_test_split(embeddings, labels,
+                             test_size=config.classifier_test_size,
                              random_state=config.classifier_seed)
     else:  # no train-test sets for the classifier
         embeddings_train = embeddings_test = embeddings
         labels_train = labels_test = labels
 
     # cast the dataset to the torch format
-    X_train = torch.from_numpy(
-        embeddings_train.loc[:, embeddings_train.columns != names_col].values).type(torch.FloatTensor)
-    X_test = torch.from_numpy(
-        embeddings_test.loc[:, embeddings_test.columns != names_col].values).type(torch.FloatTensor)
+    X_train = embeddings_train.loc[:, embeddings_train.columns != names_col]
+    X_train = torch.from_numpy(X_train.values).type(torch.FloatTensor)
+
+    X_test = embeddings_test.loc[:, embeddings_test.columns != names_col]
+    X_test = torch.from_numpy(X_test.values).type(torch.FloatTensor)
+
     Y_train = torch.from_numpy(labels_train.label.values.astype(
         'float32')).type(torch.FloatTensor)
     Y_test = torch.from_numpy(labels_test.label.values.astype(
@@ -144,10 +152,11 @@ def get_average_model(labels_df):
     aucs = labels_df.apply(compute_auc, args=[labels_df.label])
     aucs = aucs[aucs.index != 'label']
     aucs = aucs[aucs == aucs.quantile(interpolation='nearest')]
-    return(aucs.index[0])
+    return (aucs.index[0])
 
 
-def post_processing_results(labels, embeddings, Curves, aucs, accuracies, values, columns_names, mode, results_save_path):
+def post_processing_results(labels, embeddings, Curves, aucs, accuracies,
+                            values, columns_names, mode, results_save_path):
 
     labels_true = labels.label.values.astype('float64')
 
@@ -166,7 +175,8 @@ def post_processing_results(labels, embeddings, Curves, aucs, accuracies, values
     plt.plot([0, 1], [0, 1], color='r', linestyle='dashed')
 
     # get the average model (with AUC as a criteria)
-    # /!\ This model is a classifier that exists in the pool != 'mean_pred' and 'median_pred'
+    # /!\ This model is a classifier that exists in the pool
+    # /!\ This model != 'mean_pred' or 'median_pred'
     average_model = get_average_model(
         labels[['label'] + columns_names].astype('float64'))
     labels['average_model'] = labels[average_model]
@@ -186,15 +196,20 @@ def post_processing_results(labels, embeddings, Curves, aucs, accuracies, values
     plt.savefig(results_save_path+f"/{mode}_ROC_curves.png")
 
     # compute accuracy and area under the curve
-    print(f"{mode} accuracy", np.mean(accuracies[mode]), np.std(accuracies[mode]))
+    print(f"{mode} accuracy",
+          np.mean(accuracies[mode]),
+          np.std(accuracies[mode]))
     print(f"{mode} AUC", np.mean(aucs[mode]), np.std(aucs[mode]))
 
-    values[f'{mode}_total_accuracy'] = [np.mean(accuracies[mode]), np.std(accuracies[mode])]
+    values[f'{mode}_total_accuracy'] = \
+        [np.mean(accuracies[mode]), np.std(accuracies[mode])]
     values[f'{mode}_auc'] = [np.mean(aucs[mode]), np.std(aucs[mode])]
 
     # save predicted labels
-    labels.to_csv(results_save_path+f"/{mode}_predicted_probas.csv", index=False)
-    # DEBUG embeddings.to_csv(results_save_path+f"/effective_embeddings.csv", index=True)
+    labels.to_csv(results_save_path+f"/{mode}_predicted_probas.csv",
+                  index=False)
+    # DEBUG embeddings.to_csv(results_save_path+f"/effective_embeddings.csv",
+    #                         index=True)
 
     return
 
@@ -203,14 +218,18 @@ def train_nn_classifiers(config):
     # set up load and save paths
     train_embs_path = config.training_embeddings
     train_lab_paths = config.training_labels
-    # if not specified, the embeddings the results are created from are the ones used for training
 
-    EoI_path = config.embeddings_of_interest if config.embeddings_of_interest else train_embs_path
-    LoI_path = config.labels_of_interest if config.labels_of_interest else train_lab_paths
+    # if not specified, the embeddings are the ones used for training
 
-    # if not specified, the outputs of the classifier will be stored next to the embeddings
-    # used to generate them
-    results_save_path = config.results_save_path if config.results_save_path else EoI_path
+    EoI_path = (config.embeddings_of_interest if config.embeddings_of_interest
+                else train_embs_path)
+    LoI_path = (config.labels_of_interest if config.labels_of_interest
+                else train_lab_paths)
+
+    # if not specified, the outputs of the classifier will be stored next
+    # to the embeddings used to generate them
+    results_save_path = (config.results_save_path if config.results_save_path
+                         else EoI_path)
     if not os.path.isdir(results_save_path):
         results_save_path = os.path.dirname(results_save_path)
 
@@ -258,10 +277,6 @@ def train_nn_classifiers(config):
             pass
         else:
             pass
-            """# /!\ DOESN'T WORK !!!!
-            # load embeddings of interest
-            X,Y,n_train,n_val,_ = load_and_format_embeddings(EoI_path, LoI_path, config)
-            X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=1.0, random_state=24)"""
 
         # predict labels with the classifier (both for train and test sets)
         labels_pred_train = bin_class.forward(X_train).detach().numpy()
@@ -294,8 +309,10 @@ def train_nn_classifiers(config):
         x_max = max(1, np.max(labels.predicted))
 
         plt.figure()
-        plt.hist(without_paracingulate.predicted, bins=np.arange(x_min,x_max,0.01), alpha=0.6)
-        plt.hist(with_paracingulate.predicted, bins=np.arange(x_min,x_max,0.01), alpha=0.6, color='r')
+        plt.hist(without_paracingulate.predicted,
+                 bins=np.arange(x_min,x_max,0.01), alpha=0.6)
+        plt.hist(with_paracingulate.predicted,
+                 bins=np.arange(x_min,x_max,0.01), alpha=0.6, color='r')
         plt.legend(['without_paracingulate', "with_paracingulate"])
 
         ax = plt.gca()
@@ -306,7 +323,8 @@ def train_nn_classifiers(config):
     # add the predictions to the df where the true values are
     columns_names = ["predicted_"+str(i) for i in range(config.n_repeat)]
     train_preds = pd.DataFrame(
-        train_prediction_matrix, columns=columns_names, index=labels_train.index)
+        train_prediction_matrix, columns=columns_names,
+        index=labels_train.index)
     labels_train = pd.concat([labels_train, train_preds], axis=1)
 
     test_preds = pd.DataFrame(test_prediction_matrix,
@@ -323,7 +341,8 @@ def train_nn_classifiers(config):
             labels = labels_test
 
         post_processing_results(
-            labels, Curves, aucs, accuracies, values, columns_names, mode, results_save_path)
+            labels, Curves, aucs, accuracies, values,
+            columns_names, mode, results_save_path)
         # values is changed in place
 
     with open(results_save_path+"/values.json", 'w+') as file:
@@ -333,11 +352,17 @@ def train_nn_classifiers(config):
 
 
 def train_one_svm_classifier(config, inputs, i=0):
+    """Trains one SVC.
+
+    Args:
+        - config: config file
+        - inputs: dictionary containing the input data,
+        with X key containing embeddings
+        and Y key labels. If a test set is defined,
+        IT also contains X and Y for the test set.
+        - i: seed for the SVM.
+        Is automatically changed in each call of train_svm_classifiers.
     """
-    - config: config file
-    - inputs: dictionary containing the input data, with X key containing embeddings
-    and Y key labels. If a test set is defined, also contains X and Y for the test set.
-    - i: seed for the SVM. Is automatically changed in each call of train_svm_classifiers."""
 
     X = inputs['X']
     Y = inputs['Y']
@@ -355,7 +380,8 @@ def train_one_svm_classifier(config, inputs, i=0):
     outputs['proba_of_1'] = labels_proba[:, 1]
 
     # SVR
-    # model = LinearSVR(max_iter=config.class_max_epochs, random_state=i) # set the params here
+    # model = LinearSVR(max_iter=config.class_max_epochs,
+    #                   random_state=i) # set the params here
     # labels_pred = cross_val_predict(model, X, Y, cv=5)
     # curves, roc_auc, accuracy = compute_indicators(Y, labels_pred)
     # outputs['labels_pred'] = labels_pred
@@ -386,15 +412,21 @@ def train_svm_classifiers(config):
     test_embs_path = config.test_embeddings
     # /!\ in fact all_labels (=train_val and test labels)
     train_lab_paths = config.training_labels
-    # if not specified, the embeddings the results are created from are the ones used for training
-    log.info(f"training_labels file in train_svm_classifiers = {train_lab_paths}")
 
-    EoI_path = config.embeddings_of_interest if config.embeddings_of_interest else train_embs_path
-    LoI_path = config.labels_of_interest if config.labels_of_interest else train_lab_paths
+    # if not specified, the embeddings the results are created from
+    # are the ones used for training
+    log.info("training_labels file in train_svm_classifiers = "
+             f"{train_lab_paths}")
 
-    # if not specified, the outputs of the classifier will be stored next to the embeddings
-    # used to generate them
-    results_save_path = config.results_save_path if config.results_save_path else EoI_path
+    EoI_path = (config.embeddings_of_interest if config.embeddings_of_interest
+                else train_embs_path)
+    LoI_path = (config.labels_of_interest if config.labels_of_interest
+                else train_lab_paths)
+
+    # if not specified, the outputs of the classifier will be stored next
+    # to the embeddings used to generate them
+    results_save_path = (config.results_save_path if config.results_save_path
+                         else EoI_path)
     if not os.path.isdir(results_save_path):
         results_save_path = os.path.dirname(results_save_path)
 
@@ -451,7 +483,7 @@ def train_svm_classifiers(config):
         inputs['Y_test'] = Y_test
 
     # Actual loop done config.n_repeat times
-    if _parallel == True:
+    if _parallel:
         print(f"Computation done IN PARALLEL: {config.n_repeat} times")
         print(f"Number of subjects used by the SVM: {len(inputs['X'])}")
         func = partial(train_one_svm_classifier, config, inputs)
@@ -492,7 +524,8 @@ def train_svm_classifiers(config):
     values = {}
     mode = 'cross_val'
     post_processing_results(labels, embeddings, Curves, aucs,
-                            accuracies, values, columns_names, mode, results_save_path)
+                            accuracies, values, columns_names,
+                            mode, results_save_path)
     print(f"results_save_path = {results_save_path}")
     with open(results_save_path+"/values.json", 'w+') as file:
         json.dump(values, file)
@@ -501,7 +534,8 @@ def train_svm_classifiers(config):
         values = {}
         mode = 'test'
         post_processing_results(test_labels, test_embeddings, Curves, aucs,
-                                accuracies, values, columns_names, mode, results_save_path)
+                                accuracies, values, columns_names, mode,
+                                results_save_path)
 
         with open(results_save_path+"/values_test.json", 'w+') as file:
             json.dump(values, file)
@@ -514,7 +548,8 @@ def train_svm_classifiers(config):
 def train_classifiers(config):
     config = process_config(config)
 
-    print(f"\nIn train_classifiers, after process_config, training_labels = {config['training_labels']}\n")
+    print("\nIn train_classifiers, after process_config, "
+          f"training_labels = {config['training_labels']}\n")
 
     set_root_logger_level(config.verbose)
 
@@ -526,8 +561,11 @@ def train_classifiers(config):
         train_svm_classifiers(config)
 
     else:
-        raise ValueError(f"The classifer type {config.classifier_name} you are asking for is not implemented. \
-Please change the config.classifier used in the config file you are calling to solve the problem.")
+        raise ValueError(
+            f"The classifer type {config.classifier_name} "
+            "you are asking for is not implemented."
+            "Please change the config.classifier used in the config file "
+            "you are calling to solve the problem.")
 
 
 if __name__ == "__main__":

@@ -4,7 +4,8 @@ import pytorch_lightning as pl
 
 
 class BinaryClassifier(pl.LightningModule):
-    def __init__(self, layers_sizes, activation=None, loss='MSE', keep_log=False):
+    def __init__(self, layers_sizes, activation=None, loss='MSE',
+                 keep_log=False):
         super().__init__()
         self.keep_log = keep_log
         self.layers = nn.Sequential()

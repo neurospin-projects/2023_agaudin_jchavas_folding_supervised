@@ -1,4 +1,4 @@
-""" The aim of this script is to display saved model outputs thanks to Anatomist.
+""" The aim of this script is to display saved model outputs with Anatomist.
 Model outputs are stored as numpy arrays.
 """
 
@@ -33,7 +33,9 @@ def main():
     root_dir = "./"
 
     a = anatomist.Anatomist()
-    # Parameter 6 corresponds to the number of columns displayed. Can be changed.
+
+    # Parameter 6 corresponds to the number of columns displayed.
+    # Can be changed.
     block = a.AWindowsBlock(a, 7)
 
     input_arr = np.load(
@@ -50,8 +52,8 @@ def main():
         globals()['block%s' % (sub_id)] = a.createWindow(
             'Sagittal', block=block)
 
-        globals()['img%s' % (sub_id)], globals()['a_img%s' %
-                                                 (sub_id)] = array_to_ana(a, img, sub_id, phase='', status='')
+        globals()['img%s' % (sub_id)], globals()['a_img%s' % (sub_id)] = \
+            array_to_ana(a, img, sub_id, phase='', status='')
 
         globals()['block%s' % (sub_id)].addObjects(
             globals()['a_img%s' % (sub_id)])

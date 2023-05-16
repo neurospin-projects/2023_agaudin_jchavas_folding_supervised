@@ -128,7 +128,7 @@ class NTXenLoss(nn.Module):
         # (x transforms via T_i and T_j)
         sim_zij = (z_i @ z_j.T) / self.temperature
 
-        #print_info(z_i, z_j, sim_zij, sim_zii, sim_zjj, self.temperature)
+        # print_info(z_i, z_j, sim_zij, sim_zii, sim_zjj, self.temperature)
 
         # 'Remove' the diag terms by penalizing it (exp(-inf) = 0)
         sim_zii = sim_zii - self.INF * torch.eye(N, device=z_i.device)
@@ -209,7 +209,7 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         :param kernel: a callable function f: [K, *] x [K, *] -> [K, K]
                                               y1, y2          -> f(y1, y2)
                         where (*) is the dimension of the labels (yi)
-        default: an rbf kernel parametrized by 'sigma' 
+        default: an rbf kernel parametrized by 'sigma'
                  which corresponds to gamma=1/(2*sigma**2)
         :param temperature:
         :param return_logits:
@@ -236,8 +236,10 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         z_i = func.normalize(z_i, p=2, dim=-1)  # dim [N, D]
         z_j = func.normalize(z_j, p=2, dim=-1)  # dim [N, D]
         sim_zii = (z_i @ z_i.T) / self.temperature  # dim [N, N]
-        # => Upper triangle contains incorrect pairs
+
+        # => Upper triangle contains incorrect pairs
         sim_zjj = (z_j @ z_j.T) / self.temperature  # dim [N, N]
+
         # => Upper triangle contains incorrect pairs
         sim_zij = (z_i @ z_j.T) / self.temperature  # dim [N, N]
         # => the diag contains the correct pairs (i,j)
@@ -263,8 +265,10 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         z_i = func.normalize(z_i, p=2, dim=-1)  # dim [N, D]
         z_j = func.normalize(z_j, p=2, dim=-1)  # dim [N, D]
         sim_zii = (z_i @ z_i.T) / self.temperature_supervised  # dim [N, N]
-        # => Upper triangle contains incorrect pairs
+
+        # => Upper triangle contains incorrect pairs
         sim_zjj = (z_j @ z_j.T) / self.temperature_supervised  # dim [N, N]
+
         # => Upper triangle contains incorrect pairs
         sim_zij = (z_i @ z_j.T) / self.temperature_supervised  # dim [N, N]
         # => the diag contains the correct pairs (i,j)
@@ -316,8 +320,10 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         z_i = func.normalize(z_i, p=2, dim=-1)  # dim [N, D]
         z_j = func.normalize(z_j, p=2, dim=-1)  # dim [N, D]
         sim_zii = (z_i @ z_i.T) / self.temperature  # dim [N, N]
-        # => Upper triangle contains incorrect pairs
+
+        # => Upper triangle contains incorrect pairs
         sim_zjj = (z_j @ z_j.T) / self.temperature  # dim [N, N]
+
         # => Upper triangle contains incorrect pairs
         sim_zij = (z_i @ z_j.T) / self.temperature  # dim [N, N]
         # => the diag contains the correct pairs (i,j)
@@ -359,8 +365,9 @@ class GeneralizedSupervisedNTXenLoss(nn.Module):
         sim_zii, sim_zij, sim_zjj, correct_pairs = \
             self.compute_parameters_for_display(z_i, z_j)
 
-        loss_combined = self.proportion_pure_contrastive*loss_pure_contrastive \
-            + (1-self.proportion_pure_contrastive)*loss_supervised
+        loss_combined = \
+            self.proportion_pure_contrastive*loss_pure_contrastive \
+            + (1-self.proportion_pure_contrastive) * loss_supervised
         # + loss_L1
 
         if self.return_logits:

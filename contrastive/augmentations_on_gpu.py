@@ -1,7 +1,6 @@
 from numba import jit, cuda
 import numpy as np
 import torch
-import cupyx.scipy.ndimage
 import scipy.ndimage
 # to measure exec time
 from timeit import default_timer as timer

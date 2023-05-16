@@ -37,8 +37,9 @@ def compute_embeddings(config):
     subjects_names = pd.read_csv(pca_Xtransform[:-4]+"_subject.csv")
 
     X_transform = pca.transform(X_transform)
-    X_transform = pd.DataFrame(X_transform,
-                               columns=['dim'+str(i+1) for i in range(n_pca)])  # convert to df
+    X_transform = pd.DataFrame(
+        X_transform,
+        columns=['dim'+str(i+1) for i in range(n_pca)])  # convert to df
 
     # add labels
     X_transform = pd.concat([subjects_names, X_transform], axis=1)
@@ -48,7 +49,8 @@ def compute_embeddings(config):
     print("save path:", save_path)
     X_transform.to_csv(save_path, index=False)
 
-    with open(config.embeddings_save_path+f'/embeddings_info_{n_pca}.txt', 'w') as file:
+    with open(config.embeddings_save_path+f'/embeddings_info_{n_pca}.txt', 'w') \
+            as file:
         file.write(f"fit embeddings: {config.pca_Xfit}\n")
         file.write(f"transform embeddings: {pca_Xtransform}\n")
         file.write(f"pca output dimension: {n_pca}")

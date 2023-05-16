@@ -78,11 +78,12 @@ def transform_foldlabel(sample_foldlabel, percentage, config):
                 SimplifyTensor(),
                 PaddingTensor(shape=config.input_size,
                               fill_value=config.fill_value),
-                RemoveRandomBranchTensor(sample_foldlabel=sample_foldlabel,
-                                         percentage=percentage,
-                                         variable_percentage=config.variable_percentage,
-                                         input_size=config.input_size,
-                                         keep_bottom=config.keep_bottom),
+                RemoveRandomBranchTensor(
+                    sample_foldlabel=sample_foldlabel,
+                    percentage=percentage,
+                    variable_percentage=config.variable_percentage,
+                    input_size=config.input_size,
+                    keep_bottom=config.keep_bottom),
                 BinarizeTensor(),
                 RotateTensor(max_angle=config.max_angle)
             ])
@@ -92,11 +93,12 @@ def transform_foldlabel(sample_foldlabel, percentage, config):
                 SimplifyTensor(),
                 PaddingTensor(shape=config.input_size,
                               fill_value=config.fill_value),
-                RemoveRandomBranchTensor(sample_foldlabel=sample_foldlabel,
-                                         percentage=percentage,
-                                         variable_percentage=config.variable_percentage,
-                                         input_size=config.input_size,
-                                         keep_bottom=config.keep_bottom),
+                RemoveRandomBranchTensor(
+                    sample_foldlabel=sample_foldlabel,
+                    percentage=percentage,
+                    variable_percentage=config.variable_percentage,
+                    input_size=config.input_size,
+                    keep_bottom=config.keep_bottom),
                 RotateTensor(max_angle=config.max_angle),
                 BinarizeTensor(),
                 ToPointnetTensor(n_max=config.n_max)
@@ -138,11 +140,12 @@ def transform_both(sample_foldlabel, percentage, from_skeleton, config):
                 SimplifyTensor(),
                 PaddingTensor(shape=config.input_size,
                               fill_value=config.fill_value),
-                RemoveRandomBranchTensor(sample_foldlabel=sample_foldlabel,
-                                         percentage=percentage,
-                                         variable_percentage=config.variable_percentage,
-                                         input_size=config.input_size,
-                                         keep_bottom=config.keep_bottom),
+                RemoveRandomBranchTensor(
+                    sample_foldlabel=sample_foldlabel,
+                    percentage=percentage,
+                    variable_percentage=config.variable_percentage,
+                    input_size=config.input_size,
+                    keep_bottom=config.keep_bottom),
                 PartialCutOutTensor_Roll(from_skeleton=from_skeleton,
                                          keep_bottom=config.keep_bottom,
                                          patch_size=config.patch_size),
@@ -155,11 +158,12 @@ def transform_both(sample_foldlabel, percentage, from_skeleton, config):
                 SimplifyTensor(),
                 PaddingTensor(shape=config.input_size,
                               fill_value=config.fill_value),
-                RemoveRandomBranchTensor(sample_foldlabel=sample_foldlabel,
-                                         percentage=percentage,
-                                         variable_percentage=config.variable_percentage,
-                                         input_size=config.input_size,
-                                         keep_bottom=config.keep_bottom),
+                RemoveRandomBranchTensor(
+                    sample_foldlabel=sample_foldlabel,
+                    percentage=percentage,
+                    variable_percentage=config.variable_percentage,
+                    input_size=config.input_size,
+                    keep_bottom=config.keep_bottom),
                 PartialCutOutTensor_Roll(from_skeleton=from_skeleton,
                                          keep_bottom=config.keep_bottom,
                                          patch_size=config.patch_size),
@@ -169,16 +173,18 @@ def transform_both(sample_foldlabel, percentage, from_skeleton, config):
             ])
 
 
-def transform_foldlabel_resize(sample_foldlabel, percentage, resize_ratio, config):
+def transform_foldlabel_resize(sample_foldlabel, percentage,
+                               resize_ratio, config):
     if config.backbone_name != 'pointnet':
         return \
             transforms.Compose([
                 SimplifyTensor(),
-                RemoveRandomBranchTensor(sample_foldlabel=sample_foldlabel,
-                                         percentage=percentage,
-                                         variable_percentage=config.variable_percentage,
-                                         input_size=config.input_size,
-                                         keep_bottom=config.keep_bottom),
+                RemoveRandomBranchTensor(
+                    sample_foldlabel=sample_foldlabel,
+                    percentage=percentage,
+                    variable_percentage=config.variable_percentage,
+                    input_size=config.input_size,
+                    keep_bottom=config.keep_bottom),
                 BinarizeTensor(),
                 ResizeTensor(resize_ratio),
                 RotateTensor(max_angle=config.max_angle)
@@ -187,11 +193,12 @@ def transform_foldlabel_resize(sample_foldlabel, percentage, resize_ratio, confi
         return \
             transforms.Compose([
                 SimplifyTensor(),
-                RemoveRandomBranchTensor(sample_foldlabel=sample_foldlabel,
-                                         percentage=percentage,
-                                         variable_percentage=config.variable_percentage,
-                                         input_size=config.input_size,
-                                         keep_bottom=config.keep_bottom),
+                RemoveRandomBranchTensor(
+                    sample_foldlabel=sample_foldlabel,
+                    percentage=percentage,
+                    variable_percentage=config.variable_percentage,
+                    input_size=config.input_size,
+                    keep_bottom=config.keep_bottom),
                 RotateTensor(max_angle=config.max_angle),
                 BinarizeTensor(),
                 ResizeTensor(resize_ratio),

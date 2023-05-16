@@ -11,10 +11,12 @@ def regression_roc_auc_score(y_true, y_pred, num_rounds=10000):
 
     Parameters:
     ----------
-    y_true: array-like of shape (n_samples,). Binary or continuous target variable.
+    y_true: array-like of shape (n_samples,).
+            Binary or continuous target variable.
     y_pred: array-like of shape (n_samples,). Target scores.
-    num_rounds: int or string. If integer, number of random pairs of observations. 
-                If string, 'exact', all possible pairs of observations will be evaluated.
+    num_rounds: int or string.
+                If integer, number of random pairs of observations.
+                If string, 'exact', all possible pairs will be evaluated.
 
     Returns:
     -------
@@ -41,13 +43,17 @@ def regression_roc_auc_score(y_true, y_pred, num_rounds=10000):
 
 def _yield_pairs(y_true, num_rounds):
     """
-    Returns pairs of valid indices. Indices must belong to observations having different values.
+    Returns pairs of valid indices.
+
+    Indices must belong to observations having different values.
 
     Parameters:
     ----------
-    y_true: array-like of shape (n_samples,). Binary or continuous target variable.
-    num_rounds: int or string. If integer, number of random pairs of observations to return. 
-                If string, 'exact', all possible pairs of observations will be returned.
+    y_true: array-like of shape (n_samples,).
+            Binary or continuous target variable.
+    num_rounds: int or string.
+            If integer, number of random pairs of observations to return.
+            If string, 'exact', all possible pairs will be returned.
 
     Yields:
     -------
@@ -58,7 +64,8 @@ def _yield_pairs(y_true, num_rounds):
 
     if num_rounds == 'exact':
         for i in range(len(y_true)):
-            for j in np.where((y_true != y_true[i]) & (np.arange(len(y_true)) > i))[0]:
+            for j in np.where(
+                    (y_true != y_true[i]) & (np.arange(len(y_true)) > i))[0]:
                 yield i, j
     else:
         for r in range(num_rounds):

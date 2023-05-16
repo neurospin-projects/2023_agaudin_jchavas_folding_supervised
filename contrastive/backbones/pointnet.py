@@ -1,4 +1,5 @@
-# this file has been taken from the repository https://github.com/fxia22/pointnet.pytorch.git
+# this file has been taken from the repository
+# https://github.com/fxia22/pointnet.pytorch.git
 # some modifcations have been added to match the project
 
 from __future__ import print_function
@@ -31,7 +32,6 @@ class STN3d(nn.Module):
 
     def forward(self, x):
         batchsize = x.size()[0]
-        #print("forward STN3d", x.size())
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))

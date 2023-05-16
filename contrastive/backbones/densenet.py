@@ -103,7 +103,8 @@ class DenseNet(pl.LightningModule):
         in_channels (int) - number of input channels (1 for sMRI)
         num_representation_features (int) - size of latent space
         num_outputs (int) -  size of output space
-        projection_head_type (str) - Type of projection head (either "linear\" or "non-linear")
+        projection_head_type (str) - Type of projection head
+            (either "linear\" or "non-linear")
         mode (str) - specify in which mode DenseNet is trained on,
             must be "encoder" or "classifier" or "decoder"
         memory_efficient (bool) - If True, uses checkpointing. Much more memory
@@ -204,32 +205,44 @@ class DenseNet(pl.LightningModule):
                     nn.Linear(self.num_outputs,
                               self.num_outputs))
             else:
-                raise ValueError("projection_head_type must be either \"linear\" or \"non-linear\. "
-                                 f"You have set it to: {projection_head_type}")
+                raise ValueError(
+                    "projection_head_type must be "
+                    "either \"linear\" or \"non-linear\". "
+                    f"You have set it to: {projection_head_type}")
 
         elif self.mode == "decoder":
             self.hidden_representation = nn.Linear(
                 num_features, self.num_representation_features)
-            self.develop = nn.Linear(self.num_representation_features,
-                                     64 * self.z_dim_h * self.z_dim_w * self.z_dim_d)
+            self.develop = nn.Linear(
+                self.num_representation_features,
+                64 * self.z_dim_h * self.z_dim_w * self.z_dim_d)
             modules_decoder = []
             out_channels = 64
             for step in range(self.depth-1):
                 in_channels = out_channels
                 out_channels = in_channels // 2
                 ini = 1 if step == 0 else 0
-                modules_decoder.append(('convTrans3d%s' % step, nn.ConvTranspose3d(in_channels,
-                                                                                   out_channels, kernel_size=2, stride=2, padding=0, output_padding=(ini, 0, 0))))
+                modules_decoder.append(
+                    ('convTrans3d%s' % step,
+                     nn.ConvTranspose3d(in_channels, out_channels,
+                                        kernel_size=2, stride=2, padding=0,
+                                        output_padding=(ini, 0, 0))
+                     ))
                 modules_decoder.append(
                     ('normup%s' % step, nn.BatchNorm3d(out_channels)))
                 modules_decoder.append(('ReLU%s' % step, nn.ReLU()))
-                modules_decoder.append(('convTrans3d%sa' % step, nn.ConvTranspose3d(out_channels,
-                                                                                    out_channels, kernel_size=3, stride=1, padding=1)))
+                modules_decoder.append(
+                    ('convTrans3d%sa' % step,
+                     nn.ConvTranspose3d(out_channels, out_channels,
+                                        kernel_size=3, stride=1, padding=1)
+                     ))
                 modules_decoder.append(
                     ('normup%sa' % step, nn.BatchNorm3d(out_channels)))
                 modules_decoder.append(('ReLU%sa' % step, nn.ReLU()))
-            modules_decoder.append(('convtrans3dn', nn.ConvTranspose3d(16, 1, kernel_size=2,
-                                                                       stride=2, padding=0)))
+            modules_decoder.append(('convtrans3dn',
+                                    nn.ConvTranspose3d(16, 1,
+                                                       kernel_size=2, stride=2,
+                                                       padding=0)))
             modules_decoder.append(
                 ('conv_final', nn.Conv3d(1, 2, kernel_size=1, stride=1)))
             self.decoder = nn.Sequential(OrderedDict(modules_decoder))

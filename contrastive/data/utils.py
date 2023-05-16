@@ -93,7 +93,7 @@ def read_numpy_data_and_subject_csv(npy_file_path, csv_file_path):
         raise ValueError(
             f"numpy array {npy_file_path} "
             f"and csv subject file {csv_file_path} "
-             "don't have the same length.")
+            "don't have the same length.")
     return npy_data, subjects
 
 
@@ -101,9 +101,10 @@ def check_subject_consistency(csv_file_path_1, csv_file_path_2):
     subjects_1 = read_subject_csv(csv_file_path_1)
     subjects_2 = read_subject_csv(csv_file_path_2)
     if not subjects_1.equals(subjects_2):
-        raise ValueError("Both subject files (skel, foldlabel) are not equal:\n"
-                         f"subjects_1 head = {subjects_1.head()}\n"
-                         f"subjects_2 head = {subjects_2.head()}\n")
+        raise ValueError(
+            "Both subject files (skel, foldlabel) are not equal:\n"
+            f"subjects_1 head = {subjects_1.head()}\n"
+            f"subjects_2 head = {subjects_2.head()}\n")
 
 
 def check_if_skeleton(a: np.array, key: str):
@@ -165,7 +166,9 @@ def extract_test(normal_subjects, train_val_subjects, normal_data):
     return test_subjects, test_data
 
 
-def restrict_length(subjects: pd.DataFrame, nb_subjects: int, is_random: bool=False, random_state: int=1) -> pd.DataFrame:
+def restrict_length(subjects: pd.DataFrame, nb_subjects: int,
+                    is_random: bool = False,
+                    random_state: int = 1) -> pd.DataFrame:
     """Restrict length by nb_subjects if requested"""
     if nb_subjects == _ALL_SUBJECTS:
         length = len(subjects)
@@ -181,8 +184,10 @@ def restrict_length(subjects: pd.DataFrame, nb_subjects: int, is_random: bool=Fa
     return subjects
 
 
-def extract_partial_numpy(normal_subjects, target_subjects, normal_data, name='train_val'):
-    """Returns data (numpy) corresponding to subjects listed in target_subjects"""
+def extract_partial_numpy(normal_subjects, target_subjects, normal_data,
+                          name='train_val'):
+    """Returns numpy data corresponding to subjects listed in target_subjects.
+    """
 
     log.info(f"Length of {name} dataframe = {len(target_subjects)}")
     # Filter to keep only the target subjects
@@ -224,11 +229,13 @@ def extract_train_and_val_subjects(train_val_subjects, partition, seed):
         log.info("Train/val split has not fixed seed")
 
     # Split train and test
-    train_subjects, val_subjects = train_test_split(train_val_subjects,
-                                                    test_size=size_partitions[-1],
-                                                    train_size=size_partitions[0],
-                                                    random_state=seed)
-    log.debug(f"Size of train / val sets: {len(train_subjects)} /  {len(val_subjects)}")
+    train_subjects, val_subjects = \
+        train_test_split(train_val_subjects,
+                         test_size=size_partitions[-1],
+                         train_size=size_partitions[0],
+                         random_state=seed)
+    log.debug(f"Size of train / val sets: "
+              f"{len(train_subjects)} /  {len(val_subjects)}")
 
     return train_subjects, val_subjects
 
@@ -259,8 +266,9 @@ def split_data(normal_data, normal_subjects, sample_dir, config):
     if 'test_intra_csv_file' in config.keys():
         test_intra_subjects = read_subset_csv(
             config.test_intra_csv_file, name='test_intra')
-        test_intra_subjects, test_intra_data = extract_partial_numpy(normal_subjects, test_intra_subjects,
-                                                                     normal_data, name='test_intra')
+        test_intra_subjects, test_intra_data = \
+            extract_partial_numpy(normal_subjects, test_intra_subjects,
+                                  normal_data, name='test_intra')
     else:
         test_intra_subjects = pd.DataFrame([], columns=['Subject'])
         test_intra_data = np.array([])
@@ -268,15 +276,17 @@ def split_data(normal_data, normal_subjects, sample_dir, config):
     # Extracts test subject names and corresponding data
     if 'test_csv_file' in config.keys():  # if specified in config
         test_subjects = read_subset_csv(config.test_csv_file, name='test')
-        test_subjects, test_data = extract_partial_numpy(normal_subjects, test_subjects,
-                                                         normal_data, name='test')
+        test_subjects, test_data = \
+            extract_partial_numpy(normal_subjects, test_subjects,
+                                  normal_data, name='test')
     else:  # define it as complementary to train_val
         test_subjects, test_data = \
             extract_test(normal_subjects, train_val_subjects, normal_data)
 
     # Restricts train_val length
-    random_state = None if not 'random_state' in config.keys() else config.random_state
-    is_random = None if not 'random' in config.keys() else config.random
+    random_state = (None if 'random_state' not in config.keys()
+                    else config.random_state)
+    is_random = None if 'random' not in config.keys() else config.random
     if 'train_csv_file' in config.keys():
         train_subjects = restrict_length(train_subjects,
                                          config.nb_subjects,
@@ -291,10 +301,12 @@ def split_data(normal_data, normal_subjects, sample_dir, config):
                                              random_state)
 
     # Extracts train, val and train_val from normal_data
-    train_subjects, train_data = extract_partial_numpy(normal_subjects, train_subjects,
-                                                       normal_data, name='train')
-    val_subjects, val_data = extract_partial_numpy(normal_subjects, val_subjects,
-                                                   normal_data, name='val')
+    train_subjects, train_data = \
+        extract_partial_numpy(normal_subjects, train_subjects,
+                              normal_data, name='train')
+    val_subjects, val_data = \
+        extract_partial_numpy(normal_subjects, val_subjects,
+                              normal_data, name='val')
     train_val_subjects, train_val_data = \
         extract_partial_numpy(normal_subjects, train_val_subjects,
                               normal_data, name='train_val')
@@ -350,17 +362,19 @@ def check_if_same_shape(arr1, arr2, keyword):
     if not (arr1.shape == arr2.shape):
         log.error(f"Shapes are {arr1.shape} and {arr2.shape}")
         raise ValueError(f"Both {keyword} numpy arrays "
-                          "don't have the same shape")
+                         "don't have the same shape")
 
 
-def read_labels(subject_labels_file, subject_column_name, label_names, label_scaling):
+def read_labels(subject_labels_file, subject_column_name,
+                label_names, label_scaling):
     """Extracts labels from label file. Returns a dataframe with labels"""
 
     # Loads labels file
     subject_labels_file = subject_labels_file
     subject_labels = pd.read_csv(subject_labels_file)
     log.info(f"Subject_labels_file = {subject_labels_file}")
-    log.debug(f"Subject_labels head just when loaded = {subject_labels.head()}")
+    log.debug(f"Subject_labels head just when loaded = "
+              f"{subject_labels.head()}")
     log.info(f"Labels to keep = {label_names} "
              f"of type {type(label_names)}")
 
@@ -395,7 +409,8 @@ def read_labels(subject_labels_file, subject_column_name, label_names, label_sca
     return subject_labels
 
 
-def select_subject_also_present_in_subject_labels(subject_labels, normal_subjects):
+def select_subject_also_present_in_subject_labels(subject_labels,
+                                                  normal_subjects):
     normal_subjects = normal_subjects.copy(deep=True)
     normal_subjects_index = normal_subjects[
         normal_subjects.Subject.isin(subject_labels.Subject)].index
@@ -415,7 +430,8 @@ def sort_labels_according_to_normal(subject_labels, normal_subjects):
     subject_labels = subject_labels.set_index('Subject')
     subject_labels = subject_labels.reindex(index=normal_subjects.Subject)
 
-    # Removes subjects that have no label (=not present in initial subject_labels)
+    # Removes subjects that have no label
+    # (=not present in initial subject_labels)
     # subject_labels = subject_labels.dropna()
     subject_labels = subject_labels.reset_index('Subject')
 
@@ -425,7 +441,8 @@ def sort_labels_according_to_normal(subject_labels, normal_subjects):
         criterion = subject_labels[column_name].isnull().any()
         if criterion:
             raise ValueError(
-                f"There is at least one NaN value in {column_name} from subject_labels\n"
+                f"There is at least one NaN value in {column_name} "
+                f"from subject_labels\n"
                 "NaN values are for subjects:\n"
                 f"{subject_labels[subject_labels[column_name].isnull()]}"
             )
@@ -442,7 +459,8 @@ def sort_labels_according_to_normal(subject_labels, normal_subjects):
     return subject_labels
 
 
-def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
+def extract_data_with_labels(npy_file_path, subject_labels,
+                             sample_dir, config):
     """Extracts train_val and test data and subjects from npy and csv file
 
     Args:

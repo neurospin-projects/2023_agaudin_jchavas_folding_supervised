@@ -104,7 +104,7 @@ def create_sets_without_labels(config):
     skeleton_output = extract_data(config.numpy_all, config.crop_dir, config)
 
     # Loads and separates in train_val/test set foldlabels if requested
-    if (config.foldlabel == True) and (config.mode != 'evaluation'):
+    if (config.foldlabel) and (config.mode != 'evaluation'):
         foldlabel_output = sanity_checks_without_labels(config,
                                                         skeleton_output)
     else:
@@ -160,7 +160,11 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
                                f"{subset_name} labels")
 
     # Loads and separates in train_val/test set foldlabels if requested
-    if ('foldlabel' in config.keys()) and (config.foldlabel == True) and (config.mode != 'evaluation'):
+    if (
+        ('foldlabel' in config.keys())
+        and (config.foldlabel)
+        and (config.mode != 'evaluation')
+    ):
         check_subject_consistency(config.subjects_all,
                                   config.subjects_foldlabel_all)
         # in order to avoid logging twice the same information
@@ -182,14 +186,14 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
             check_if_same_shape(skeleton_output[subset_name][1],
                                 foldlabel_output[subset_name][1],
                                 subset_name)
-            check_if_same_subjects(foldlabel_output[subset_name][0],
-                                   skeleton_output[subset_name][2][[
-                                       'Subject']],
-                                   f"{subset_name} labels")
-            check_if_same_subjects(foldlabel_output[subset_name][2][['Subject']],
-                                   skeleton_output[subset_name][2][[
-                                       'Subject']],
-                                   f"{subset_name} labels")
+            check_if_same_subjects(
+                foldlabel_output[subset_name][0],
+                skeleton_output[subset_name][2][['Subject']],
+                f"{subset_name} labels")
+            check_if_same_subjects(
+                foldlabel_output[subset_name][2][['Subject']],
+                skeleton_output[subset_name][2][['Subject']],
+                f"{subset_name} labels")
 
         if config.environment == "brainvisa" and config.checking:
             for subset_name in foldlabel_output.keys():
@@ -215,7 +219,8 @@ def create_sets_with_labels(config):
 
     # Gets labels for all subjects
     # Column subject_column_name is renamed 'Subject'
-    label_scaling = None if not 'label_scaling' in config.keys() else config.label_scaling
+    label_scaling = (None if 'label_scaling' not in config.keys()
+                     else config.label_scaling)
     subject_labels = read_labels(config.subject_labels_file,
                                  config.subject_column_name,
                                  config.label_names,
