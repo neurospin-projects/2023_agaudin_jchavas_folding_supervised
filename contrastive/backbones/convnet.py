@@ -157,8 +157,8 @@ class ConvNet(pl.LightningModule):
         modules_encoder.append(
             ('Linear',
              nn.Linear(
-                self.num_features*self.z_dim_h*self.z_dim_w*self.z_dim_d,
-                self.num_representation_features)
+                 self.num_features*self.z_dim_h*self.z_dim_w*self.z_dim_d,
+                 self.num_representation_features)
              ))
         self.encoder = nn.Sequential(OrderedDict(modules_encoder))
 

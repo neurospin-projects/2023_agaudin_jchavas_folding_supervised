@@ -113,7 +113,7 @@ class DataModule_Learning(DataModule):
                 multiprocessing_context='fork',
                 num_workers=self.config.num_cpu_workers,
                 shuffle=False
-                )
+            )
             return loader_test_intra
         else:
             raise ValueError(
@@ -171,7 +171,7 @@ class DataModule_Evaluation(DataModule):
                 pin_memory=self.config.pin_mem,
                 num_workers=self.config.num_cpu_workers,
                 shuffle=False
-                )
+            )
             return loader_test_intra
         else:
             raise ValueError(
