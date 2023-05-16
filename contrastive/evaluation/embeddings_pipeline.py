@@ -119,6 +119,7 @@ overwrite to True if you still want to compute them.")
         else:
             print(f"{sub_dir} is a file. Continue.")
 
-
-embeddings_pipeline("/volatile/jc225751/Runs/59_analysis_ukbiobank/Output/HCP/right",
-dataset='cingulate_ACCpatterns', verbose=True, classifier_name='svm', overwrite=False)
+#'cingulate_ACCpatterns_1'
+#'cingulate_Utrecht_dHCP'
+embeddings_pipeline("/volatile/jc225751/Runs/61_classifier_regresser/Output/self-supervised",
+                    dataset='cingulate_ACCpatterns_1', verbose=True, classifier_name='svm', overwrite=False)

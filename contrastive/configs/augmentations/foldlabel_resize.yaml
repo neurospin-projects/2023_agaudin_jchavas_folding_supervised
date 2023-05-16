@@ -1,5 +1,5 @@
 # @package _global_
-resize: False
+resize: True
 both: False
 apply_augmentations: True
 foldlabel: True

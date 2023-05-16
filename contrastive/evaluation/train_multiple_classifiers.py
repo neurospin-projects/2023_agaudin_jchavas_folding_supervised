@@ -66,7 +66,8 @@ def load_embeddings(dir_path, labels_path, config):
 
     # get the labels (0 = no paracingulate, 1 = paracingulate) and match them to the embeddings
     # /!\ use read_labels
-    labels = read_labels(labels_path, config.subject_column_name, config.label_names)
+    label_scaling = None if not 'label_scaling' in config.keys() else config.label_scaling
+    labels = read_labels(labels_path, config.subject_column_name, config.label_names, label_scaling)
     labels.rename(columns={config.label_names[0]: 'label'}, inplace=True)
     labels = labels[labels.Subject.isin(embeddings.index)]
     labels.sort_values(by='Subject', inplace=True, ignore_index=True)

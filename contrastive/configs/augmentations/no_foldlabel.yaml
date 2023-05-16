@@ -1,4 +1,6 @@
 # @package _global_
+resize: False
+both: False
 apply_augmentations: True
 foldlabel: False
 fill_value: 0

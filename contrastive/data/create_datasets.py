@@ -51,6 +51,10 @@ from contrastive.data.datasets import ContrastiveDataset_WithLabels
 from contrastive.data.datasets import ContrastiveDataset_WithFoldLabels
 from contrastive.data.datasets import \
     ContrastiveDataset_WithLabels_WithFoldLabels
+from contrastive.data.datasets import \
+    ContrastiveDataset_WithLabels_WithFoldLabels_Resize
+from contrastive.data.datasets import ContrastiveDataset_Both
+from contrastive.data.datasets import ContrastiveDataset_WithLabels_Both
 from contrastive.data.datasets_copy import ContrastiveDatasetFusion
 
 from contrastive.data.utils import *
@@ -180,6 +184,9 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
                                 foldlabel_output[subset_name][1],
                                 subset_name)
             check_if_same_subjects(foldlabel_output[subset_name][0],
+                                   skeleton_output[subset_name][2][['Subject']],
+                                   f"{subset_name} labels")
+            check_if_same_subjects(foldlabel_output[subset_name][2][['Subject']],
                                    skeleton_output[subset_name][2][['Subject']],
                                    f"{subset_name} labels")
             

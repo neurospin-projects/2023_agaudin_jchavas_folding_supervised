@@ -232,20 +232,7 @@ def extract_train_and_val_subjects(train_val_subjects, partition, seed):
     return train_subjects, val_subjects
 
 
-
-def extract_data(npy_file_path, config):
-    """Extracts train_val and test data and subjects from npy and csv file
-
-    Args:
-        config (Omegaconf dict): contains configuration parameters
-    Returns (subjects as dataframe, data as numpy array):
-        train_val_subjects, train_val_data, test_subjects, test_data (tuple)
-    """
-
-    # Reads numpy data and subject list
-    # normal_data corresponds to all data ('normal' != 'benchmark')
-    normal_data, normal_subjects = \
-        read_numpy_data_and_subject_csv(npy_file_path, config.subjects_all)
+def split_data(normal_data, normal_subjects, config):
 
     if config.environment == "brainvisa" and config.checking:
         compare_array_aims_files(normal_subjects, normal_data, config.crop_dir)
@@ -325,6 +312,23 @@ def extract_data(npy_file_path, config):
     return output
 
 
+def extract_data(npy_file_path, config):
+    """Extracts train_val and test data and subjects from npy and csv file
+
+    Args:
+        config (Omegaconf dict): contains configuration parameters
+    Returns (subjects as dataframe, data as numpy array):
+        train_val_subjects, train_val_data, test_subjects, test_data (tuple)
+    """
+
+    # Reads numpy data and subject list
+    # normal_data corresponds to all data ('normal' != 'benchmark')
+    normal_data, normal_subjects = \
+        read_numpy_data_and_subject_csv(npy_file_path, config.subjects_all)
+    
+    return split_data(normal_data, normal_subjects, config)
+
+
 def check_if_same_subjects(subjects_1, subjects_2, keyword):
     """Checks if the dataframes subjects_1 and subjects_2 are equal"""
     log.debug(f"Both heads (must be equal) of {keyword} subjects = \n"
@@ -385,21 +389,46 @@ def read_labels(subject_labels_file, subject_column_name, label_names, label_sca
     return subject_labels
 
 
+def select_subject_also_present_in_subject_labels(subject_labels, normal_subjects):
+    normal_subjects = normal_subjects.copy(deep=True)
+    normal_subjects_index = normal_subjects[
+        normal_subjects.Subject.isin(subject_labels.Subject)].index
+    normal_subjects = normal_subjects.loc[normal_subjects_index]
+    normal_subjects = normal_subjects.reset_index(drop=True)
+    
+    return normal_subjects, normal_subjects_index
+
+
 def sort_labels_according_to_normal(subject_labels, normal_subjects):
     """Sort subject labels according to normal_subjects order
     
     Returns reordered subject_labels
     """
+    normal_subjects, _ = select_subject_also_present_in_subject_labels(subject_labels, normal_subjects)
     subject_labels = subject_labels.set_index('Subject')
     subject_labels = subject_labels.reindex(index=normal_subjects.Subject)
+
+    # Removes subjects that have no label (=not present in initial subject_labels)
+    # subject_labels = subject_labels.dropna()
     subject_labels = subject_labels.reset_index('Subject')
+
+    # Checks if there is a null value in subject_labels
+
+    for column_name in subject_labels.columns:
+        criterion = subject_labels[column_name].isnull().any()
+        if criterion:
+            raise ValueError(
+                f"There is at least one NaN value in {column_name} from subject_labels\n"
+                "NaN values are for subjects:\n"
+                f"{subject_labels[subject_labels[column_name].isnull()]}"
+            )
 
     # Checks if label subject names and subjects names are the same
     log.debug(f"Head of normal_subjects = \n{normal_subjects.head()}")
     log.debug(f"Head of subject_labels = \n{subject_labels.head()}")
     if not normal_subjects.Subject.reset_index(drop=True).\
         equals(subject_labels.Subject):
-        raise ValueError(\
+        raise ValueError(
             "Names of subject in subject labels are not included "
             "or are not in the same order as the csv file of the subjects")
 
@@ -415,9 +444,6 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
         train_val_subjects, train_val_data, test_subjects, test_data (tuple)
     """
 
-    # extract data without labels
-    output = extract_data(npy_file_path, config)
-
     # Reads numpy data and subject list
     # normal_data corresponds to all data ('normal' != 'benchmark')
     normal_data, normal_subjects = \
@@ -426,11 +452,10 @@ def extract_data_with_labels(npy_file_path, subject_labels, sample_dir, config):
     # Selects subjects also present in subject_labels
     log.debug(f"Head of normal_subjects before label selection = \n"
               f"{normal_subjects.head()}")
-    normal_subjects_index = normal_subjects[
-        normal_subjects.Subject.isin(subject_labels.Subject)].index
-    normal_subjects = normal_subjects.loc[normal_subjects_index]
+    normal_subjects, normal_subjects_index = select_subject_also_present_in_subject_labels(subject_labels, normal_subjects)
     normal_data = normal_data[normal_subjects_index]
-    normal_subjects = normal_subjects.reset_index(drop=True)
+
+    output = split_data(normal_data, normal_subjects, config)
 
     if config.environment == "brainvisa" and config.checking:
         compare_array_aims_files(normal_subjects, normal_data, sample_dir)

@@ -37,7 +37,7 @@ from collections import namedtuple
 
 import numpy as np
 import torch
-from scipy.ndimage import rotate
+from scipy.ndimage import rotate, zoom
 from sklearn.preprocessing import OneHotEncoder
 
 from contrastive.utils import logs
@@ -608,7 +608,7 @@ class ToPointnetTensor(object):
 def interval(obj, lower=None):
     """ Listify an object.
     Parameters
-    ----------
+o   ----------
     obj: 2-uplet or number
         the object used to build the interval.
     lower: number, default None
@@ -671,3 +671,20 @@ class Transformer(object):
         for trf in self.transforms:
             s += '\n\t- ' + trf.__str__()
         return s
+
+class ResizeTensor(object):
+    """Apply resize to a 3D image
+    """
+
+    def __init__(self, resize_ratio):
+        self.resize_ratio = resize_ratio
+
+    def __call__(self, tensor):
+        arr = tensor.numpy()
+        resized_arr = np.copy(arr)
+        log.debug(f"Resize Ratio: {self.resize_ratio}")
+        resized_arr = zoom(resized_arr,
+                           self.resize_ratio,
+                           order=0)
+
+        return torch.from_numpy(resized_arr)

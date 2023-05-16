@@ -399,7 +399,271 @@ class ContrastiveDataset_WithLabels_WithFoldLabels():
             return tuple_with_path
         
 
+class ContrastiveDataset_Both():
+    """Custom dataset that includes images and foldlabels
 
+    Applies different transformations to data depending on the type of input.
+    """
+
+    def __init__(self, array, foldlabel_array, filenames, config):
+        """
+        Args:
+            data (numpy array): contains skeletonss as numpy arrays
+            foldlabel_data (numpy array): contains foldlabels as numpy array
+            filenames (list of strings): list of subjects' IDs
+            config (Omegaconf dict): contains configuration information
+        """
+        self.arr = array
+        self.foldlabel_arr = foldlabel_array
+        self.transform = True
+        self.nb_train = len(filenames)
+        log.info(self.nb_train)
+        self.filenames = filenames
+        self.config = config
+
+    def __len__(self):
+        return (self.nb_train)
+
+    def __getitem__(self, idx):
+        """Returns the two views corresponding to index idx
+
+        The two views are generated on the fly.
+
+        Returns:
+            tuple of (views, subject ID)
+        """
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        # Gets data corresponding to idx
+        log.debug(f"length = {self.nb_train}")
+        sample = get_sample(self.arr, idx, 'float32')
+        sample_foldlabel = get_sample(self.foldlabel_arr, idx, 'int32')
+        filename = get_filename(self.filenames, idx)
+
+        # Padds foldlabel
+        sample_foldlabel = padd_foldlabel(sample_foldlabel,
+                                          self.config.input_size)
+
+        # Computes the transforms
+        self.transform1 = transform_both(sample_foldlabel,
+                                         self.config.percentage,
+                                         from_skeleton=True,
+                                         config=self.config)
+        self.transform2 = transform_both(sample_foldlabel,
+                                         self.config.percentage,
+                                         from_skeleton=False,
+                                         config=self.config)
+        self.transform3 = transform_only_padding(self.config)
+
+        # Computes the views
+        view1 = self.transform1(sample)
+        view2 = self.transform2(sample)
+
+        if self.config.mode == "decoder":
+            view3 = self.transform3(sample)
+            views = torch.stack((view1, view2, view3), dim=0)
+        else:
+            views = torch.stack((view1, view2), dim=0)
+
+        tuple_with_path = (views, filename)
+        return tuple_with_path
+    
+
+class ContrastiveDataset_WithLabels_Both():
+    """Custom dataset that includes images and labels
+
+    Applies different transformations to data depending on the type of input.
+    """
+
+    def __init__(self, array, foldlabel_array, labels, filenames, config):
+        """
+        Args:
+            array (np array): contains MRIs as numpy arrays
+            labels (dataframe): contains labels as columns
+            filenames (list of strings): list of subjects' IDs
+            config (Omegaconf dict): contains configuration information
+        """
+        self.arr = array
+        self.foldlabel_arr = foldlabel_array
+        self.labels = labels
+        self.transform = True
+        self.nb_train = len(filenames)
+        log.info(self.nb_train)
+        self.filenames = filenames
+        self.config = config
+
+    def __len__(self):
+        return (self.nb_train)
+
+    def __getitem__(self, idx):
+        """Returns the two views corresponding to index idx
+
+        The two views are generated on the fly.
+
+        Returns:
+            tuple of (views, subject ID)
+        """
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        # Gets the data corresponding to idx
+        log.debug(f"length = {self.nb_train}")
+        log.debug(f"filenames = {self.filenames}")
+        sample = get_sample(self.arr, idx, 'float32')
+        sample_foldlabel = get_sample(self.foldlabel_arr, idx, 'int32')
+        labels = get_label(self.labels, idx)
+        filename = get_filename(self.filenames, idx)
+
+        # Padds foldlabel
+        sample_foldlabel = padd_foldlabel(sample_foldlabel,
+                                          self.config.input_size)
+
+        # Computes the transforms
+        self.transform1 = transform_both(sample_foldlabel,
+                                         self.config.percentage,
+                                         from_skeleton=True,
+                                         config=self.config)
+        self.transform2 = transform_both(sample_foldlabel,
+                                         self.config.percentage,
+                                         from_skeleton=False,
+                                         config=self.config)
+
+        # Computes the views
+        try:
+            view1 = self.transform1(sample)
+            view2 = self.transform2(sample)
+        except ValueError as e:
+            # self.transform1 = transform_nothing_done()
+            # self.transform2 = transform_nothing_done()
+            # view1 = self.transform1(sample)
+            # view2 = self.transform2(sample)
+            log.info("Something happens in view generation. "
+                    f"It happens for index {idx} and filename {filename}")
+            raise ValueError("Something happens in view generation. "
+                             f"It happens for index {idx} and filename {filename}") from e
+        except:
+            # self.transform1 = transform_nothing_done()
+            # self.transform2 = transform_nothing_done()
+            # view1 = self.transform1(sample)
+            # view2 = self.transform2(sample)
+            log.info("Something happens in view generation. "
+                    f"It happens for index {idx} and filename {filename}")
+            raise ValueError("Something happens in view generation. "
+                       f"It happens for index {idx} and filename {filename}")
+
+        if self.config.mode == "decoder":
+            self.transform3 = transform_only_padding(self.config)
+            view3 = self.transform3(sample)
+            views = torch.stack((view1, view2, view3), dim=0)
+            tuple_with_path = (views, labels, filename)
+            return tuple_with_path
+        else:
+            self.transform3 = transform_nothing_done()
+            view3 = self.transform3(sample)
+            views = torch.stack((view1, view2), dim=0)
+            tuple_with_path = (views, labels, filename, view3)
+            return tuple_with_path
+
+class ContrastiveDataset_WithLabels_WithFoldLabels_Resize():
+    """Custom dataset that includes images and labels
+
+    Applies different transformations to data depending on the type of input.
+    """
+
+    def __init__(self, array, foldlabel_array, labels, filenames, config):
+        """
+        Args:
+            array (np array): contains MRIs as numpy arrays
+            labels (dataframe): contains labels as columns
+            filenames (list of strings): list of subjects' IDs
+            config (Omegaconf dict): contains configuration information
+        """
+        self.arr = array
+        self.foldlabel_arr = foldlabel_array
+        self.labels = labels
+        self.transform = True
+        self.nb_train = len(filenames)
+        log.info(self.nb_train)
+        self.filenames = filenames
+        self.config = config
+
+    def __len__(self):
+        return (self.nb_train)
+
+    def __getitem__(self, idx):
+        """Returns the two views corresponding to index idx
+
+        The two views are generated on the fly.
+
+        Returns:
+            tuple of (views, subject ID)
+        """
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        # Gets the data corresponding to idx
+        log.debug(f"length = {self.nb_train}")
+        log.debug(f"filenames = {self.filenames}")
+        sample = get_sample(self.arr, idx, 'float32')
+        sample_foldlabel = get_sample(self.foldlabel_arr, idx, 'int32')
+        labels = get_label(self.labels, idx)
+        filename = get_filename(self.filenames, idx)
+
+        # Compute resize_ratio
+        #log.info(f"Target input size: {self.config.input_size}")
+        #log.info(f"Original input size: {sample.size()}")
+
+        # Dimensions in Tensor and numpy array are ordered differently
+        target_size = self.config.input_size[1:] + [self.config.input_size[0]]
+
+        resize_ratio = np.array(target_size)/np.array(sample.size())
+
+        # Computes the transforms
+        self.transform1 = transform_foldlabel_resize(sample_foldlabel,
+                                                    self.config.percentage,
+                                                    resize_ratio,
+                                                    self.config)
+        self.transform2 = transform_foldlabel_resize(sample_foldlabel,
+                                                    self.config.percentage,
+                                                    resize_ratio,
+                                                    self.config)
+
+        # Computes the views
+        try:
+            view1 = self.transform1(sample)
+            view2 = self.transform2(sample)
+        except ValueError as e:
+            # self.transform1 = transform_nothing_done()
+            # self.transform2 = transform_nothing_done()
+            # view1 = self.transform1(sample)
+            # view2 = self.transform2(sample)
+            log.info("Something happens in view generation. "
+                    f"It happens for index {idx} and filename {filename}")
+            raise ValueError("Something happens in view generation. "
+                             f"It happens for index {idx} and filename {filename}") from e
+        except:
+            # self.transform1 = transform_nothing_done()
+            # self.transform2 = transform_nothing_done()
+            # view1 = self.transform1(sample)
+            # view2 = self.transform2(sample)
+            log.info("Something happens in view generation. "
+                    f"It happens for index {idx} and filename {filename}")
+            raise ValueError("Something happens in view generation. "
+                       f"It happens for index {idx} and filename {filename}")
+
+        if self.config.mode == "decoder":
+            self.transform3 = transform_only_padding(self.config)
+            view3 = self.transform3(sample)
+            views = torch.stack((view1, view2, view3), dim=0)
+            tuple_with_path = (views, labels, filename)
+            return tuple_with_path
+        else:
+            self.transform3 = transform_nothing_done()
+            view3 = self.transform3(sample)
+            views = torch.stack((view1, view2), dim=0)
+            tuple_with_path = (views, labels, filename, view3)
+            return tuple_with_path
 
 class ContrastiveDataset_Visualization():
     """Custom dataset that includes image file paths.
