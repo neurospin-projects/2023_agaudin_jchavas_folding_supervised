@@ -172,12 +172,34 @@ class ContrastiveDatasetFusion():
         # compute the transforms
         if self.transform:
             if self.config.foldlabel:
-                self.transform1 = transform_foldlabel(sample_foldlabel,
-                                                      self.config.percentage,
-                                                      self.config)
-                self.transform2 = transform_foldlabel(sample_foldlabel,
-                                                      self.config.percentage,
-                                                      self.config)
+                if self.config.resize:
+                    # Dims in Tensor and np array are ordered differently
+                    target_size = self.config.input_size[1:] + [self.config.input_size[0]]
+                    resize_ratio = np.array(target_size)/np.array(sample.size())
+                    self.transform1 = transform_foldlabel_resize(sample_foldlabel,
+                                                                 self.config.percentage,
+                                                                 resize_ratio,
+                                                                 self.config)
+                    self.transform2 = transform_foldlabel_resize(sample_foldlabel,
+                                                                 self.config.percentage,
+                                                                 resize_ratio,
+                                                                 self.config)
+                elif self.config.both:
+                    self.transform1 = transform_both(sample_foldlabel,
+                                                     self.config.percentage,
+                                                     from_skeleton=True,
+                                                     config=self.config)
+                    self.transform2 = transform_both(sample_foldlabel,
+                                                     self.config.percentage,
+                                                     from_skeleton=False,
+                                                     config=self.config)
+                else:
+                    self.transform1 = transform_foldlabel(sample_foldlabel,
+                                                          self.config.percentage,
+                                                          self.config)
+                    self.transform2 = transform_foldlabel(sample_foldlabel,
+                                                          self.config.percentage,
+                                                          self.config)
             else:
                 self.transform1 = transform_no_foldlabel(from_skeleton=True,
                                                          config=self.config)

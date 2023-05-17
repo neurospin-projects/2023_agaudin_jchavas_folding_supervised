@@ -3,7 +3,7 @@ defaults:
   - dataset: cingulate_HCP_half_1
   - model: SimCLR_supervised
   - mode: encoder
-  - augmentations: foldlabel
+  - augmentations: foldlabel_resize
   - backbone: ConvNet
   - platform: cuda_not_brainvisa
   - trainer: default
