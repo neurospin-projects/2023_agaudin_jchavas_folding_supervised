@@ -4,7 +4,7 @@ pin_mem: True
 partition: [0.9, 0.1]
 lr: 4e-4
 weight_decay: 5.0e-05
-max_epochs: 251
+max_epochs: 101
 nb_epochs_per_saving: 1
 nb_epochs_per_tSNE: -1
 nb_epochs_per_matrix_plot: -1
@@ -21,5 +21,5 @@ seed: 1
 nb_subjects: -1
 random: False
 random_state: 25
-pretrained_model_path: 
+pretrained_model_path: "/neurospin/dico/jlaval/Runs/01_deep_supervised/Program/Output/comparison_HCP_full/ACC_new_crop_7/logs/default/version_0/checkpoints/epoch=250-step=15812.ckpt" 
 # pretrained_model_path: path/to/.ckpt

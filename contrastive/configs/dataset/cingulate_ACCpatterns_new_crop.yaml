@@ -1,0 +1,17 @@
+# @package _global_
+dataset_name: cingulate_ACCpatterns_new_crop
+numpy_all: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/CINGULATE_40wks/mask/Rskeleton.npy
+subjects_all: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/CINGULATE_40wks/mask/Rskeleton_subject.csv
+foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/CINGULATE_40wks/mask/Rlabel.npy
+subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/CINGULATE_40wks/mask/Rlabel_subject.csv
+crop_dir: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/CINGULATE_40wks/mask/Rcrops
+crop_file_suffix: _cropped_skeleton.nii.gz
+foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/CINGULATE_40wks/mask/Rlabels
+pickle_benchmark: 
+train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/ACCpatterns/train_val_ACCpatterns.csv
+subject_labels_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/ACCpatterns/all.csv
+subject_column_name: 'long_name'
+#label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
+#label_names: ["NEOFAC_C"]
+label_names: ["Right_PCS"]
+n_max: 1099

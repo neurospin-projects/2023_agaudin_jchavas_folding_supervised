@@ -112,7 +112,9 @@ overwrite to True if you still want to compute them.")
         else:
             print(f"{sub_dir} is a file. Continue.")
 
-#'cingulate_ACCpatterns_1'
-#'cingulate_Utrecht_dHCP'
-embeddings_pipeline("/neurospin/dico/jlaval/Runs/01_deep_supervised/Program/Output/2023-05-02/",
-dataset='cingulate_ACCpatterns_1', verbose=True, classifier_name='svm', overwrite=False)
+# 'cingulate_ACCpatterns_new_crop'
+# 'cingulate_Utrecht_dHCP_new_crop'
+# 'cingulate_ACCpatterns_1'
+# 'cingulate_Utrecht_dHCP'
+embeddings_pipeline("/neurospin/dico/jlaval/Runs/01_deep_supervised/Program/Output/2023-05-16/",
+dataset='cingulate_ACCpatterns_new_crop', verbose=True, classifier_name='svm', overwrite=True)
