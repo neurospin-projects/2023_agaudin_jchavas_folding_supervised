@@ -212,7 +212,7 @@ they are done with another database than {dataset}")
                     print("End file", len(bdd_models))
 
 
-def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False, dropnan=False):
+def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False, dropnan=False, exclude=False):
     """
     - bdd_models: pandas dataframe containing the models path, performances, and parameters. Created by
     generate_bdd_models.
@@ -245,17 +245,18 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False, dropna
         bdd_models.loc[bdd_models.backbone_name ==
                        'pointnet', 'git_branch'] = 'pointnet'
 
-    # add mismatch exclusion reason (not the same dimension for latent space and output)
-    bdd_models['exclude'] = 'False'
+    if exclude:
+        # add mismatch exclusion reason (not the same dimension for latent space and output)
+        bdd_models['exclude'] = 'False'
 
-    # add sigmoid exclusion reason
-    bdd_models['exclude'].mask(bdd_models.model_path.str.contains(
-        'sigmoid'), 'sigmoid', inplace=True)
+        # add sigmoid exclusion reason
+        bdd_models['exclude'].mask(bdd_models.model_path.str.contains(
+            'sigmoid'), 'sigmoid', inplace=True)
 
-    # exclude models with a different structure
-    bdd_models['exclude'].mask(bdd_models.git_branch.str.contains(
-        'joel'), 'structure', inplace=True)
-    # bdd_models.loc[(bdd_models.model_path.str.contains('#')),'exclude'] = 'structure'
+        # exclude models with a different structure
+        bdd_models['exclude'].mask(bdd_models.git_branch.str.contains(
+            'joel'), 'structure', inplace=True)
+        # bdd_models.loc[(bdd_models.model_path.str.contains('#')),'exclude'] = 'structure'
 
     # remove columns where the values never change
     remove = []
