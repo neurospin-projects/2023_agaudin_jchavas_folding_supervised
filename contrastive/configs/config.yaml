@@ -1,6 +1,7 @@
 defaults:
   - hydra: local
-  - dataset: cingulate_HCP_half_1
+  - dataset:
+    - cingulate_HCP_half_1
   - model: SimCLR_supervised
   - mode: encoder
   - augmentations: foldlabel
