@@ -72,7 +72,9 @@ def sanity_checks_without_labels(config, skeleton_output):
     if root.level == 20:  # root logger in INFO mode
         set_root_logger_level(0)
     # add all the other created objects in the next line
-    foldlabel_output = extract_data(config.foldlabel_all, config)
+    foldlabel_output = extract_data(config.foldlabel_all,
+                                    config.foldlabel_dir,
+                                    config)
     if root.level == 10:  # root logger in WARNING mode
         set_root_logger_level(1)
     log.info("foldlabel data loaded")

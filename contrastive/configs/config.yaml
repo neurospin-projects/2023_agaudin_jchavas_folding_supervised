@@ -1,12 +1,13 @@
 defaults:
   - hydra: local
   - dataset: cingulate_HCP_half_1
-  - model: SimCLR_supervised
+  - model: SimCLR
   - mode: encoder
   - augmentations: foldlabel
-  - backbone: ConvNet
+  - backbone: DenseNet
   - platform: cuda_not_brainvisa
   - trainer: default
   - classifier: svm
   - embeddings: embeddings
+  - projection_head: relu
   - override hydra/job_logging: custom

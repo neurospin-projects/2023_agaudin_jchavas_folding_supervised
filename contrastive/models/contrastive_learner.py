@@ -46,9 +46,11 @@ from toolz.itertoolz import first
 from collections import OrderedDict
 
 from contrastive.augmentations import ToPointnetTensor
-from contrastive.backbones.densenet import DenseNet
-from contrastive.backbones.convnet import ConvNet
+#from contrastive.backbones.densenet import DenseNet
+#from contrastive.backbones.convnet import ConvNet
 from contrastive.backbones.pointnet import PointNetCls
+from contrastive.backbones.backbones import *
+from contrastive.backbones.projection_heads import *
 from contrastive.losses import NTXenLoss
 from contrastive.losses import CrossEntropyLoss
 from contrastive.utils.plots.visualize_images import plot_bucket
@@ -89,29 +91,49 @@ class ContrastiveLearner(pl.LightningModule):
                 block_config=config.block_config,
                 num_init_features=config.num_init_features,
                 num_representation_features=config.num_representation_features,
-                num_outputs=config.num_representation_features,
-                # projection_head_type=config.projection_head_type,
-                mode=config.mode,
                 drop_rate=config.drop_rate,
-                in_shape=config.input_size,
-                depth=config.depth_decoder)
+                in_shape=config.input_size)
         elif config.backbone_name == "convnet":
             self.backbone = ConvNet(
                 encoder_depth=config.encoder_depth,
                 num_representation_features=config.num_representation_features,
-                num_outputs=config.num_representation_features,
-                projection_head_hidden_layers=config.projection_head_hidden_layers,
                 drop_rate=config.drop_rate,
-                mode=config.mode,
-                in_shape=config.input_size,
-                pretrained_model_path=config.pretrained_model_path)
-        elif config.backbone_name == 'pointnet':
-            self.backbone = PointNetCls(
-                k=config.num_representation_features,
-                num_outputs=config.num_representation_features,
-                projection_head_hidden_layers=config.projection_head_hidden_layers,
-                drop_rate=config.drop_rate,
-                feature_transform=False)
+                in_shape=config.input_size)
+        # elif config.backbone_name == 'pointnet':
+        #     self.backbone = PointNetCls(
+        #         k=config.num_representation_features,
+        #         num_outputs=config.num_representation_features,
+        #         projection_head_hidden_layers=config.projection_head_hidden_layers,
+        #         drop_rate=config.drop_rate,
+        #         feature_transform=False)
+        else:
+            raise ValueError(f"No underlying backbone with backbone name {config.backbone_name}")
+        
+        # define the shape of the projection head
+        # prioritize the shapes explicitely specified in config
+        if config.proj_layers_shapes is not None:
+            layers_shapes = config.proj_layers_shapes
+        else:
+            # else, construct it in a standardized way
+            if config.mode == 'encoder':
+                output_shape = config.num_representation_features
+            elif config.mode == 'classifier':
+                output_shape = 2
+            elif config.mode == 'regresser':
+                output_shape = 1
+            layers_shapes = [config.num_representation_features] * (config.length_projection_head - 1) + [output_shape]
+
+        if config.projection_head_name == 'linear':
+            self.projection_head = LinearProjectionHead(
+                num_representation_features=config.num_representation_features,
+                layers_shapes=layers_shapes)
+        elif config.projection_head_name == 'relu':
+            self.projection_head = ReluProjectionHead(
+                num_representation_features=config.num_representation_features,
+                layers_shapes=layers_shapes)
+        else:
+            raise ValueError(f"No underlying projection head with name {config.projection_head_name}")
+
         self.config = config
         self.sample_data = sample_data
         self.sample_i = np.array([])
@@ -125,7 +147,9 @@ class ContrastiveLearner(pl.LightningModule):
             self.visu_anatomist = Visu_Anatomist()
 
     def forward(self, x):
-        return self.backbone.forward(x)
+        embedding = self.backbone.forward(x)
+        out = self.projection_head.forward(embedding)
+        return out
 
     def get_layers(self):
         i = 0

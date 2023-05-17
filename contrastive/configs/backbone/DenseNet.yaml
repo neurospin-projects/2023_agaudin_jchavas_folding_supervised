@@ -5,5 +5,3 @@ growth_rate: 32
 block_config: [6, 16]
 num_init_features: 64
 num_representation_features: 30
-projection_head_hidden_layers:
-projection_head_type: non-linear
