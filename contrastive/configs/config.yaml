@@ -9,5 +9,5 @@ defaults:
   - trainer: default
   - classifier: svm
   - embeddings: embeddings
-  - projection_head: relu
+  - projection_head: linear
   - override hydra/job_logging: custom

@@ -298,11 +298,12 @@ class DenseNet(pl.LightningModule):
                 num_features = num_output_features
             print("NUM FEATURES", num_features)
         
-        print(640*30)
-        #print(math.prod(num_features))
+        # Transition from blocks to representation space
+        self.encoder.add_module('Relu', nn.ReLU())
+        self.encoder.add_module('3D avg pooling', nn.AdaptiveAvgPool3d(1))
         self.encoder.add_module('Flatten', nn.Flatten())
         self.encoder.add_module('Linear', nn.Linear(num_features, self.num_representation_features))
-
+        self.encoder.add_module('Relu', nn.ReLU())
 
         # Init. with kaiming
         for m in self.modules():
