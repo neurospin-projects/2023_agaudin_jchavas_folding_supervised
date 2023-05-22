@@ -329,7 +329,7 @@ def split_data(normal_data, normal_subjects, sample_dir, config, reg=0):
     return output
 
 
-def extract_data(npy_file_path, sample_dir, config):
+def extract_data(npy_file_path, sample_dir, config, reg=0):
     """Extracts train_val and test data and subjects from npy and csv file
 
     Args:
