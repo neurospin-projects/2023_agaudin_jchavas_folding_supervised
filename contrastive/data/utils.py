@@ -240,32 +240,32 @@ def extract_train_and_val_subjects(train_val_subjects, partition, seed):
     return train_subjects, val_subjects
 
 
-def split_data(normal_data, normal_subjects, sample_dir, config):
+def split_data(normal_data, normal_subjects, sample_dir, config, reg=0):
 
     if config.environment == "brainvisa" and config.checking:
         compare_array_aims_files(normal_subjects, normal_data, sample_dir)
 
     # Gets train_val subjects as dataframe from csv file
-    if 'train_val_csv_file' in config.keys():
+    if 'train_val_csv_file' in config.data[reg].keys():
         train_val_subjects = read_subset_csv(
-            config.train_val_csv_file, name='train_val')
-        if 'train_csv_file' not in config.keys():
+            config.data[reg].train_val_csv_file, name='train_val')
+        if 'train_csv_file' not in config.data[reg].keys():
             # define train and val from here
             train_subjects, val_subjects = \
                 extract_train_and_val_subjects(
                     train_val_subjects, config.partition, config.seed)
     # get train & val separately if in config
-    if 'train_csv_file' in config.keys():
-        train_subjects = read_subset_csv(config.train_csv_file, name='train')
-        val_subjects = read_subset_csv(config.val_csv_file, name='val')
-        if 'train_val_csv_file' not in config.keys():
+    if 'train_csv_file' in config.data[reg].keys():
+        train_subjects = read_subset_csv(config.data[reg].train_csv_file, name='train')
+        val_subjects = read_subset_csv(config.data[reg].val_csv_file, name='val')
+        if 'train_val_csv_file' not in config.data[reg].keys():
             # reconstruct train_val from train + val if not already done
             train_val_subjects = pd.concat([train_subjects, val_subjects])
 
     # get test_intra subjects and data if in config
-    if 'test_intra_csv_file' in config.keys():
+    if 'test_intra_csv_file' in config.data[reg].keys():
         test_intra_subjects = read_subset_csv(
-            config.test_intra_csv_file, name='test_intra')
+            config.data[reg].test_intra_csv_file, name='test_intra')
         test_intra_subjects, test_intra_data = \
             extract_partial_numpy(normal_subjects, test_intra_subjects,
                                   normal_data, name='test_intra')
@@ -274,8 +274,8 @@ def split_data(normal_data, normal_subjects, sample_dir, config):
         test_intra_data = np.array([])
 
     # Extracts test subject names and corresponding data
-    if 'test_csv_file' in config.keys():  # if specified in config
-        test_subjects = read_subset_csv(config.test_csv_file, name='test')
+    if 'test_csv_file' in config.data[reg].keys():  # if specified in config
+        test_subjects = read_subset_csv(config.data[reg].test_csv_file, name='test')
         test_subjects, test_data = \
             extract_partial_numpy(normal_subjects, test_subjects,
                                   normal_data, name='test')
@@ -341,7 +341,7 @@ def extract_data(npy_file_path, sample_dir, config):
     # Reads numpy data and subject list
     # normal_data corresponds to all data ('normal' != 'benchmark')
     normal_data, normal_subjects = \
-        read_numpy_data_and_subject_csv(npy_file_path, config.subjects_all)
+        read_numpy_data_and_subject_csv(npy_file_path, config.data[reg].subjects_all)
 
     return split_data(normal_data, normal_subjects, sample_dir, config)
 
@@ -460,7 +460,7 @@ def sort_labels_according_to_normal(subject_labels, normal_subjects):
 
 
 def extract_data_with_labels(npy_file_path, subject_labels,
-                             sample_dir, config):
+                             sample_dir, config, reg=0):
     """Extracts train_val and test data and subjects from npy and csv file
 
     Args:
@@ -472,13 +472,15 @@ def extract_data_with_labels(npy_file_path, subject_labels,
     # Reads numpy data and subject list
     # normal_data corresponds to all data ('normal' != 'benchmark')
     normal_data, normal_subjects = \
-        read_numpy_data_and_subject_csv(npy_file_path, config.subjects_all)
+        read_numpy_data_and_subject_csv(npy_file_path,
+                                        config.data[reg].subjects_all)
 
     # Selects subjects also present in subject_labels
     log.debug(f"Head of normal_subjects before label selection = \n"
               f"{normal_subjects.head()}")
-    normal_subjects, normal_subjects_index = select_subject_also_present_in_subject_labels(
-        subject_labels, normal_subjects)
+    normal_subjects, normal_subjects_index = \
+        select_subject_also_present_in_subject_labels(
+            subject_labels, normal_subjects)
     normal_data = normal_data[normal_subjects_index]
 
     output = split_data(normal_data, normal_subjects, sample_dir, config)
@@ -494,7 +496,7 @@ def extract_data_with_labels(npy_file_path, subject_labels,
     train_labels = extract_labels(subject_labels, output['train'][0])
     val_labels = extract_labels(subject_labels, output['val'][0])
     train_val_labels = extract_labels(subject_labels, output['train_val'][0])
-    if 'test_intra_csv_file' in config.keys():
+    if 'test_intra_csv_file' in config.data[reg].keys():
         test_intra_labels = extract_labels(
             subject_labels, output['test_intra'][0])
     else:

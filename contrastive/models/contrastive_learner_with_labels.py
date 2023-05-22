@@ -182,8 +182,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             self.sample_labels = labels
             if self.config.environment == 'brainvisa' and self.config.checking:
                 vol_file = \
-                    f"{self.config.crop_dir}/{filenames[0]}" +\
-                    f"{self.config.crop_file_suffix}"
+                    f"{self.config.data[reg].crop_dir}/{filenames[0]}" +\
+                    f"{self.config.data[reg].crop_file_suffix}"
                 vol = aims.read(vol_file)
                 self.sample_ref_0 = np.asarray(vol)
                 if not np.array_equal(self.sample_ref_0[..., 0],
@@ -223,7 +223,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         return batch_dictionary
 
-    def compute_outputs_skeletons(self, loader):
+    def compute_outputs_skeletons(self, loader, reg=0):
         """Computes the outputs of the model for each crop.
 
         This includes the projection head"""
@@ -236,7 +236,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         else:
             num_outputs = self.config.num_representation_features
         X = torch.zeros([0, num_outputs]).cpu()
-        labels_all = torch.zeros([0, len(self.config.label_names)]).cpu()
+        labels_all = torch.zeros([0, len(self.config.data[reg].label_names)]).cpu()
         filenames_list = []
 
         # Computes embeddings without computing gradient
@@ -336,14 +336,14 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         return X, filenames_list
 
-    def compute_representations(self, loader):
+    def compute_representations(self, loader, reg=0):
         """Computes representations for each crop.
 
         Representation are before the projection head"""
 
         # Initialization
         X = torch.zeros([0, self.config.num_representation_features]).cpu()
-        labels_all = torch.zeros([0, len(self.config.label_names)]).cpu()
+        labels_all = torch.zeros([0, len(self.config.data[reg].label_names)]).cpu()
         filenames_list = []
 
         # Computes representation (without gradient computation)
