@@ -1,7 +1,7 @@
 defaults:
+  - _self_
   - hydra: local
-  - dataset:
-    - cingulate_HCP_half_1
+  - dataset/cingulate_HCP_half_1
   - model: SimCLR_supervised
   - mode: encoder
   - augmentations: foldlabel
@@ -11,3 +11,5 @@ defaults:
   - classifier: svm
   - embeddings: embeddings
   - override hydra/job_logging: custom
+
+data: ${oc.dict.values:dataset}
