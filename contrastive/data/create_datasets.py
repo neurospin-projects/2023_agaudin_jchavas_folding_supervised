@@ -45,16 +45,6 @@ except ImportError:
 
 from contrastive.utils.logs import set_file_logger, set_root_logger_level
 
-from contrastive.data.datasets import ContrastiveDataset
-from contrastive.data.datasets import ContrastiveDataset_Visualization
-from contrastive.data.datasets import ContrastiveDataset_WithLabels
-from contrastive.data.datasets import ContrastiveDataset_WithFoldLabels
-from contrastive.data.datasets import \
-    ContrastiveDataset_WithLabels_WithFoldLabels
-from contrastive.data.datasets import \
-    ContrastiveDataset_WithLabels_WithFoldLabels_Resize
-from contrastive.data.datasets import ContrastiveDataset_Both
-from contrastive.data.datasets import ContrastiveDataset_WithLabels_Both
 from contrastive.data.datasets_copy import ContrastiveDatasetFusion
 
 from contrastive.data.utils import *
@@ -64,7 +54,7 @@ log = set_file_logger(__file__)
 root = logging.getLogger()
 
 
-def sanity_checks_without_labels(config, skeleton_output):
+def sanity_checks_without_labels(config, skeleton_output, reg=0):
     # Loads and separates in train_val/test set foldlabels if requested
     check_subject_consistency(config.data[reg].subjects_all,
                               config.data[reg].subjects_foldlabel_all)

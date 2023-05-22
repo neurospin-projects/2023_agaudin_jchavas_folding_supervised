@@ -35,11 +35,6 @@
 """
 Tools to create pytorch dataloaders
 """
-import os
-from re import sub
-
-import numpy as np
-import pandas as pd
 import torch
 
 from contrastive.utils.logs import set_file_logger
@@ -164,7 +159,7 @@ class ContrastiveDatasetFusion():
         if self.foldlabel_arr is not None:
             sample_foldlabel = get_sample(self.foldlabel_arr, idx, 'int32')
             sample_foldlabel = padd_foldlabel(sample_foldlabel,
-                                              self.config.input_size)
+                                              self.config.data[0].input_size)
         if self.labels is not None:
             check_consistency(filename, self.labels, idx)
             labels = get_label(self.labels, idx)
@@ -174,18 +169,26 @@ class ContrastiveDatasetFusion():
             if self.config.foldlabel:
                 self.transform1 = transform_foldlabel(sample_foldlabel,
                                                       self.config.percentage,
+                                                      self.config.data[0].input_size,
                                                       self.config)
                 self.transform2 = transform_foldlabel(sample_foldlabel,
                                                       self.config.percentage,
+                                                      self.config.data[0].input_size,
                                                       self.config)
             else:
-                self.transform1 = transform_no_foldlabel(from_skeleton=True,
-                                                         config=self.config)
-                self.transform2 = transform_no_foldlabel(from_skeleton=False,
-                                                         config=self.config)
+                self.transform1 = transform_no_foldlabel(
+                    from_skeleton=True,
+                    input_size=self.config.data[0].input_size,
+                    config=self.config)
+                self.transform2 = transform_no_foldlabel(
+                    from_skeleton=False,
+                    input_size=self.config.data[0].input_size,
+                    config=self.config)
         else:
-            self.transform1 = transform_only_padding(self.config)
-            self.transform2 = transform_only_padding(self.config)
+            self.transform1 = transform_only_padding(
+                self.config.data[0].input_size, self.config)
+            self.transform2 = transform_only_padding(
+                self.config.data[0].input_size, self.config)
 
         # Computes the views
         view1 = self.transform1(sample)
