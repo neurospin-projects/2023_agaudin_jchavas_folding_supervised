@@ -1,4 +1,4 @@
-# @package _global_
+# @package dataset.left_cingulate_HCP_full_top-separated
 dataset_name: left_cingulate_HCP_full_top-separated
 pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/CINGULATE/mask/Lskeleton.pkl
 numpy_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/CINGULATE/mask/Lskeleton.npy

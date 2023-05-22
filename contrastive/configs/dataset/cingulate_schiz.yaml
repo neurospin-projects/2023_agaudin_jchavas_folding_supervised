@@ -1,4 +1,4 @@
-# @package _global_
+# @package dataset.cingulate_schiz
 dataset_name: cingulate_schiz
 numpy_all: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/CINGULATE/mask/Rskeleton.npy
 subjects_all: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/CINGULATE/mask/Rskeleton_subject.csv

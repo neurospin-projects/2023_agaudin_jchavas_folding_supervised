@@ -1,4 +1,4 @@
-# @package _global_
+# @package dataset.cingulate_UkBioBank_most_folded_1114
 dataset_name: cingulate_UkBioBank_most_folded_1114
 pickle_normal: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rskeleton.pkl
 numpy_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rskeleton.npy

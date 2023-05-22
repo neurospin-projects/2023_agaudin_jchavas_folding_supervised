@@ -1,4 +1,4 @@
-# @package _global_
+# @package dataset.cingulate_ACCpatterns_0
 dataset_name: cingulate_ACCpatterns_0
 numpy_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/ACCpatterns/ACCpatterns_0.npy
 subjects_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/ACCpatterns/ACCpatterns_0_subject.csv
