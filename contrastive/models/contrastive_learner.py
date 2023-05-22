@@ -48,7 +48,7 @@ from collections import OrderedDict
 from contrastive.augmentations import ToPointnetTensor
 #from contrastive.backbones.densenet import DenseNet
 #from contrastive.backbones.convnet import ConvNet
-from contrastive.backbones.pointnet import PointNetCls
+#from contrastive.backbones.pointnet import PointNetCls
 from contrastive.backbones.backbones import *
 from contrastive.backbones.projection_heads import *
 from contrastive.losses import NTXenLoss
@@ -121,6 +121,8 @@ class ContrastiveLearner(pl.LightningModule):
                 output_shape = 2
             elif config.mode == 'regresser':
                 output_shape = 1
+            else:
+                raise ValueError(f"Mode {config.mode} doesn't exist.")
             layers_shapes = [config.num_representation_features] * (config.length_projection_head - 1) + [output_shape]
 
         if config.projection_head_name == 'linear':

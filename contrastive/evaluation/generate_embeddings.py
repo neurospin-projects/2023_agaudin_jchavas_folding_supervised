@@ -72,7 +72,6 @@ def embeddings_to_pandas(embeddings, csv_path=None, verbose=False):
 def compute_embeddings(config):
     config = process_config(config)
 
-    config.mode = 'evaluation'
     config.apply_augmentations = False
     config.with_labels = False
 
