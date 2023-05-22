@@ -66,6 +66,8 @@ root = logging.getLogger()
 
 def sanity_checks_without_labels(config, skeleton_output):
     # Loads and separates in train_val/test set foldlabels if requested
+    log.info(f"config.subjects_all {config.subjects_all}")
+    log.info(f"config.subjects_foldlabel_all {config.subjects_foldlabel_all}")
     check_subject_consistency(config.subjects_all,
                               config.subjects_foldlabel_all)
     # in order to avoid logging twice the same information
@@ -106,7 +108,7 @@ def create_sets_without_labels(config):
     skeleton_output = extract_data(config.numpy_all, config.crop_dir, config)
 
     # Loads and separates in train_val/test set foldlabels if requested
-    if (config.foldlabel) and (config.mode != 'evaluation'):
+    if config.apply_augmentations and config.foldlabel:
         foldlabel_output = sanity_checks_without_labels(config,
                                                         skeleton_output)
     else:
