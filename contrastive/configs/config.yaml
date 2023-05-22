@@ -1,8 +1,8 @@
 defaults:
   - hydra: local
-  - dataset: cingulate_HCP_half_1
+  - dataset: cingulate_ACCpatterns_left
   - model: SimCLR_supervised
-  - mode: encoder
+  - mode: classifier
   - augmentations: foldlabel
   - backbone: ConvNet
   - platform: cuda_not_brainvisa

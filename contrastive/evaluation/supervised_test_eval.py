@@ -201,6 +201,6 @@ def pipeline(dir_path, dataset, overwrite=False, use_best_model=True):
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/supervised/pretrained_UKB/ACCpatterns/opposite_side",
+pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/supervised/ACCpatterns/L",
          dataset="cingulate_ACCpatterns_left", overwrite=True,
          use_best_model=True)

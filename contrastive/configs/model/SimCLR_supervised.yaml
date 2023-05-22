@@ -1,15 +1,14 @@
 # @package _global_
 model: SimCLR_supervised
 with_labels: True
-input_size: (1, 17, 40, 38)
+input_size: (1, 20, 42, 38)
 temperature_initial: 0.1
 temperature: 0.1
 temperature_supervised: 0.3
 sigma_labels: 2.0
 sigma: 5
 drop_rate: 0.05
-proportion_pure_contrastive: 1.0
+proportion_pure_contrastive: 0.0
 depth_decoder: 3
-pretrained_model_path:
-# pretrained_model_path: /neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-04-25/09-31-04/logs/lightning_logs/version_0/checkpoints/epoch=49-step=1550.ckpt
+pretrained_model_path: /neurospin/dico/jchavas/Runs/59_analysis_ukbiobank/Output/trained_on_ukbiobank/chosen_model/chosen_model/logs/default/version_0/checkpoints/epoch=250-step=297685.ckpt
 load_encoder_only: True
