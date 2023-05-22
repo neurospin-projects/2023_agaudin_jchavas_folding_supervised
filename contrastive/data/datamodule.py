@@ -62,7 +62,7 @@ class DataModule(pl.LightningDataModule):
         self.dataset_val = datasets['val']
         self.dataset_train_val = datasets['train_val']
         self.dataset_test = datasets['test']
-        if 'test_intra_csv_file' in self.config.keys():
+        if 'test_intra_csv_file' in self.config.data[0].keys():
             self.dataset_test_intra = datasets['test_intra']
 
 
@@ -105,7 +105,7 @@ class DataModule_Learning(DataModule):
         return loader_test
 
     def test_intra_dataloader(self):
-        if 'test_intra_csv_file' in self.config.keys():
+        if 'test_intra_csv_file' in self.config.data[0].keys():
             loader_test_intra = DataLoader(
                 self.dataset_test_intra,
                 batch_size=self.config.batch_size,
@@ -164,7 +164,7 @@ class DataModule_Evaluation(DataModule):
         return loader_test
 
     def test_intra_dataloader(self):
-        if 'test_intra_csv_file' in self.config.keys():
+        if 'test_intra_csv_file' in self.config.data[0].keys():
             loader_test_intra = DataLoader(
                 self.dataset_test_intra,
                 batch_size=self.config.batch_size,

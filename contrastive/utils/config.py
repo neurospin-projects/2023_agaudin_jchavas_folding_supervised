@@ -48,7 +48,14 @@ def process_config(config) -> DictConfig:
     """Does whatever operations on the config file.
     """
 
-    log.debug(OmegaConf.to_yaml(config))
+    log.info("\n\n========================\n"
+             "= START OF CONFIGURATION\n"
+             "========================\n")
+    log.info(OmegaConf.to_yaml(config))
+    log.info("\n\n======================\n"
+             "= END OF CONFIGURATION\n"
+             "======================\n")
+
     log.info("Working directory : {}".format(os.getcwd()))
     config.input_size = eval(config.input_size)
     log.debug("config type: {}".format(type(config)))

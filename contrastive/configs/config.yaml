@@ -2,6 +2,7 @@ defaults:
   - _self_
   - hydra: local
   - dataset/cingulate_HCP_half_1
+  - dataset/cingulate_HCP_half_2
   - model: SimCLR_supervised
   - mode: encoder
   - augmentations: foldlabel

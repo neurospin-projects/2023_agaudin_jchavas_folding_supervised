@@ -341,7 +341,8 @@ def extract_data(npy_file_path, sample_dir, config, reg=0):
     # Reads numpy data and subject list
     # normal_data corresponds to all data ('normal' != 'benchmark')
     normal_data, normal_subjects = \
-        read_numpy_data_and_subject_csv(npy_file_path, config.data[reg].subjects_all)
+        read_numpy_data_and_subject_csv(npy_file_path,
+                                        config.data[reg].subjects_all)
 
     return split_data(normal_data, normal_subjects, sample_dir, config)
 

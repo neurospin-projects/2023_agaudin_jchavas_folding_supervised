@@ -74,7 +74,7 @@ We use the following definitions:
 """
 
 
-@hydra.main(config_name='config', config_path="configs")
+@hydra.main(config_name='config', version_base="1.1", config_path="configs")
 def train(config):
     config = process_config(config)
 

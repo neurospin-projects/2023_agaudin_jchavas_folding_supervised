@@ -117,7 +117,7 @@ class ContrastiveDatasetFusion():
     """
 
     def __init__(self, array, filenames, config, apply_transform=True,
-                 labels=None, foldlabel_array=None, reg=0):
+                 labels=None, foldlabel_array=None):
         """
         Args:
             data_tensor (tensor): contains MRIs as numpy arrays
@@ -136,8 +136,8 @@ class ContrastiveDatasetFusion():
         log.debug(filenames[:5])
         if labels is not None and labels.shape[0] > 0:
             log.debug(labels[:5])
-            log.debug(f"There are {labels[labels[config.data[reg].label_names[0]].isna()].shape[0]} NaN labels")
-            log.debug(labels[labels[config.data[reg].label_names[0]].isna()])
+            log.debug(f"There are {labels[labels[config.data[0].label_names[0]].isna()].shape[0]} NaN labels")
+            log.debug(labels[labels[config.data[0].label_names[0]].isna()])
 
     def __len__(self):
         return (self.nb_train)
