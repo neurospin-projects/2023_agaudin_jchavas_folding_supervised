@@ -123,14 +123,14 @@ class ContrastiveLearner(pl.LightningModule):
         else:
             # else, construct it in a standardized way
             if config.mode == 'encoder':
-                output_shape = config.num_representation_features
+                output_shape = config.num_representation_features * n_datasets
             elif config.mode == 'classifier':
                 output_shape = 2
             elif config.mode == 'regresser':
                 output_shape = 1
             else:
                 raise ValueError(f"Mode {config.mode} doesn't exist.")
-            layers_shapes = [config.num_representation_features] * (config.length_projection_head - 1) + [output_shape]
+            layers_shapes = [config.num_representation_features * n_datasets] * (config.length_projection_head - 1) + [output_shape]
 
         if config.projection_head_name == 'linear':
             self.projection_head = LinearProjectionHead(
@@ -482,6 +482,15 @@ class ContrastiveLearner(pl.LightningModule):
 
         return X, filenames_list
 
+    def plotting_now(self):
+        if self.config.nb_epochs_per_tSNE <= 0:
+            return False
+        elif self.current_epoch % self.config.nb_epochs_per_tSNE == 0 \
+                or self.current_epoch >= self.config.max_epochs:
+            return True
+        else:
+            return False
+
     def compute_tsne(self, loader, register):
         """Computes t-SNE.
 
@@ -511,8 +520,8 @@ class ContrastiveLearner(pl.LightningModule):
 
         if self.config.mode == "encoder":
             # Computes t-SNE both in representation and output space
-            if self.current_epoch % self.config.nb_epochs_per_tSNE == 0 \
-                    or self.current_epoch >= self.config.max_epochs:
+            if self.plotting_now():
+                print("Computing tsne\n")
                 X_tsne = self.compute_tsne(
                     self.sample_data.train_dataloader(), "output")
                 image_TSNE = plot_tsne(X_tsne, buffer=True)
@@ -580,9 +589,8 @@ class ContrastiveLearner(pl.LightningModule):
 
         # Computes t-SNE
         if self.config.mode == "encoder":
-            if self.current_epoch % self.config.nb_epochs_per_tSNE == 0 \
-                    or self.current_epoch >= self.config.max_epochs:
-                print("Computing tsne")
+            if self.plotting_now():
+                print("Computing tsne\n")
                 X_tsne = self.compute_tsne(
                     self.sample_data.val_dataloader(), "output")
                 image_TSNE = plot_tsne(X_tsne, buffer=True)

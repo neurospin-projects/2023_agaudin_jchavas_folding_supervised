@@ -414,15 +414,6 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         # Returns tsne embeddings
         return X_tsne, labels
 
-    def plotting_now(self):
-        if self.config.nb_epochs_per_tSNE <= 0:
-            return False
-        elif self.current_epoch % self.config.nb_epochs_per_tSNE == 0 \
-                or self.current_epoch >= self.config.max_epochs:
-            return True
-        else:
-            return False
-
     def plotting_matrices_now(self):
         if self.config.nb_epochs_per_matrix_plot <= 0:
             return False
