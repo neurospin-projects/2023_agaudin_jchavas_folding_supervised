@@ -307,7 +307,7 @@ class ContrastiveLearner(pl.LightningModule):
     def training_step(self, train_batch, batch_idx):
         """Training step.
         """
-        (inputs, filenames) = train_batch
+        (inputs, filenames) = train_batch[0]
         if self.config.backbone_name == 'pointnet':
             inputs = torch.squeeze(inputs).to(torch.float)
 
@@ -527,7 +527,7 @@ class ContrastiveLearner(pl.LightningModule):
     def validation_step(self, val_batch, batch_idx):
         """Validation step"""
 
-        (inputs, filenames) = val_batch
+        (inputs, filenames) = val_batch[0]
         if self.config.backbone_name == 'pointnet':
             inputs = torch.squeeze(inputs).to(torch.float)
         input_i = inputs[:, 0, :]

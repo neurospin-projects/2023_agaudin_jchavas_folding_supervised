@@ -344,7 +344,7 @@ def extract_data(npy_file_path, sample_dir, config, reg):
         read_numpy_data_and_subject_csv(npy_file_path,
                                         config.data[reg].subjects_all)
 
-    return split_data(normal_data, normal_subjects, sample_dir, config)
+    return split_data(normal_data, normal_subjects, sample_dir, config, reg)
 
 
 def check_if_same_subjects(subjects_1, subjects_2, keyword):

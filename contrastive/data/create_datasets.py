@@ -67,7 +67,8 @@ def sanity_checks_without_labels(config, skeleton_output, reg):
         set_root_logger_level(0)
     # add all the other created objects in the next line
     foldlabel_output = extract_data(config.data[reg].foldlabel_all,
-                                    config.data[reg].crop_dir, config)
+                                    config.data[reg].crop_dir,
+                                    config, reg)
     if root.level == 10:  # root logger in WARNING mode
         set_root_logger_level(1)
     log.info("foldlabel data loaded")
@@ -86,7 +87,7 @@ def sanity_checks_without_labels(config, skeleton_output, reg):
     return foldlabel_output
 
 
-def create_sets_without_labels(config, reg):
+def create_sets_without_labels(config):
     """Creates train, validation and test sets
 
     Args:
@@ -95,40 +96,61 @@ def create_sets_without_labels(config, reg):
         train_dataset, val_dataset, test_datasetset, train_val_dataset (tuple)
     """
 
-    # Loads and separates in train_val/test skeleton crops
-    skeleton_output = extract_data(config.data[reg].numpy_all,
-                                   config.data[reg].crop_dir, config)
+    skeleton_all = []
+    foldlabel_all = []
 
-    # Loads and separates in train_val/test set foldlabels if requested
-    if config.apply_augmentations and config.foldlabel:
-        foldlabel_output = sanity_checks_without_labels(config,
-                                                        skeleton_output)
-    else:
-        log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
+    for reg in range(len(config.data)):
+        # Loads and separates in train_val/test skeleton crops
+        skeleton_output = extract_data(
+            config.data[reg].numpy_all,
+            config.data[reg].crop_dir, config, reg)
+
+        # Loads and separates in train_val/test set foldlabels if requested
+        if config.apply_augmentations and config.foldlabel:
+            foldlabel_output = sanity_checks_without_labels(config,
+                                                            skeleton_output,
+                                                            reg)
+        else:
+            log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
+            
+        skeleton_all.append(skeleton_output)
+        foldlabel_all.append(foldlabel_output)
 
     # Creates the dataset from these data by doing some preprocessing
     datasets = {}
-    for subset_name in skeleton_output.keys():
-        # select the augmentation method
-        if config.apply_augmentations:
-            if config.foldlabel:  # branch_clipping
-                foldlabel_array = foldlabel_output[subset_name][1]
-            else:  # cutout
-                foldlabel_array = None  # no nedd of fold labels
-        else:  # no augmentation
-            foldlabel_array = None
+    for subset_name in skeleton_all[0].keys():
+        log.debug(subset_name)
+        # Concatenates filenames
+        filenames = [skeleton_output[subset_name][0]
+                     for skeleton_output in skeleton_all]
+        # Concatenates arrays
+        arrays = [skeleton_output[subset_name][1]
+                  for skeleton_output in skeleton_all]
 
+        # Concatenates foldabel arrays
+        foldlabel_arrays = []
+        for foldlabel_output in foldlabel_all:
+            # select the augmentation method
+            if config.apply_augmentations:
+                if config.foldlabel:  # branch_clipping
+                    foldlabel_array = foldlabel_output[subset_name][1]
+                else:  # cutout
+                    foldlabel_array = None  # no need of fold labels
+            else:  # no augmentation
+                foldlabel_array = None
+            foldlabel_arrays.append(foldlabel_array)
+
+        # Checks if equality of filenames and labels
+        check_if_list_of_equal_dataframes(
+            filenames,
+            "filenames, " + subset_name)
+        
         datasets[subset_name] = ContrastiveDatasetFusion(
-            filenames=skeleton_output[subset_name][0],
-            array=skeleton_output[subset_name][1],
-            foldlabel_array=foldlabel_array,
+            filenames=filenames,
+            arrays=arrays,
+            foldlabel_arrays=foldlabel_arrays,
             config=config,
             apply_transform=config.apply_augmentations)
-
-    # # just to have the same data format as train and val
-    # test_dataset, _ = torch.utils.data.random_split(
-    #     test_dataset,
-    #     [len(test_dataset),0])
 
     return datasets
 
@@ -253,16 +275,6 @@ def create_sets_with_labels(config):
         foldlabel_output = sanity_checks_with_labels(
             config, skeleton_output, subject_labels, reg)
 
-        for subset_name in skeleton_output.keys():
-            # select the augmentation method
-            if config.apply_augmentations:
-                if config.foldlabel:  # branch_clipping
-                    foldlabel_array = foldlabel_output[subset_name][1]
-                else:  # cutout
-                    foldlabel_array = None  # no need of fold labels
-            else:  # no augmentation
-                foldlabel_array = None
-
         skeleton_all.append(skeleton_output)
         foldlabel_all.append(foldlabel_output)
 
@@ -274,7 +286,7 @@ def create_sets_with_labels(config):
         filenames = [skeleton_output[subset_name][0]
                      for skeleton_output in skeleton_all]
         # Concatenates arrays
-        arrays = [skeleton_output[subset_name][0]
+        arrays = [skeleton_output[subset_name][1]
                   for skeleton_output in skeleton_all]
 
         # Concatenates foldabel arrays

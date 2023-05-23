@@ -131,8 +131,8 @@ class ContrastiveDatasetFusion():
 
         log.debug(f"nb_train = {self.nb_train}")
         log.debug(f"filenames[:5] = {filenames[:5]}")
-        label0 = labels[0]
-        if label0 is not None and label0.shape[0] > 0:
+        if labels is not None and labels.shape[0] > 0:
+            label0 = labels[0]
             log.debug(f"labels[:5] = {label0[:5]}")
             log.debug(f"There are {label0[label0[config.data[0].label_names[0]].isna()].shape[0]} NaN labels")
             log.debug(label0[label0[config.data[0].label_names[0]].isna()])
@@ -161,14 +161,14 @@ class ContrastiveDatasetFusion():
         filenames = [get_filename(filename, idx)
                      for filename in self.filenames]
 
-        if self.foldlabel_arr[0] is not None:
+        if self.foldlabel_arrs[0] is not None:
             sample_foldlabels = [get_sample(foldlabel_arr, idx, 'int32')
                                  for foldlabel_arr in self.foldlabel_arrs]
             sample_foldlabels = [padd_foldlabel(sample_foldlabel,
                                                 self.config.data[0].input_size)
                                  for sample_foldlabel in sample_foldlabels]
 
-        if self.labels[0] is not None:
+        if self.labels is not None:
             for reg in range(len(filenames)):
                 check_consistency(filenames[reg], self.labels[reg], idx)
             labels = [get_label(label, idx) for label in self.labels]

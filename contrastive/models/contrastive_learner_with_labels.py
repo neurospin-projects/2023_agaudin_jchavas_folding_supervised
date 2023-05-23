@@ -61,7 +61,8 @@ try:
 except ImportError:
     print("INFO: you are not in a brainvisa environment. Probably OK.")
 
-from contrastive.utils.logs import set_root_logger_level, set_file_logger
+from contrastive.utils.logs import set_file_logger
+
 log = set_file_logger(__file__)
 
 
@@ -243,7 +244,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         # Computes embeddings without computing gradient
         with torch.no_grad():
             for batch in loader:
-                (inputs, labels, filenames, _) = batch[0]
+                (inputs, labels, filenames, _) = batch[reg]
                 # First views of the whole batch
                 inputs = inputs.cuda()
                 model = self.cuda()
@@ -286,11 +287,11 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def compute_output_probabilities(self, loader):
         if self.config.mode == 'classifier':
             X, labels_all, filenames_list = self.compute_output_skeletons(
-                loader)
+                loader, 0)
             # compute the mean of the two views' outputs
             X = (X[::2, ...] + X[1::2, ...]) / 2
             # remove the doubleing of labels
-            labels = labels[::2]
+            labels_all = labels_all[::2]
             filenames_list = filenames_list[::2]
             X = nn.functional.softmax(X, dim=1)
             return X, labels_all, filenames_list
@@ -300,7 +301,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 "You shouldn't compute probabilities with another mode.")
 
     def compute_output_auc(self, loader):
-        X, labels, _ = self.compute_outputs_skeletons(loader)
+        X, labels, _ = self.compute_outputs_skeletons(loader, 0)
         # compute the mean of the two views' outputs
         X = (X[::2, ...] + X[1::2, ...]) / 2
         # remove the doubleing of labels
