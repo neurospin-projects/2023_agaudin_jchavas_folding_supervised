@@ -240,7 +240,7 @@ def extract_train_and_val_subjects(train_val_subjects, partition, seed):
     return train_subjects, val_subjects
 
 
-def split_data(normal_data, normal_subjects, sample_dir, config, reg=0):
+def split_data(normal_data, normal_subjects, sample_dir, config, reg):
 
     if config.environment == "brainvisa" and config.checking:
         compare_array_aims_files(normal_subjects, normal_data, sample_dir)
@@ -329,7 +329,7 @@ def split_data(normal_data, normal_subjects, sample_dir, config, reg=0):
     return output
 
 
-def extract_data(npy_file_path, sample_dir, config, reg=0):
+def extract_data(npy_file_path, sample_dir, config, reg):
     """Extracts train_val and test data and subjects from npy and csv file
 
     Args:
@@ -461,7 +461,7 @@ def sort_labels_according_to_normal(subject_labels, normal_subjects):
 
 
 def extract_data_with_labels(npy_file_path, subject_labels,
-                             sample_dir, config, reg=0):
+                             sample_dir, config, reg):
     """Extracts train_val and test data and subjects from npy and csv file
 
     Args:

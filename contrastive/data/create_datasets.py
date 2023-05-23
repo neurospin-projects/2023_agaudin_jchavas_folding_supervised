@@ -83,7 +83,7 @@ def sanity_checks_without_labels(config, skeleton_output, reg):
     return foldlabel_output
 
 
-def create_sets_without_labels(config, reg=0):
+def create_sets_without_labels(config, reg):
     """Creates train, validation and test sets
 
     Args:
@@ -130,7 +130,7 @@ def create_sets_without_labels(config, reg=0):
     return datasets
 
 
-def sanity_checks_with_labels(config, skeleton_output, subject_labels, reg=0):
+def sanity_checks_with_labels(config, skeleton_output, subject_labels, reg):
     """Checks alignment of the generated objects."""
     # remove test_intra if not in config
     subsets = [key for key in skeleton_output.keys()]
