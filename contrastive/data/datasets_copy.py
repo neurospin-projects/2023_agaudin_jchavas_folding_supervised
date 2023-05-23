@@ -168,14 +168,16 @@ class ContrastiveDatasetFusion():
         # compute the transforms
         if self.transform:
             if self.config.foldlabel:
-                self.transform1 = transform_foldlabel(sample_foldlabel,
-                                                      self.config.percentage,
-                                                      self.config.data[0].input_size,
-                                                      self.config)
-                self.transform2 = transform_foldlabel(sample_foldlabel,
-                                                      self.config.percentage,
-                                                      self.config.data[0].input_size,
-                                                      self.config)
+                self.transform1 = transform_foldlabel(
+                    sample_foldlabel,
+                    self.config.percentage,
+                    self.config.data[0].input_size,
+                    self.config)
+                self.transform2 = transform_foldlabel(
+                    sample_foldlabel,
+                    self.config.percentage,
+                    self.config.data[0].input_size,
+                    self.config)
             else:
                 self.transform1 = transform_no_foldlabel(
                     from_skeleton=True,

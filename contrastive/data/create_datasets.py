@@ -50,11 +50,12 @@ from contrastive.data.datasets_copy import ContrastiveDatasetFusion
 from contrastive.data.utils import *
 
 import logging
+
 log = set_file_logger(__file__)
 root = logging.getLogger()
 
 
-def sanity_checks_without_labels(config, skeleton_output, reg=0):
+def sanity_checks_without_labels(config, skeleton_output, reg):
     # Loads and separates in train_val/test set foldlabels if requested
     check_subject_consistency(config.data[reg].subjects_all,
                               config.data[reg].subjects_foldlabel_all)
@@ -130,6 +131,7 @@ def create_sets_without_labels(config, reg=0):
 
 
 def sanity_checks_with_labels(config, skeleton_output, subject_labels, reg=0):
+    """Checks alignment of the generated objects."""
     # remove test_intra if not in config
     subsets = [key for key in skeleton_output.keys()]
     if 'test_intra_csv_file' not in config.keys():
@@ -163,10 +165,10 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels, reg=0):
         if root.level == 20:  # root logger in INFO mode
             set_root_logger_level(0)
         foldlabel_output = extract_data_with_labels(
-                                config.data[reg].foldlabel_all,
-                                subject_labels,
-                                config.data[reg].foldlabel_dir,
-                                config)
+            config.data[reg].foldlabel_all,
+            subject_labels,
+            config.data[reg].foldlabel_dir,
+            config)
         if root.level == 10:  # root logger in WARNING mode
             set_root_logger_level(1)
         log.info("foldlabel data loaded")
@@ -201,7 +203,7 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels, reg=0):
     return foldlabel_output
 
 
-def create_sets_with_labels(config, reg=0):
+def create_sets_with_labels(config):
     """Creates train, validation and test sets when there are labels
 
     Args:
@@ -211,27 +213,29 @@ def create_sets_with_labels(config, reg=0):
         train_dataset, val_dataset, test_datasetset, train_val_dataset (tuple)
     """
 
-    # Gets labels for all subjects
-    # Column subject_column_name is renamed 'Subject'
-    label_scaling = (None if 'label_scaling' not in config.data[reg].keys()
-                     else config.data[reg].label_scaling)
-    subject_labels = read_labels(config.data[reg].subject_labels_file,
-                                 config.data[reg].subject_column_name,
-                                 config.data[reg].label_names,
-                                 label_scaling)
+    for reg in range(len(config.data)):
+        # Gets labels for all subjects
+        # Column subject_column_name is renamed 'Subject'
+        label_scaling = (None if 'label_scaling' not in config.data[reg].keys()
+                         else config.data[reg].label_scaling)
+        subject_labels = read_labels(
+            config.data[reg].subject_labels_file,
+            config.data[reg].subject_column_name,
+            config.data[reg].label_names,
+            label_scaling)
 
-    if config.environment == "brainvisa" and config.checking:
-        quality_checks(config.data[reg].subjects_all,
-                       config.data[reg].numpy_all,
-                       config.data[reg].crop_dir, parallel=True)
+        if config.environment == "brainvisa" and config.checking:
+            quality_checks(config.data[reg].subjects_all,
+                           config.data[reg].numpy_all,
+                           config.data[reg].crop_dir, parallel=True)
 
-    # Loads and separates in train_val/test skeleton crops
-    skeleton_output = extract_data_with_labels(
-        config.data[reg].numpy_all, subject_labels,
-        config.data[reg].crop_dir, config)
+        # Loads and separates in train_val/test skeleton crops
+        skeleton_output = extract_data_with_labels(
+            config.data[reg].numpy_all, subject_labels,
+            config.data[reg].crop_dir, config)
 
-    foldlabel_output = sanity_checks_with_labels(
-        config, skeleton_output, subject_labels)
+        foldlabel_output = sanity_checks_with_labels(
+            config, skeleton_output, subject_labels, reg)
 
     # Creates the dataset from these data by doing some preprocessing
     datasets = {}

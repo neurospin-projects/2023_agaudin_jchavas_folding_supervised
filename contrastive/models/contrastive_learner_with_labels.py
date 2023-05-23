@@ -182,8 +182,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             self.sample_labels = labels
             if self.config.environment == 'brainvisa' and self.config.checking:
                 vol_file = \
-                    f"{self.config.data[reg].crop_dir}/{filenames[0]}" +\
-                    f"{self.config.data[reg].crop_file_suffix}"
+                    f"{self.config.data[0].crop_dir}/{filenames[0]}" +\
+                    f"{self.config.data[0].crop_file_suffix}"
                 vol = aims.read(vol_file)
                 self.sample_ref_0 = np.asarray(vol)
                 if not np.array_equal(self.sample_ref_0[..., 0],
@@ -236,7 +236,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         else:
             num_outputs = self.config.num_representation_features
         X = torch.zeros([0, num_outputs]).cpu()
-        labels_all = torch.zeros([0, len(self.config.data[reg].label_names)]).cpu()
+        labels_all = torch.zeros(
+            [0, len(self.config.data[reg].label_names)]).cpu()
         filenames_list = []
 
         # Computes embeddings without computing gradient
@@ -344,13 +345,13 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # Initialization
         X = torch.zeros([0, self.config.num_representation_features]).cpu()
-        labels_all = torch.zeros([0, len(self.config.data[reg].label_names)]).cpu()
+        labels_all = torch.zeros(
+            [0, len(self.config.data[reg].label_names)]).cpu()
         filenames_list = []
 
         # Computes representation (without gradient computation)
         with torch.no_grad():
-            for batch in loader:
-                (inputs, labels, filenames, _) = batch[0]
+            for (inputs, labels, filenames, _) in loader:
                 # We first compute the embeddings
                 # for the first views of the whole batch
                 inputs = inputs.cuda()
@@ -436,16 +437,16 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         if self.current_epoch == 0:
             best_auc = 0
         elif self.current_epoch > 0:
-            with open(save_path+"best_model_params.json", 'r') as file:
+            with open(save_path + "best_model_params.json", 'r') as file:
                 best_model_params = json.load(file)
                 best_auc = best_model_params['best_auc']
 
         if current_auc > best_auc:
             torch.save({'state_dict': self.state_dict()},
-                       save_path+'best_model_weights.pt')
+                       save_path + 'best_model_weights.pt')
             best_model_params = {
                 'epoch': self.current_epoch, 'best_auc': current_auc}
-            with open(save_path+"best_model_params.json", 'w') as file:
+            with open(save_path + "best_model_params.json", 'w') as file:
                 json.dump(best_model_params, file)
 
     def training_epoch_end(self, outputs):
