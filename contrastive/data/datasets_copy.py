@@ -156,6 +156,7 @@ class ContrastiveDatasetFusion():
         log.debug(f"filenames = {self.filenames}")
         sample = get_sample(self.arr, idx, 'float32')
         filename = get_filename(self.filenames, idx)
+
         if self.foldlabel_arr is not None:
             sample_foldlabel = get_sample(self.foldlabel_arr, idx, 'int32')
             sample_foldlabel = padd_foldlabel(sample_foldlabel,
@@ -199,9 +200,9 @@ class ContrastiveDatasetFusion():
             view3 = self.transform3(sample)
             views = torch.stack((view1, view2, view3), dim=0)
             if self.config.with_labels:
-                tuple_with_path = (views, labels, filename)
+                tuple_with_path = ((views, labels, filename),)
             else:
-                tuple_with_path = (views, filename)
+                tuple_with_path = ((views, filename),)
         else:
             views = torch.stack((view1, view2), dim=0)
             if self.config.with_labels:
@@ -209,8 +210,8 @@ class ContrastiveDatasetFusion():
                 if not self.transform:
                     self.transform3 = transform_only_padding(self.config)
                 view3 = self.transform3(sample)
-                tuple_with_path = (views, labels, filename, view3)
+                tuple_with_path = ((views, labels, filename, view3),)
             else:
-                tuple_with_path = (views, filename)
+                tuple_with_path = ((views, filename),)
 
         return tuple_with_path

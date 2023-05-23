@@ -75,8 +75,8 @@ def load_embeddings(dir_path, labels_path, config, reg=0):
     # get the labels (0 = no paracingulate, 1 = paracingulate)
     # and match them to the embeddings
     # /!\ use read_labels
-    label_scaling = (None if 'label_scaling' not in config.keys()
-                     else config.label_scaling)
+    label_scaling = (None if 'label_scaling' not in config.data[0].keys()
+                     else config.data[0].label_scaling)
     labels = read_labels(labels_path, config.data[reg].subject_column_name,
                          config.data[reg].label_names, label_scaling)
     labels.rename(columns={config.data[reg].label_names[0]: 'label'}, inplace=True)

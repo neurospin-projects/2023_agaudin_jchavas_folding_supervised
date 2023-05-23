@@ -145,7 +145,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def training_step(self, train_batch, batch_idx):
         """Training step.
         """
-        (inputs, labels, filenames, view3) = train_batch
+        (inputs, labels, filenames, view3) = train_batch[0]
         input_i = inputs[:, 0, :]
         input_j = inputs[:, 1, :]
         z_i = self.forward(input_i)
@@ -241,7 +241,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # Computes embeddings without computing gradient
         with torch.no_grad():
-            for (inputs, labels, filenames, _) in loader:
+            for batch in loader:
+                (inputs, labels, filenames, _) = batch[0]
                 # First views of the whole batch
                 inputs = inputs.cuda()
                 model = self.cuda()
@@ -348,7 +349,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # Computes representation (without gradient computation)
         with torch.no_grad():
-            for (inputs, labels, filenames, _) in loader:
+            for batch in loader:
+                (inputs, labels, filenames, _) = batch[0]
                 # We first compute the embeddings
                 # for the first views of the whole batch
                 inputs = inputs.cuda()
@@ -517,7 +519,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def validation_step(self, val_batch, batch_idx):
         """Validation step"""
 
-        (inputs, labels, filenames, _) = val_batch
+        inputs, labels, filenames, _ = val_batch[0]
+
         input_i = inputs[:, 0, :]
         input_j = inputs[:, 1, :]
 

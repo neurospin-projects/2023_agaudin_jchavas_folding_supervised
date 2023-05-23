@@ -213,8 +213,8 @@ def create_sets_with_labels(config, reg=0):
 
     # Gets labels for all subjects
     # Column subject_column_name is renamed 'Subject'
-    label_scaling = (None if 'label_scaling' not in config.keys()
-                     else config.label_scaling)
+    label_scaling = (None if 'label_scaling' not in config.data[reg].keys()
+                     else config.data[reg].label_scaling)
     subject_labels = read_labels(config.data[reg].subject_labels_file,
                                  config.data[reg].subject_column_name,
                                  config.data[reg].label_names,
