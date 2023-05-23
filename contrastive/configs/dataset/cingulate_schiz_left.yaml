@@ -14,3 +14,4 @@ test_csv_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/test_sub
 subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/used_schiz_subjects.csv
 subject_column_name: 'participant_id'
 label_names: ["diagnosis"]
+input_size: (1, 20, 42, 38)
