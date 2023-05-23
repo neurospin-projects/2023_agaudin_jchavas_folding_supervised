@@ -484,7 +484,8 @@ def extract_data_with_labels(npy_file_path, subject_labels,
             subject_labels, normal_subjects)
     normal_data = normal_data[normal_subjects_index]
 
-    output = split_data(normal_data, normal_subjects, sample_dir, config)
+    output = split_data(normal_data, normal_subjects, sample_dir,
+                        config, reg)
 
     if config.environment == "brainvisa" and config.checking:
         compare_array_aims_files(normal_subjects, normal_data, sample_dir)

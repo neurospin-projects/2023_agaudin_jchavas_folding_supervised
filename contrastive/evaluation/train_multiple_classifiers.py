@@ -40,7 +40,7 @@ def define_njobs():
     return max(nb_cpus - 2, 1)
 
 
-def load_embeddings(dir_path, labels_path, config, reg=0):
+def load_embeddings(dir_path, labels_path, config, reg):
     """Load the embeddings and the labels.
     """
     # load embeddings

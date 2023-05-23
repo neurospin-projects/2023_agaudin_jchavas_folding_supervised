@@ -47,7 +47,10 @@ from contrastive.utils.logs import set_file_logger, set_root_logger_level
 
 from contrastive.data.datasets_copy import ContrastiveDatasetFusion
 
-from contrastive.data.utils import *
+from contrastive.data.utils import \
+    check_subject_consistency, extract_data, check_if_same_subjects,\
+    check_if_same_shape, check_if_skeleton, extract_data_with_labels,\
+    read_labels
 
 import logging
 
@@ -168,7 +171,7 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels, reg):
             config.data[reg].foldlabel_all,
             subject_labels,
             config.data[reg].foldlabel_dir,
-            config)
+            config, reg)
         if root.level == 10:  # root logger in WARNING mode
             set_root_logger_level(1)
         log.info("foldlabel data loaded")
@@ -203,6 +206,16 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels, reg):
     return foldlabel_output
 
 
+def check_if_list_of_equal_dataframes(list_of_df, key):
+    """Checks if it is a list of equal dataframes"""
+    if len(list_of_df) > 1:
+        df0 = list_of_df[0]
+        for df in list_of_df[1:]:
+            if not df0.equals(df):
+                raise ValueError(
+                    f"List of dataframes of {key} are not equal")
+
+
 def create_sets_with_labels(config):
     """Creates train, validation and test sets when there are labels
 
@@ -212,6 +225,9 @@ def create_sets_with_labels(config):
     Returns:
         train_dataset, val_dataset, test_datasetset, train_val_dataset (tuple)
     """
+
+    skeleton_all = []
+    foldlabel_all = []
 
     for reg in range(len(config.data)):
         # Gets labels for all subjects
@@ -232,29 +248,66 @@ def create_sets_with_labels(config):
         # Loads and separates in train_val/test skeleton crops
         skeleton_output = extract_data_with_labels(
             config.data[reg].numpy_all, subject_labels,
-            config.data[reg].crop_dir, config)
+            config.data[reg].crop_dir, config, reg)
 
         foldlabel_output = sanity_checks_with_labels(
             config, skeleton_output, subject_labels, reg)
 
+        for subset_name in skeleton_output.keys():
+            # select the augmentation method
+            if config.apply_augmentations:
+                if config.foldlabel:  # branch_clipping
+                    foldlabel_array = foldlabel_output[subset_name][1]
+                else:  # cutout
+                    foldlabel_array = None  # no need of fold labels
+            else:  # no augmentation
+                foldlabel_array = None
+
+        skeleton_all.append(skeleton_output)
+        foldlabel_all.append(foldlabel_output)
+
     # Creates the dataset from these data by doing some preprocessing
     datasets = {}
-    for subset_name in skeleton_output.keys():
-        # select the augmentation method
-        if config.apply_augmentations:
-            if config.foldlabel:  # branch_clipping
-                foldlabel_array = foldlabel_output[subset_name][1]
-            else:  # cutout
-                foldlabel_array = None  # no need of fold labels
-        else:  # no augmentation
-            foldlabel_array = None
-
+    for subset_name in skeleton_all[0].keys():
         log.debug(subset_name)
+        # Concatenates filenames
+        filenames = [skeleton_output[subset_name][0]
+                     for skeleton_output in skeleton_all]
+        # Concatenates arrays
+        arrays = [skeleton_output[subset_name][0]
+                  for skeleton_output in skeleton_all]
+
+        # Concatenates foldabel arrays
+        foldlabel_arrays = []
+        for foldlabel_output in foldlabel_all:
+            # select the augmentation method
+            if config.apply_augmentations:
+                if config.foldlabel:  # branch_clipping
+                    foldlabel_array = foldlabel_output[subset_name][1]
+                else:  # cutout
+                    foldlabel_array = None  # no need of fold labels
+            else:  # no augmentation
+                foldlabel_array = None
+            foldlabel_arrays.append(foldlabel_array)
+
+        # Concatenates labels
+        labels = [skeleton_output[subset_name][2]
+                  for skeleton_output in skeleton_all]
+
+        # Checks if equality of filenames and labels
+        check_if_list_of_equal_dataframes(
+            filenames,
+            "filenames, " + subset_name)
+        check_if_list_of_equal_dataframes(
+            labels,
+            "labels, " + subset_name)
+
+        # Builds subset-name=train/val/test dataset
         datasets[subset_name] = ContrastiveDatasetFusion(
-            filenames=skeleton_output[subset_name][0],
-            array=skeleton_output[subset_name][1],
-            foldlabel_array=foldlabel_array,
-            labels=skeleton_output[subset_name][2],
+            filenames=filenames,
+            arrays=arrays,
+            foldlabel_arrays=foldlabel_arrays,
+            labels=labels,
             config=config,
             apply_transform=config.apply_augmentations)
 

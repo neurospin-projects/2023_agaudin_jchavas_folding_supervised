@@ -223,7 +223,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         return batch_dictionary
 
-    def compute_outputs_skeletons(self, loader, reg=0):
+    def compute_outputs_skeletons(self, loader, reg):
         """Computes the outputs of the model for each crop.
 
         This includes the projection head"""
@@ -338,7 +338,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         return X, filenames_list
 
-    def compute_representations(self, loader, reg=0):
+    def compute_representations(self, loader, reg):
         """Computes representations for each crop.
 
         Representation are before the projection head"""

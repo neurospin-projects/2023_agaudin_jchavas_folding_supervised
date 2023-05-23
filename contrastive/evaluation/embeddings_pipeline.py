@@ -12,7 +12,7 @@ from sklearn.exceptions import ConvergenceWarning
 
 # Auxilary function used to process the config linked to the model.
 # For instance, change the embeddings save path to being next to the model.
-def preprocess_config(sub_dir, dataset, classifier_name='svm', reg=0, verbose=False):
+def preprocess_config(sub_dir, dataset, classifier_name='svm', reg, verbose=False):
     if verbose:
         print(os.getcwd())
     cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config.yaml')
