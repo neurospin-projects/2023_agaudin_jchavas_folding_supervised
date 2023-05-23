@@ -1,4 +1,4 @@
-# @package _global_
+# @package dataset.cingulate_HCP_full_nb_voxels_shuffled
 dataset_name: cingulate_HCP_full_nb_voxels_shuffled
 pickle_normal: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton.pkl
 numpy_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton.npy
