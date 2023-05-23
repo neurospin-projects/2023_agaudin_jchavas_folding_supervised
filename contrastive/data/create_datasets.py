@@ -235,7 +235,14 @@ def check_if_list_of_equal_dataframes(list_of_df, key):
         for df in list_of_df[1:]:
             if not df0.equals(df):
                 raise ValueError(
-                    f"List of dataframes of {key} are not equal")
+                    f"List of dataframes are not equal: {key}"
+                    "First dataframe head:\n"
+                    f"{df0.head()}\n"
+                    "Other dataframe head:\n"
+                    f"{df.head()}\n"    
+                    f"length of first dataframe = {len(df0)}"
+                    f"length of other dataframe = {len(df)}"               
+                    )
 
 
 def create_sets_with_labels(config):
