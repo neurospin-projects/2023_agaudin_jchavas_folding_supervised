@@ -85,20 +85,27 @@ class ContrastiveLearner(pl.LightningModule):
 
     def __init__(self, config, sample_data):
         super(ContrastiveLearner, self).__init__()
+
+        n_datasets = len(config.data)
+        log.info(f"n_datasets {n_datasets}")
+
+        self.backbones = nn.ModuleList()
         if config.backbone_name == 'densenet':
-            self.backbone = DenseNet(
-                growth_rate=config.growth_rate,
-                block_config=config.block_config,
-                num_init_features=config.num_init_features,
-                num_representation_features=config.num_representation_features,
-                drop_rate=config.drop_rate,
-                in_shape=config.data[0].input_size)
+            for i in range(n_datasets):
+                self.backbones.append(DenseNet(
+                    growth_rate=config.growth_rate,
+                    block_config=config.block_config,
+                    num_init_features=config.num_init_features,
+                    num_representation_features=config.num_representation_features,
+                    drop_rate=config.drop_rate,
+                    in_shape=config.data[0].input_size))
         elif config.backbone_name == "convnet":
-            self.backbone = ConvNet(
-                encoder_depth=config.encoder_depth,
-                num_representation_features=config.num_representation_features,
-                drop_rate=config.drop_rate,
-                in_shape=config.data[0].input_size)
+            for i in range(n_datasets):
+                self.backbones.append(ConvNet(
+                    encoder_depth=config.encoder_depth,
+                    num_representation_features=config.num_representation_features,
+                    drop_rate=config.drop_rate,
+                    in_shape=config.data[0].input_size))
         # elif config.backbone_name == 'pointnet':
         #     self.backbone = PointNetCls(
         #         k=config.num_representation_features,
@@ -137,6 +144,7 @@ class ContrastiveLearner(pl.LightningModule):
             raise ValueError(f"No underlying projection head with name {config.projection_head_name}")
 
         self.config = config
+        self.n_datasets = n_datasets
         self.sample_data = sample_data
         self.sample_i = np.array([])
         self.sample_j = np.array([])
@@ -149,9 +157,23 @@ class ContrastiveLearner(pl.LightningModule):
             self.visu_anatomist = Visu_Anatomist()
 
     def forward(self, x):
-        embedding = self.backbone.forward(x)
-        out = self.projection_head.forward(embedding)
+        embeddings = []
+        for i in range(self.n_datasets):
+            embedding = self.backbones[i].forward(x[i])
+            embeddings.append(embedding)
+        embeddings = torch.cat(embeddings, dim=0)
+        out = self.projection_head.forward(embeddings)
         return out
+
+    def get_full_inputs_from_batch(self, batch):
+        full_inputs = []
+        for (inputs, filenames) in batch:
+            if self.config.backbone_name == 'pointnet':
+                inputs = torch.squeeze(inputs).to(torch.float)
+            full_inputs.append(inputs)
+        
+        inputs = torch.stack(full_inputs, dim=0)
+        return (inputs, filenames)
 
     def get_layers(self):
         i = 0
@@ -307,13 +329,11 @@ class ContrastiveLearner(pl.LightningModule):
     def training_step(self, train_batch, batch_idx):
         """Training step.
         """
-        (inputs, filenames) = train_batch
-        if self.config.backbone_name == 'pointnet':
-            inputs = torch.squeeze(inputs).to(torch.float)
+        inputs, filenames = self.get_full_inputs_from_batch(train_batch)
 
         # print("TRAINING STEP", inputs.shape)
-        input_i = inputs[:, 0, :]
-        input_j = inputs[:, 1, :]
+        input_i = inputs[:, :, 0, ...]
+        input_j = inputs[:, :, 1, ...]
         z_i = self.forward(input_i)
         z_j = self.forward(input_j)
 
@@ -363,18 +383,19 @@ class ContrastiveLearner(pl.LightningModule):
 
         # Computes embeddings without computing gradient
         with torch.no_grad():
-            for (inputs, filenames) in loader:
+            for batch in loader:
+                inputs, filenames = self.get_full_inputs_from_batch(batch)
                 # First views of the whole batch
                 inputs = inputs.cuda()
-                model = self.cuda()
-                input_i = inputs[:, 0, :]
-                input_j = inputs[:, 1, :]
+                # model = self.cuda()
+                input_i = inputs[:, :, 0, ...]
+                input_j = inputs[:, :, 1, ...]
                 if self.config.backbone_name == 'pointnet':
                     input_i = transform(input_i.cpu()).cuda().to(torch.float)
                     input_j = transform(input_j.cpu()).cuda().to(torch.float)
-                X_i = model.forward(input_i)
+                X_i = self.forward(input_i)
                 # Second views of the whole batch
-                X_j = model.forward(input_j)
+                X_j = self.forward(input_j)
                 # First views and second views
                 # are put side by side
                 X_reordered = torch.cat([X_i, X_j], dim=-1)
@@ -425,7 +446,8 @@ class ContrastiveLearner(pl.LightningModule):
 
         # Computes representation (without gradient computation)
         with torch.no_grad():
-            for (inputs, filenames) in loader:
+            for batch in loader:
+                inputs, filenames = self.get_full_inputs_from_batch(batch)
                 # First views of the whole batch
                 if self.config.device != 'cpu':
                     inputs = inputs.cuda()
@@ -437,8 +459,8 @@ class ContrastiveLearner(pl.LightningModule):
                     model = self.cuda()
                 else:
                     model = self.cpu()
-                input_i = inputs[:, 0, :]
-                input_j = inputs[:, 1, :]
+                input_i = inputs[:, :, 0, ...]
+                input_j = inputs[:, :, 1, ...]
                 model.forward(input_i)
                 X_i = first(self.save_output.outputs.values())
 
@@ -526,12 +548,10 @@ class ContrastiveLearner(pl.LightningModule):
 
     def validation_step(self, val_batch, batch_idx):
         """Validation step"""
+        inputs, filenames = self.get_full_inputs_from_batch(val_batch)
 
-        (inputs, filenames) = val_batch
-        if self.config.backbone_name == 'pointnet':
-            inputs = torch.squeeze(inputs).to(torch.float)
-        input_i = inputs[:, 0, :]
-        input_j = inputs[:, 1, :]
+        input_i = inputs[:, :, 0, ...]
+        input_j = inputs[:, :, 1, ...]
         z_i = self.forward(input_i)
         z_j = self.forward(input_j)
 
@@ -562,6 +582,7 @@ class ContrastiveLearner(pl.LightningModule):
         if self.config.mode == "encoder":
             if self.current_epoch % self.config.nb_epochs_per_tSNE == 0 \
                     or self.current_epoch >= self.config.max_epochs:
+                print("Computing tsne")
                 X_tsne = self.compute_tsne(
                     self.sample_data.val_dataloader(), "output")
                 image_TSNE = plot_tsne(X_tsne, buffer=True)
