@@ -1,4 +1,4 @@
-# @package _global_
+# @package dataset.left_cingulate_ACCpatterns
 dataset_name: left_cingulate_ACCpatterns
 numpy_all: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/CINGULATE/mask/Lskeleton.npy
 subjects_all: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/CINGULATE/mask/Lskeleton_subject.csv

@@ -74,7 +74,7 @@ We use the following definitions:
 """
 
 
-@hydra.main(config_name='config', config_path="configs")
+@hydra.main(config_name='config', version_base="1.1", config_path="configs")
 def train(config):
     config = process_config(config)
 
@@ -144,7 +144,7 @@ def train(config):
                                     encoder_only=config.load_encoder_only)
 
     if config.backbone_name != 'pointnet':
-        summary(model, tuple(config.input_size), device="cpu")
+        summary(model, tuple(config.data[0].input_size), device="cpu")
     else:
         summary(model, device='cpu')
 

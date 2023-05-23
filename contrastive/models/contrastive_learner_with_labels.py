@@ -145,7 +145,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def training_step(self, train_batch, batch_idx):
         """Training step.
         """
-        (inputs, labels, filenames, view3) = train_batch
+        (inputs, labels, filenames, view3) = train_batch[0]
         input_i = inputs[:, 0, :]
         input_j = inputs[:, 1, :]
         z_i = self.forward(input_i)
@@ -182,8 +182,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             self.sample_labels = labels
             if self.config.environment == 'brainvisa' and self.config.checking:
                 vol_file = \
-                    f"{self.config.crop_dir}/{filenames[0]}" +\
-                    f"{self.config.crop_file_suffix}"
+                    f"{self.config.data[reg].crop_dir}/{filenames[0]}" +\
+                    f"{self.config.data[reg].crop_file_suffix}"
                 vol = aims.read(vol_file)
                 self.sample_ref_0 = np.asarray(vol)
                 if not np.array_equal(self.sample_ref_0[..., 0],
@@ -223,7 +223,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         return batch_dictionary
 
-    def compute_outputs_skeletons(self, loader):
+    def compute_outputs_skeletons(self, loader, reg=0):
         """Computes the outputs of the model for each crop.
 
         This includes the projection head"""
@@ -236,12 +236,13 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         else:
             num_outputs = self.config.num_representation_features
         X = torch.zeros([0, num_outputs]).cpu()
-        labels_all = torch.zeros([0, len(self.config.label_names)]).cpu()
+        labels_all = torch.zeros([0, len(self.config.data[reg].label_names)]).cpu()
         filenames_list = []
 
         # Computes embeddings without computing gradient
         with torch.no_grad():
-            for (inputs, labels, filenames, _) in loader:
+            for batch in loader:
+                (inputs, labels, filenames, _) = batch[0]
                 # First views of the whole batch
                 inputs = inputs.cuda()
                 model = self.cuda()
@@ -336,19 +337,20 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         return X, filenames_list
 
-    def compute_representations(self, loader):
+    def compute_representations(self, loader, reg=0):
         """Computes representations for each crop.
 
         Representation are before the projection head"""
 
         # Initialization
         X = torch.zeros([0, self.config.num_representation_features]).cpu()
-        labels_all = torch.zeros([0, len(self.config.label_names)]).cpu()
+        labels_all = torch.zeros([0, len(self.config.data[reg].label_names)]).cpu()
         filenames_list = []
 
         # Computes representation (without gradient computation)
         with torch.no_grad():
-            for (inputs, labels, filenames, _) in loader:
+            for batch in loader:
+                (inputs, labels, filenames, _) = batch[0]
                 # We first compute the embeddings
                 # for the first views of the whole batch
                 inputs = inputs.cuda()
@@ -517,7 +519,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def validation_step(self, val_batch, batch_idx):
         """Validation step"""
 
-        (inputs, labels, filenames, _) = val_batch
+        inputs, labels, filenames, _ = val_batch[0]
+
         input_i = inputs[:, 0, :]
         input_j = inputs[:, 1, :]
 

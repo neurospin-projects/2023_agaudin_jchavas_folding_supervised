@@ -48,9 +48,20 @@ def process_config(config) -> DictConfig:
     """Does whatever operations on the config file.
     """
 
-    log.debug(OmegaConf.to_yaml(config))
+    log.info("\n\n========================\n"
+             "= START OF CONFIGURATION\n"
+             "========================\n")
+    log.info(OmegaConf.to_yaml(config))
+    log.info("\n\n======================\n"
+             "= END OF CONFIGURATION\n"
+             "======================\n")
+
     log.info("Working directory : {}".format(os.getcwd()))
-    config.input_size = eval(config.input_size)
+
+    # Loops over datasets, contained as a list in config.data
+    for reg,_ in enumerate(config.data):
+        config.data[reg].input_size = eval(config.data[reg].input_size)
+
     log.debug("config type: {}".format(type(config)))
     if "pretrained_model_path" not in config:
         config = OmegaConf.structured(OmegaConf.to_yaml(config))

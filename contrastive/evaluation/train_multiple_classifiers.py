@@ -40,7 +40,7 @@ def define_njobs():
     return max(nb_cpus - 2, 1)
 
 
-def load_embeddings(dir_path, labels_path, config):
+def load_embeddings(dir_path, labels_path, config, reg=0):
     """Load the embeddings and the labels.
     """
     # load embeddings
@@ -75,11 +75,11 @@ def load_embeddings(dir_path, labels_path, config):
     # get the labels (0 = no paracingulate, 1 = paracingulate)
     # and match them to the embeddings
     # /!\ use read_labels
-    label_scaling = (None if 'label_scaling' not in config.keys()
-                     else config.label_scaling)
-    labels = read_labels(labels_path, config.subject_column_name,
-                         config.label_names, label_scaling)
-    labels.rename(columns={config.label_names[0]: 'label'}, inplace=True)
+    label_scaling = (None if 'label_scaling' not in config.data[0].keys()
+                     else config.data[0].label_scaling)
+    labels = read_labels(labels_path, config.data[reg].subject_column_name,
+                         config.data[reg].label_names, label_scaling)
+    labels.rename(columns={config.data[reg].label_names[0]: 'label'}, inplace=True)
     labels = labels[labels.Subject.isin(embeddings.index)]
     labels.sort_values(by='Subject', inplace=True, ignore_index=True)
     print("sorted labels", labels.head())

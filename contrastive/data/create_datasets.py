@@ -45,16 +45,6 @@ except ImportError:
 
 from contrastive.utils.logs import set_file_logger, set_root_logger_level
 
-from contrastive.data.datasets import ContrastiveDataset
-from contrastive.data.datasets import ContrastiveDataset_Visualization
-from contrastive.data.datasets import ContrastiveDataset_WithLabels
-from contrastive.data.datasets import ContrastiveDataset_WithFoldLabels
-from contrastive.data.datasets import \
-    ContrastiveDataset_WithLabels_WithFoldLabels
-from contrastive.data.datasets import \
-    ContrastiveDataset_WithLabels_WithFoldLabels_Resize
-from contrastive.data.datasets import ContrastiveDataset_Both
-from contrastive.data.datasets import ContrastiveDataset_WithLabels_Both
 from contrastive.data.datasets_copy import ContrastiveDatasetFusion
 
 from contrastive.data.utils import *
@@ -64,19 +54,16 @@ log = set_file_logger(__file__)
 root = logging.getLogger()
 
 
-def sanity_checks_without_labels(config, skeleton_output):
+def sanity_checks_without_labels(config, skeleton_output, reg=0):
     # Loads and separates in train_val/test set foldlabels if requested
-    log.info(f"config.subjects_all {config.subjects_all}")
-    log.info(f"config.subjects_foldlabel_all {config.subjects_foldlabel_all}")
-    check_subject_consistency(config.subjects_all,
-                              config.subjects_foldlabel_all)
+    check_subject_consistency(config.data[reg].subjects_all,
+                              config.data[reg].subjects_foldlabel_all)
     # in order to avoid logging twice the same information
     if root.level == 20:  # root logger in INFO mode
         set_root_logger_level(0)
     # add all the other created objects in the next line
-    foldlabel_output = extract_data(config.foldlabel_all,
-                                    config.foldlabel_dir,
-                                    config)
+    foldlabel_output = extract_data(config.data[reg].foldlabel_all,
+                                    config.data[reg].crop_dir, config)
     if root.level == 10:  # root logger in WARNING mode
         set_root_logger_level(1)
     log.info("foldlabel data loaded")
@@ -95,7 +82,7 @@ def sanity_checks_without_labels(config, skeleton_output):
     return foldlabel_output
 
 
-def create_sets_without_labels(config):
+def create_sets_without_labels(config, reg=0):
     """Creates train, validation and test sets
 
     Args:
@@ -105,7 +92,8 @@ def create_sets_without_labels(config):
     """
 
     # Loads and separates in train_val/test skeleton crops
-    skeleton_output = extract_data(config.numpy_all, config.crop_dir, config)
+    skeleton_output = extract_data(config.data[reg].numpy_all,
+                                   config.data[reg].crop_dir, config)
 
     # Loads and separates in train_val/test set foldlabels if requested
     if config.apply_augmentations and config.foldlabel:
@@ -141,7 +129,7 @@ def create_sets_without_labels(config):
     return datasets
 
 
-def sanity_checks_with_labels(config, skeleton_output, subject_labels):
+def sanity_checks_with_labels(config, skeleton_output, subject_labels, reg=0):
     # remove test_intra if not in config
     subsets = [key for key in skeleton_output.keys()]
     if 'test_intra_csv_file' not in config.keys():
@@ -155,7 +143,7 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
         for subset_name in subsets:
             compare_array_aims_files(skeleton_output[subset_name][0],
                                      skeleton_output[subset_name][1],
-                                     config.crop_dir)
+                                     config.data[reg].crop_dir)
 
     # Makes some sanity checks on ordering of label subjects
     for subset_name in subsets:
@@ -169,15 +157,16 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
         and (config.foldlabel)
         and (config.mode != 'evaluation')
     ):
-        check_subject_consistency(config.subjects_all,
-                                  config.subjects_foldlabel_all)
+        check_subject_consistency(config.data[reg].subjects_all,
+                                  config.data[reg].subjects_foldlabel_all)
         # in order to avoid logging twice the same information
         if root.level == 20:  # root logger in INFO mode
             set_root_logger_level(0)
-        foldlabel_output = extract_data_with_labels(config.foldlabel_all,
-                                                    subject_labels,
-                                                    config.foldlabel_dir,
-                                                    config)
+        foldlabel_output = extract_data_with_labels(
+                                config.data[reg].foldlabel_all,
+                                subject_labels,
+                                config.data[reg].foldlabel_dir,
+                                config)
         if root.level == 10:  # root logger in WARNING mode
             set_root_logger_level(1)
         log.info("foldlabel data loaded")
@@ -203,7 +192,7 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
             for subset_name in foldlabel_output.keys():
                 compare_array_aims_files(foldlabel_output[subset_name][0],
                                          foldlabel_output[subset_name][1],
-                                         config.foldlabel_dir)
+                                         config.data[reg].foldlabel_dir)
 
     else:
         log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
@@ -212,31 +201,34 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
     return foldlabel_output
 
 
-def create_sets_with_labels(config):
+def create_sets_with_labels(config, reg=0):
     """Creates train, validation and test sets when there are labels
 
     Args:
         config (Omegaconf dict): contains configuration parameters
+        reg: region number
     Returns:
         train_dataset, val_dataset, test_datasetset, train_val_dataset (tuple)
     """
 
     # Gets labels for all subjects
     # Column subject_column_name is renamed 'Subject'
-    label_scaling = (None if 'label_scaling' not in config.keys()
-                     else config.label_scaling)
-    subject_labels = read_labels(config.subject_labels_file,
-                                 config.subject_column_name,
-                                 config.label_names,
+    label_scaling = (None if 'label_scaling' not in config.data[reg].keys()
+                     else config.data[reg].label_scaling)
+    subject_labels = read_labels(config.data[reg].subject_labels_file,
+                                 config.data[reg].subject_column_name,
+                                 config.data[reg].label_names,
                                  label_scaling)
 
     if config.environment == "brainvisa" and config.checking:
-        quality_checks(config.subjects_all, config.numpy_all,
-                       config.crop_dir, parallel=True)
+        quality_checks(config.data[reg].subjects_all,
+                       config.data[reg].numpy_all,
+                       config.data[reg].crop_dir, parallel=True)
 
     # Loads and separates in train_val/test skeleton crops
     skeleton_output = extract_data_with_labels(
-        config.numpy_all, subject_labels, config.crop_dir, config)
+        config.data[reg].numpy_all, subject_labels,
+        config.data[reg].crop_dir, config)
 
     foldlabel_output = sanity_checks_with_labels(
         config, skeleton_output, subject_labels)

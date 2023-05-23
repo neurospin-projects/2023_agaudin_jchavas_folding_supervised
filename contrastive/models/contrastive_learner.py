@@ -92,13 +92,13 @@ class ContrastiveLearner(pl.LightningModule):
                 num_init_features=config.num_init_features,
                 num_representation_features=config.num_representation_features,
                 drop_rate=config.drop_rate,
-                in_shape=config.input_size)
+                in_shape=config.data[0].input_size)
         elif config.backbone_name == "convnet":
             self.backbone = ConvNet(
                 encoder_depth=config.encoder_depth,
                 num_representation_features=config.num_representation_features,
                 drop_rate=config.drop_rate,
-                in_shape=config.input_size)
+                in_shape=config.data[0].input_size)
         # elif config.backbone_name == 'pointnet':
         #     self.backbone = PointNetCls(
         #         k=config.num_representation_features,

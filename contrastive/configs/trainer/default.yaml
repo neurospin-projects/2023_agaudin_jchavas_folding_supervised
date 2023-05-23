@@ -14,7 +14,7 @@ start_epoch: 0
 checkpoint_path:
 analysis_path: 
 verbose: 1
-checking: False
+checking: True
 # Data split and subject choice
 seed: 1
 partition: [0.9, 0.1]

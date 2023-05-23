@@ -1,8 +1,11 @@
 defaults:
+  - _self_
   - hydra: local
-  - dataset: cingulate_HCP_half_1
-  - model: SimCLR
-  - mode: encoder
+  # - dataset/cingulate_ACCpatterns_1
+  - dataset/right_cingulate_HCP_full_top-separated_Flanker_AgeAdj
+  - dataset/left_cingulate_HCP_full_top-separated_Flanker_AgeAdj
+  - model: SimCLR_supervised
+  - mode: regresser
   - augmentations: foldlabel
   - backbone: DenseNet
   - platform: cuda_not_brainvisa
@@ -11,3 +14,5 @@ defaults:
   - embeddings: embeddings
   - projection_head: linear
   - override hydra/job_logging: custom
+
+data: ${oc.dict.values:dataset}

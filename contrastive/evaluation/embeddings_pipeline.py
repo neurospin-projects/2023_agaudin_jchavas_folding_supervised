@@ -12,7 +12,7 @@ from sklearn.exceptions import ConvergenceWarning
 
 # Auxilary function used to process the config linked to the model.
 # For instance, change the embeddings save path to being next to the model.
-def preprocess_config(sub_dir, dataset, classifier_name='svm', verbose=False):
+def preprocess_config(sub_dir, dataset, classifier_name='svm', reg=0, verbose=False):
     if verbose:
         print(os.getcwd())
     cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config.yaml')
@@ -22,13 +22,13 @@ def preprocess_config(sub_dir, dataset, classifier_name='svm', verbose=False):
     keys_to_remove = ['train_val_csv_file', 'train_csv_file', 'val_csv_file',
                       'test_intra_csv_file', 'test_csv_file']
     for key in keys_to_remove:
-        if key in cfg.keys():
-            cfg.pop(key)
+        if key in cfg.data[reg].keys():
+            cfg.data[reg].pop(key)
     # add the ones of the target dataset
     with open(f'./configs/dataset/{dataset}.yaml', 'r') as file:
         dataset_yaml = yaml.load(file, yaml.FullLoader)
     for key in dataset_yaml:
-        cfg[key] = dataset_yaml[key]
+        cfg.data[reg][key] = dataset_yaml[key]
 
     # get the right classifiers parameters
     with open(f'./configs/classifier/{classifier_name}.yaml', 'r') as file:
@@ -37,7 +37,7 @@ def preprocess_config(sub_dir, dataset, classifier_name='svm', verbose=False):
         cfg[key] = dataset_yaml[key]
 
     # replace the possibly incorrect config parameters
-    cfg.training_labels = cfg['subject_labels_file']
+    cfg.training_labels = cfg.data[reg]['subject_labels_file']
     cfg.model_path = sub_dir
     cfg.embeddings_save_path = \
         sub_dir + f"/{dataset}_embeddings"
