@@ -96,7 +96,7 @@ def create_sets_without_labels(config, reg=0):
                                    config.data[reg].crop_dir, config)
 
     # Loads and separates in train_val/test set foldlabels if requested
-    if (config.foldlabel) and (config.mode != 'evaluation'):
+    if config.apply_augmentations and config.foldlabel:
         foldlabel_output = sanity_checks_without_labels(config,
                                                         skeleton_output)
     else:

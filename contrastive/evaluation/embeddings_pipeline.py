@@ -43,6 +43,7 @@ def preprocess_config(sub_dir, dataset, classifier_name='svm', reg=0, verbose=Fa
         sub_dir + f"/{dataset}_embeddings"
     cfg.training_embeddings = \
         sub_dir + f"/{dataset}_embeddings/full_embeddings.csv"
+    cfg.apply_transformations = False
 
     return cfg
 
@@ -94,8 +95,8 @@ def embeddings_pipeline(dir_path,
                     print("Start post processing")
                     # get the config and correct it to suit
                     # what is needed for classifiers
-                    cfg = preprocess_config(
-                        sub_dir, dataset, classifier_name=classifier_name)
+                    cfg = preprocess_config(sub_dir, dataset, 
+                                            classifier_name=classifier_name)
                     if verbose:
                         print("CONFIG FILE", type(cfg))
                         print(json.dumps(omegaconf.OmegaConf.to_container(
@@ -117,11 +118,7 @@ def embeddings_pipeline(dir_path,
 
                     # compute embeddings for the best model if saved
                     # FULL BRICOLAGE
-                    if (
-                        use_best_model
-                            and os.path.exists(
-                                sub_dir+'/logs/best_model_weights.pt')
-                    ):
+                    if (use_best_model and os.path.exists(sub_dir+'/logs/best_model_weights.pt')):
                         # apply the functions
                         cfg = omegaconf.OmegaConf.load(
                             sub_dir+'/.hydra/config_classifiers.yaml')
@@ -148,11 +145,5 @@ def embeddings_pipeline(dir_path,
             print(f"{sub_dir} is a file. Continue.")
 
 
-# 'cingulate_ACCpatterns_1'
-# 'cingulate_Utrecht_dHCP'
-embeddings_pipeline(
-    "/volatile/jc225751/Runs/61_classifier_regresser/Output/regresser/test_two_regions",
-    dataset='cingulate_ACCpatterns_1',
-    verbose=True,
-    classifier_name='svm',
-    overwrite=True)
+embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-05-17",
+dataset='cingulate_ACCpatterns', verbose=False, classifier_name='svm', overwrite=True, use_best_model=False)

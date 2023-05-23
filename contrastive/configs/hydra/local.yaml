@@ -3,8 +3,8 @@ hydra:
   job:
     chdir: True
   run:
-    dir: ../../../Output/regresser/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: ../../Output/${now:%Y-%m-%d}/${now:%H-%M-%S}
   sweep:
-    dir: ../../../Output/regresser/${now:%Y-%m-%d}
+    dir: ../../Output/${now:%Y-%m-%d}
     subdir: ${now:%H-%M-%S}_${hydra.job.num}
 checkpoint_dir: ../../Output
