@@ -87,9 +87,12 @@ def create_accessible_config(keys_to_keep, config_path):
     for key in config_dict.keys():
         if key in keys_to_keep:
             partial_config[key] = config_dict[key]
+    
+    if 'datasets' in keys_to_keep:
+        partial_config['datasets'] = list(config_dict['dataset'].keys())
 
     save_path = '/' + os.path.join(*config_path.split("/")[:-2])
-    print(save_path)
+    log.info(save_path)
     with open(save_path + '/partial_config.yaml', 'w') as file:
         yaml.dump(partial_config, file)
 
