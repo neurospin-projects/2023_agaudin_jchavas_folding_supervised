@@ -116,6 +116,8 @@ class ContrastiveLearner(pl.LightningModule):
         else:
             raise ValueError(f"No underlying backbone with backbone name {config.backbone_name}")
         
+        num_representation_features_total = config.num_representation_features * n_datasets
+
         # define the shape of the projection head
         # prioritize the shapes explicitely specified in config
         if config.proj_layers_shapes is not None:
@@ -123,22 +125,22 @@ class ContrastiveLearner(pl.LightningModule):
         else:
             # else, construct it in a standardized way
             if config.mode == 'encoder':
-                output_shape = config.num_representation_features * n_datasets
+                output_shape = num_representation_features_total
             elif config.mode == 'classifier':
                 output_shape = 2
             elif config.mode == 'regresser':
                 output_shape = 1
             else:
                 raise ValueError(f"Mode {config.mode} doesn't exist.")
-            layers_shapes = [config.num_representation_features * n_datasets] * (config.length_projection_head - 1) + [output_shape]
+            layers_shapes = [num_representation_features_total] * (config.length_projection_head - 1) + [output_shape]
 
         if config.projection_head_name == 'linear':
             self.projection_head = LinearProjectionHead(
-                num_representation_features=config.num_representation_features,
+                num_representation_features=num_representation_features_total,
                 layers_shapes=layers_shapes)
         elif config.projection_head_name == 'relu':
             self.projection_head = ReluProjectionHead(
-                num_representation_features=config.num_representation_features,
+                num_representation_features=num_representation_features_total,
                 layers_shapes=layers_shapes)
         else:
             raise ValueError(f"No underlying projection head with name {config.projection_head_name}")
