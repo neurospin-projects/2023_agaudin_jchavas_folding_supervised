@@ -191,16 +191,21 @@ def pipeline(dir_path, dataset, overwrite=False, use_best_model=True):
                         yaml.dump(omegaconf.OmegaConf.to_yaml(cfg), file)
 
                     supervised_test_eval(cfg, os.path.abspath(sub_dir),
-                                         use_best_model=use_best_model)
+                                         use_best_model=False)
+                    if use_best_model:  # do both
+                        log.info("Repeat with the best model")
+                        cfg = preprocess_config(sub_dir, dataset)
+                        supervised_test_eval(cfg, os.path.abspath(sub_dir),
+                                         use_best_model=True)
 
             else:
                 print(f"{sub_dir} not associated to a model. Continue")
                 pipeline(sub_dir, dataset, overwrite=False,
-                         test_intra=False, use_best_model=True)
+                        use_best_model=use_best_model)
         else:
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/supervised/ACCpatterns/L",
-         dataset="cingulate_ACCpatterns_left", overwrite=True,
+pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/supervised/pretrained_UKB/ACCpatterns/same_side",
+         dataset="cingulate_ACCpatterns", overwrite=False,
          use_best_model=True)

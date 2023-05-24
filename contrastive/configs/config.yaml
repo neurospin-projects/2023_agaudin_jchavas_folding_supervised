@@ -1,6 +1,6 @@
 defaults:
   - hydra: local
-  - dataset: cingulate_ACCpatterns_left
+  - dataset: cingulate_ACCpatterns
   - model: SimCLR_supervised
   - mode: classifier
   - augmentations: foldlabel
