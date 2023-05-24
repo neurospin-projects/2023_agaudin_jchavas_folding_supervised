@@ -112,10 +112,10 @@ def train(config):
              'sigma_labels',
              'pretrained_model_path'])
 
-    create_accessible_config(keys_to_keep, os.getcwd()+"/.hydra/config.yaml")
+    create_accessible_config(keys_to_keep, os.getcwd() + "/.hydra/config.yaml")
 
     # create a csv file where the parameters changing between runs are stored
-    get_config_diff(os.getcwd()+'/..', whole_config=False, save=True)
+    get_config_diff(os.getcwd() + '/..', whole_config=False, save=True)
 
     if config.mode == 'evaluation':
         data_module = DataModule_Evaluation(config)

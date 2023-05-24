@@ -7,6 +7,7 @@ subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/ACCpa
 crop_dir: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/CINGULATE/mask/Lcrops
 crop_file_suffix: _cropped_skeleton.nii.gz
 foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/CINGULATE/mask/Llabels
+input_size: (1, 18, 41, 38)
 pickle_benchmark: 
 train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/ACCpatterns/train_val_ACCpatterns.csv
 subject_labels_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/ACCpatterns/all.csv

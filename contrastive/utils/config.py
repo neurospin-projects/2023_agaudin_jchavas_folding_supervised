@@ -59,7 +59,7 @@ def process_config(config) -> DictConfig:
     log.info("Working directory : {}".format(os.getcwd()))
 
     # Loops over datasets, contained as a list in config.data
-    for reg,_ in enumerate(config.data):
+    for reg in range(len(config.data)):
         config.data[reg].input_size = eval(config.data[reg].input_size)
 
     log.debug("config type: {}".format(type(config)))
@@ -90,7 +90,7 @@ def create_accessible_config(keys_to_keep, config_path):
 
     save_path = '/' + os.path.join(*config_path.split("/")[:-2])
     print(save_path)
-    with open(save_path+'/partial_config.yaml', 'w') as file:
+    with open(save_path + '/partial_config.yaml', 'w') as file:
         yaml.dump(partial_config, file)
 
 
