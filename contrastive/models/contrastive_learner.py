@@ -390,7 +390,7 @@ class ContrastiveLearner(pl.LightningModule):
             for batch in loader:
                 inputs, filenames = self.get_full_inputs_from_batch(batch)
                 # First views of the whole batch
-                inputs = inputs.cuda()
+                inputs = change_list_device(inputs, 'cuda')
                 # model = self.cuda()
                 input_i = [inputs[i][:, 0, ...] for i in range(self.n_datasets)]
                 input_j = [inputs[i][:, 1, ...] for i in range(self.n_datasets)]
@@ -426,7 +426,7 @@ class ContrastiveLearner(pl.LightningModule):
         with torch.no_grad():
             for (inputs, filenames) in loader:
                 # First views of the whole batch
-                inputs = inputs.cuda()
+                inputs = change_list_device(inputs, 'cuda')
                 model = self.cuda()
                 X_i = model.forward(inputs[:, 0, :])
                 print(f"shape X and X_i: {X.shape}, {X_i.shape}")
