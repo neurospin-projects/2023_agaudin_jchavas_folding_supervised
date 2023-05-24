@@ -36,6 +36,9 @@
 Tools to create datasets
 """
 
+import pandas as pd
+import numpy as np
+
 # only if foldlabel == True
 try:
     from deep_folding.brainvisa.utils.save_data import quality_checks
@@ -98,6 +101,23 @@ def create_sets_without_labels(config):
 
     skeleton_all = []
     foldlabel_all = []
+    
+    # checks consistency among regions
+    if len(config.data) > 1:
+        for reg in range(len(config.data)-1):
+            check_if_same_csv(config.data[0].subjects_all,
+                              config.data[reg+1].subjects_all,
+                              "subjects_all")
+            check_if_same_csv(config.data[0].train_val_csv_file,
+                              config.data[reg+1].train_val_csv_file,
+                              "train_csv")
+            check_if_numpy_same_length(config.data[0].numpy_all,
+                                       config.data[1].numpy_all,
+                                       "numpy_all")
+            if config.foldlabel:
+                check_if_numpy_same_length(config.data[0].foldlabel_all,
+                                           config.data[1].foldlabel_all,
+                                           "foldlabel_all")
 
     for reg in range(len(config.data)):
         # Loads and separates in train_val/test skeleton crops
@@ -240,9 +260,35 @@ def check_if_list_of_equal_dataframes(list_of_df, key):
                     f"{df0.head()}\n"
                     "Other dataframe head:\n"
                     f"{df.head()}\n"    
-                    f"length of first dataframe = {len(df0)}"
+                    f"length of first dataframe = {len(df0)}\n"
                     f"length of other dataframe = {len(df)}"               
                     )
+
+
+def check_if_same_csv(csv_file_1, csv_file_2, key):
+    """Checks if the two csv are identical"""
+    csv1 = pd.read_csv(csv_file_1)
+    csv2 = pd.read_csv(csv_file_2)
+    if not csv1.equals(csv2):
+        raise ValueError(
+            f"Input {key} csv files are not equal"
+            "First dataframe head:\n"
+            f"{csv1.head()}\n"
+            "Other dataframe head:\n"
+            f"{csv2.head()}\n"
+            f"length of first dataframe ({csv_file_1}) = {len(csv1)}\n"
+            f"length of other dataframe ({csv_file_2}) = {len(csv2)}"
+        )
+
+
+def check_if_numpy_same_length(npy_file_1, npy_file_2, key):
+    """Checks if the two numpy arrays have the same length"""
+    arr1 = np.load(npy_file_1)
+    arr2 = np.load(npy_file_2)
+    if len(arr1) != len(arr2):
+        raise ValueError(
+            f"Input {key} numpy files don't have the same length"
+        )
 
 
 def create_sets_with_labels(config):
@@ -257,6 +303,26 @@ def create_sets_with_labels(config):
 
     skeleton_all = []
     foldlabel_all = []
+    
+    # checks consistency among regions
+    if len(config.data) > 1:
+        for reg in range(len(config.data)-1):
+            check_if_same_csv(config.data[0].subject_labels_file,
+                              config.data[reg+1].subject_labels_file,
+                              "subject_labels")         
+            check_if_same_csv(config.data[0].subjects_all,
+                              config.data[reg+1].subjects_all,
+                              "subjects_all")
+            check_if_same_csv(config.data[0].train_val_csv_file,
+                              config.data[reg+1].train_val_csv_file,
+                              "train_csv")
+            check_if_numpy_same_length(config.data[0].numpy_all,
+                                       config.data[1].numpy_all,
+                                       "numpy_all")
+            if config.foldlabel:
+                check_if_numpy_same_length(config.data[0].foldlabel_all,
+                                           config.data[1].foldlabel_all,
+                                           "foldlabel_all")
 
     for reg in range(len(config.data)):
         # Gets labels for all subjects

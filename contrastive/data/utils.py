@@ -254,6 +254,7 @@ def split_data(normal_data, normal_subjects, sample_dir, config, reg):
             train_subjects, val_subjects = \
                 extract_train_and_val_subjects(
                     train_val_subjects, config.partition, config.seed)
+                
     # get train & val separately if in config
     if 'train_csv_file' in config.data[reg].keys():
         train_subjects = read_subset_csv(config.data[reg].train_csv_file, name='train')
