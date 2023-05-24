@@ -48,11 +48,11 @@ def process_config(config) -> DictConfig:
     """Does whatever operations on the config file.
     """
 
-    log.info("\n\n========================\n"
+    log.debug("\n\n========================\n"
              "= START OF CONFIGURATION\n"
              "========================\n")
-    log.info(OmegaConf.to_yaml(config))
-    log.info("\n\n======================\n"
+    log.debug(OmegaConf.to_yaml(config))
+    log.debug("\n\n======================\n"
              "= END OF CONFIGURATION\n"
              "======================\n")
 

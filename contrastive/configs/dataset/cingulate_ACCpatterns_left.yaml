@@ -12,3 +12,4 @@ train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/ACCpatter
 subject_labels_file: /neurospin/dico/data/bv_databases/human/partially_labeled/ACCpatterns/all.csv
 subject_column_name: 'long_name'
 label_names: ["Left_PCS"]
+input_size: (1, 20, 42, 38)

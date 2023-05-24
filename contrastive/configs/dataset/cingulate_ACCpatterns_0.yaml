@@ -14,4 +14,4 @@ test_csv_file: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/AC
 subject_labels_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/ACCpatterns/all.csv
 subject_column_name: 'long_name'
 label_names: ["Right_PCS"]
-n_max: 1099
+input_size: (1, 17, 40, 38)
