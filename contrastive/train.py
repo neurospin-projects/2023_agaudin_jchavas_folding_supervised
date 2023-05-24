@@ -94,10 +94,9 @@ def train(config):
     # copies some of the config parameters in a yaml file easily accessible
     keys_to_keep = ['datasets', 'nb_subjects', 'model', 'with_labels',
                     'input_size', 'temperature_initial', 'temperature',
-                    'sigma', 'drop_rate', 'depth_decoder',
-                    'mode', 'both', 'foldlabel', 'resize', 'fill_value',
-                    'patch_size', 'max_angle', 'checkerboard_size',
-                    'keep_bottom',
+                    'sigma', 'drop_rate', 'mode', 'both', 'foldlabel',
+                    'resize', 'patch_size', 'max_angle',
+                    'checkerboard_size', 'keep_bottom',
                     'growth_rate', 'block_config', 'num_init_features',
                     'num_representation_features', 'num_outputs',
                     'environment', 'batch_size', 'pin_mem', 'partition',

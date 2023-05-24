@@ -1,3 +1,4 @@
 # @package _global_
 test: False
 mode: decoder
+depth_decoder: 3
