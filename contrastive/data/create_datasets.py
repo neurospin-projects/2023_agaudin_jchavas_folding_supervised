@@ -265,10 +265,10 @@ def check_if_list_of_equal_dataframes(list_of_df, key):
                     )
 
 
-def check_if_same_csv(csv_file_1, csv_file_2, key):
+def check_if_same_csv(csv_file_1, csv_file_2, key, header='infer'):
     """Checks if the two csv are identical"""
-    csv1 = pd.read_csv(csv_file_1)
-    csv2 = pd.read_csv(csv_file_2)
+    csv1 = pd.read_csv(csv_file_1, header=header)
+    csv2 = pd.read_csv(csv_file_2, header=header)
     if not csv1.equals(csv2):
         raise ValueError(
             f"Input {key} csv files are not equal"
@@ -315,7 +315,7 @@ def create_sets_with_labels(config):
                               "subjects_all")
             check_if_same_csv(config.data[0].train_val_csv_file,
                               config.data[reg+1].train_val_csv_file,
-                              "train_csv")
+                              "train_csv", header=None)
             check_if_numpy_same_length(config.data[0].numpy_all,
                                        config.data[1].numpy_all,
                                        "numpy_all")

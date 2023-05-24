@@ -165,8 +165,8 @@ class ContrastiveDatasetFusion():
             sample_foldlabels = [get_sample(foldlabel_arr, idx, 'int32')
                                  for foldlabel_arr in self.foldlabel_arrs]
             sample_foldlabels = [padd_foldlabel(sample_foldlabel,
-                                                self.config.data[0].input_size)
-                                 for sample_foldlabel in sample_foldlabels]
+                                                self.config.data[reg].input_size)
+                                 for reg, sample_foldlabel in enumerate(sample_foldlabels)]
 
         if self.labels is not None:
             for reg in range(len(filenames)):
