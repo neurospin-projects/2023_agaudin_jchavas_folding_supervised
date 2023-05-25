@@ -185,7 +185,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # Only computes graph on first step
         if self.global_step == 1:
-            self.logger.experiment.add_graph(self, inputs[:, 0, :])
+            self.logger.experiment.add_graph(self, [input_i])
 
         # Records sample for first batch of each epoch
         if batch_idx == 0:

@@ -4,7 +4,7 @@ defaults:
   # - dataset/cingulate_ACCpatterns_1
   - dataset/right_cingulate_HCP_full_top-separated_Flanker_AgeAdj
   - dataset/left_cingulate_HCP_full_top-separated_Flanker_AgeAdj
-  - model: SimCLR
+  - model: SimCLR_supervised
   - mode: encoder
   - augmentations: foldlabel
   - backbone: ConvNet
