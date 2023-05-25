@@ -257,15 +257,19 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         # Computes embeddings without computing gradient
         with torch.no_grad():
             for batch in loader:
-                (inputs, labels, filenames, _) = self.get_full_inputs_from_batch_with_labels(batch)
+                (inputs, labels, filenames, _) = \
+                    self.get_full_inputs_from_batch_with_labels(batch)
                 # First views of the whole batch
                 inputs = change_list_device(inputs, 'cuda')
-                model = self.cuda()
-                log.debug("COMPUTE OUTPUTS SKELETONS")
-                log.debug((inputs[:, 0, :] == inputs[:, 1, :]).all())
-                X_i = model.forward(inputs[:, :, 0, ...])
+                # model = self.cuda()
+                input_i = [inputs[i][:, 0, ...] for i in range(self.n_datasets)]
+                input_j = [inputs[i][:, 1, ...] for i in range(self.n_datasets)]
+                if self.config.backbone_name == 'pointnet':
+                    input_i = transform(input_i.cpu()).cuda().to(torch.float)
+                    input_j = transform(input_j.cpu()).cuda().to(torch.float)
+                X_i = self.forward(input_i)
                 # Second views of the whole batch
-                X_j = model.forward(inputs[:, :, 1, ...])
+                X_j = self.forward(input_i)
 
                 # Reshape (necessary if num_outputs==1)
                 X_i = X_i.reshape(X_i.shape[0], num_outputs)
