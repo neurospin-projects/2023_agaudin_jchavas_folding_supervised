@@ -92,20 +92,18 @@ def train(config):
     log.debug(f"current directory = {os.getcwd()}")
 
     # copies some of the config parameters in a yaml file easily accessible
-    keys_to_keep = ['dataset_name', 'nb_subjects', 'model', 'with_labels',
+    keys_to_keep = ['datasets', 'nb_subjects', 'model', 'with_labels',
                     'input_size', 'temperature_initial', 'temperature',
-                    'sigma', 'drop_rate', 'depth_decoder',
-                    'mode', 'both', 'foldlabel', 'resize', 'fill_value',
-                    'patch_size', 'max_angle', 'checkerboard_size',
-                    'keep_bottom',
+                    'sigma', 'drop_rate', 'mode', 'both', 'foldlabel',
+                    'resize', 'patch_size', 'max_angle',
+                    'checkerboard_size', 'keep_bottom',
                     'growth_rate', 'block_config', 'num_init_features',
                     'num_representation_features', 'num_outputs',
                     'environment', 'batch_size', 'pin_mem', 'partition',
                     'lr', 'weight_decay', 'max_epochs',
                     'early_stopping_patience', 'random_state', 'seed',
                     'backbone_name', 'sigma_labels',
-                    'proportion_pure_contrastive', 'n_max',
-                    'train_val_csv_file', 'percentage']
+                    'proportion_pure_contrastive', 'percentage']
     if config.model == 'SimCLR_supervised':
         keys_to_keep.extend(
             ['temperature_supervised',

@@ -517,6 +517,12 @@ def extract_data_with_labels(npy_file_path, subject_labels,
     return output
 
 
+def change_list_device(list_of_tensors, device):
+    """Change the device (cpu or cuda) of all tensors contained in a list"""
+    returned_list = [tensor.to(device=device) for tensor in list_of_tensors]
+    return returned_list
+
+
 # auxilary functions for ToPointnetTensor
 def zero_padding(cloud, n_max, shuffle=False):
     return np.pad(cloud, ((0, 0), (0, n_max-cloud.shape[1])))

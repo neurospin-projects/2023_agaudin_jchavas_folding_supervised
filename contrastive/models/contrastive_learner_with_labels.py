@@ -47,14 +47,14 @@ from toolz.itertoolz import first
 
 from sklearn.metrics import r2_score
 
+from contrastive.data.utils import change_list_device
+from contrastive.evaluation.auc_score import regression_roc_auc_score
 from contrastive.models.contrastive_learner import ContrastiveLearner
 from contrastive.losses import GeneralizedSupervisedNTXenLoss,\
-    CrossEntropyLoss_Classification
-from contrastive.losses import MSELoss_Regression
+    CrossEntropyLoss_Classification, MSELoss_Regression
 from contrastive.utils.plots.visualize_images \
     import plot_scatter_matrix_with_labels
 from contrastive.utils.plots.visualize_tsne import plot_tsne
-from contrastive.evaluation.auc_score import regression_roc_auc_score
 
 try:
     from soma import aims
@@ -92,8 +92,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             full_inputs.append(inputs)
             full_view3.append(view3)
         
-        inputs = torch.stack(full_inputs, dim=0)
-        view3 = torch.stack(full_view3, dim=0)
+        inputs = full_inputs
+        view3 = full_view3
         return (inputs, labels, filenames, view3)
 
     def plot_scatter_matrices_with_labels(self, dataloader, key,
@@ -160,8 +160,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         """Training step.
         """
         (inputs, labels, filenames, view3) = self.get_full_inputs_from_batch_with_labels(train_batch)
-        input_i = inputs[:, :, 0, ...]
-        input_j = inputs[:, :, 1, ...]
+        input_i = [inputs[i][:, 0, ...] for i in range(self.n_datasets)]
+        input_j = [inputs[i][:, 1, ...] for i in range(self.n_datasets)]
         z_i = self.forward(input_i)
         z_j = self.forward(input_j)
 
@@ -189,9 +189,9 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # Records sample for first batch of each epoch
         if batch_idx == 0:
-            self.sample_i = input_i.cpu()
-            self.sample_j = input_j.cpu()
-            self.sample_k = view3.cpu()
+            self.sample_i = change_list_device(input_i, 'cpu')
+            self.sample_j = change_list_device(input_j, 'cpu')
+            self.sample_k = change_list_device(view3, 'cpu')
             self.sample_filenames = filenames
             self.sample_labels = labels
             if self.config.environment == 'brainvisa' and self.config.checking:
@@ -259,7 +259,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             for batch in loader:
                 (inputs, labels, filenames, _) = self.get_full_inputs_from_batch_with_labels(batch)
                 # First views of the whole batch
-                inputs = inputs.cuda()
+                inputs = change_list_device(inputs, 'cuda')
                 model = self.cuda()
                 log.debug("COMPUTE OUTPUTS SKELETONS")
                 log.debug((inputs[:, 0, :] == inputs[:, 1, :]).all())
@@ -341,7 +341,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             for batch in loader:
                 (inputs, _, filenames, _) = self.get_full_inputs_from_batch_with_labels(batch)
                 # First views of the whole batch
-                inputs = inputs.cuda()
+                inputs = change_list_device(inputs, 'cuda')
                 model = self.cuda()
                 X_i = model.forward(inputs[:, 0, :])
                 # First views re put side by side
@@ -370,7 +370,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 (inputs, labels, filenames, _) = self.get_full_inputs_from_batch_with_labels(batch)
                 # We first compute the embeddings
                 # for the first views of the whole batch
-                inputs = inputs.cuda()
+                inputs = change_list_device(inputs, 'cuda')
                 model = self.cuda()
                 model.forward(inputs[:, 0, :])
                 X_i = first(self.save_output.outputs.values())
@@ -529,8 +529,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         (inputs, labels, _, _) = self.get_full_inputs_from_batch_with_labels(val_batch)
 
-        input_i = inputs[:, :, 0, ...]
-        input_j = inputs[:, :, 1, ...]
+        input_i = [inputs[i][:, 0, ...] for i in range(self.n_datasets)]
+        input_j = [inputs[i][:, 1, ...] for i in range(self.n_datasets)]
 
         z_i = self.forward(input_i)
         z_j = self.forward(input_j)
