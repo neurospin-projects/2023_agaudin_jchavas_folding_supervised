@@ -40,7 +40,7 @@ def define_njobs():
     return max(nb_cpus - 2, 1)
 
 
-def load_embeddings(dir_path, labels_path, config, reg):
+def load_embeddings(dir_path, labels_path, config):
     """Load the embeddings and the labels.
     """
     # load embeddings
@@ -77,9 +77,9 @@ def load_embeddings(dir_path, labels_path, config, reg):
     # /!\ use read_labels
     label_scaling = (None if 'label_scaling' not in config.data[0].keys()
                      else config.data[0].label_scaling)
-    labels = read_labels(labels_path, config.data[reg].subject_column_name,
-                         config.data[reg].label_names, label_scaling)
-    labels.rename(columns={config.data[reg].label_names[0]: 'label'}, inplace=True)
+    labels = read_labels(labels_path, config.data[0].subject_column_name,
+                         config.data[0].label_names, label_scaling)
+    labels.rename(columns={config.data[0].label_names[0]: 'label'}, inplace=True)
     labels = labels[labels.Subject.isin(embeddings.index)]
     labels.sort_values(by='Subject', inplace=True, ignore_index=True)
     print("sorted labels", labels.head())
@@ -420,15 +420,18 @@ def train_svm_classifiers(config):
 
     EoI_path = (config.embeddings_of_interest if config.embeddings_of_interest
                 else train_embs_path)
-    LoI_path = (config.labels_of_interest if config.labels_of_interest
-                else train_lab_paths)
 
     # if not specified, the outputs of the classifier will be stored next
     # to the embeddings used to generate them
     results_save_path = (config.results_save_path if config.results_save_path
                          else EoI_path)
+    # remove the 'full_embeddings.csv if it is there
     if not os.path.isdir(results_save_path):
         results_save_path = os.path.dirname(results_save_path)
+    # add a subfolder with the evaluated label as name
+    results_save_path = results_save_path + "/" + config.data[0].label_names[0]
+    if not os.path.exists(config.data[0].label_names[0]):
+        os.makedirs(results_save_path)
 
     embeddings, labels = load_embeddings(
         train_embs_path, train_lab_paths, config)
@@ -437,14 +440,15 @@ def train_svm_classifiers(config):
 
     Y = labels.label
 
-    if np.unique(Y).shape[0] > 2:
-        per_50 = np.percentile(Y, 50.)
-        Z = Y.copy(deep=True)
-        Z[Y <= per_50] = 0
-        Z[Y > per_50] = 1
-        Z = Z.astype(int)
-        labels.label = Z.copy(deep=True)
-        Y = labels.label
+    # debug regression
+    # if np.unique(Y).shape[0] > 2:
+    #     per_50 = np.percentile(Y, 50.)
+    #     Z = Y.copy(deep=True)
+    #     Z[Y <= per_50] = 0
+    #     Z[Y > per_50] = 1
+    #     Z = Z.astype(int)
+    #     labels.label = Z.copy(deep=True)
+    #     Y = labels.label
 
     if test_embs_path:
         test_embeddings, test_labels = load_embeddings(

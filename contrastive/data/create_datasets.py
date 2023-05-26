@@ -131,9 +131,11 @@ def create_sets_without_labels(config):
             foldlabel_output = sanity_checks_without_labels(config,
                                                             skeleton_output,
                                                             reg)
-            foldlabel_all.append(foldlabel_output)
         else:
+            foldlabel_output = None
             log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
+        
+        foldlabel_all.append(foldlabel_output)
             
 
     # Creates the dataset from these data by doing some preprocessing
@@ -164,8 +166,6 @@ def create_sets_without_labels(config):
         check_if_list_of_equal_dataframes(
             filenames,
             "filenames, " + subset_name)
-        
-        log.info(foldlabel_arrays)
 
         datasets[subset_name] = ContrastiveDatasetFusion(
             filenames=filenames,

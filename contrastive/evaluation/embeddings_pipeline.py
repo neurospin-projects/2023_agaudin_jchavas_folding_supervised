@@ -60,7 +60,7 @@ def preprocess_config(sub_dir, datasets, folder_name, classifier_name='svm', ver
     cfg.embeddings_save_path = \
         sub_dir + f"/{folder_name}_embeddings"
     cfg.training_embeddings = \
-        sub_dir + f"/{dataset}_embeddings/full_embeddings.csv"
+        sub_dir + f"/{folder_name}_embeddings/full_embeddings.csv"
     cfg.apply_transformations = False
 
     return cfg
@@ -168,4 +168,4 @@ def embeddings_pipeline(dir_path,
 
 embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-05-25",
 datasets=['cingulate_ACCpatterns', 'left_cingulate_ACCpatterns'], short_name='cing_ACC',
-classifier_name='svm', overwrite=True, use_best_model=False, verbose=True)
+classifier_name='svm', overwrite=True, use_best_model=False, verbose=False)
