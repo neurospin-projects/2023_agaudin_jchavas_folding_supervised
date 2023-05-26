@@ -124,17 +124,17 @@ def create_sets_without_labels(config):
         skeleton_output = extract_data(
             config.data[reg].numpy_all,
             config.data[reg].crop_dir, config, reg)
+        skeleton_all.append(skeleton_output)
 
         # Loads and separates in train_val/test set foldlabels if requested
         if config.apply_augmentations and config.foldlabel:
             foldlabel_output = sanity_checks_without_labels(config,
                                                             skeleton_output,
                                                             reg)
+            foldlabel_all.append(foldlabel_output)
         else:
             log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
             
-        skeleton_all.append(skeleton_output)
-        foldlabel_all.append(foldlabel_output)
 
     # Creates the dataset from these data by doing some preprocessing
     datasets = {}
@@ -165,6 +165,8 @@ def create_sets_without_labels(config):
             filenames,
             "filenames, " + subset_name)
         
+        log.info(foldlabel_arrays)
+
         datasets[subset_name] = ContrastiveDatasetFusion(
             filenames=filenames,
             arrays=arrays,

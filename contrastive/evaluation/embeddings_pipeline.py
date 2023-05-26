@@ -10,25 +10,43 @@ from sklearn.utils._testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
 
 
+def get_save_folder_name(datasets, short_name):
+    if short_name is not None:
+        folder_name = short_name
+    else:
+        folder_name = ''
+        for dataset in datasets:
+            folder_name = folder_name + dataset + '_'
+        folder_name = folder_name[:-1]  # remove the last _
+    
+    return folder_name
+
+
 # Auxilary function used to process the config linked to the model.
 # For instance, change the embeddings save path to being next to the model.
-def preprocess_config(sub_dir, dataset, classifier_name='svm', reg, verbose=False):
+def preprocess_config(sub_dir, datasets, folder_name, classifier_name='svm', verbose=False):
     if verbose:
         print(os.getcwd())
     cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config.yaml')
 
     # replace the dataset
-    # first, remove some keys of the older dataset
-    keys_to_remove = ['train_val_csv_file', 'train_csv_file', 'val_csv_file',
-                      'test_intra_csv_file', 'test_csv_file']
-    for key in keys_to_remove:
-        if key in cfg.data[reg].keys():
-            cfg.data[reg].pop(key)
-    # add the ones of the target dataset
-    with open(f'./configs/dataset/{dataset}.yaml', 'r') as file:
-        dataset_yaml = yaml.load(file, yaml.FullLoader)
-    for key in dataset_yaml:
-        cfg.data[reg][key] = dataset_yaml[key]
+    # first, remove the keys of the older datasets
+    cfg['dataset'] = {}
+
+    # keys_to_remove = ['train_val_csv_file', 'train_csv_file', 'val_csv_file',
+    #                   'test_intra_csv_file', 'test_csv_file']
+    # for key in keys_to_remove:
+    #     for reg in range(len(cfg.data)):
+    #         if key in cfg.data[reg].keys():
+    #             cfg.data[reg].pop(key)
+
+    # add the ones of the target datasets
+    for dataset in datasets:
+        with open(f'./configs/dataset/{dataset}.yaml', 'r') as file:
+            dataset_yaml = yaml.load(file, yaml.FullLoader)
+        cfg.dataset[dataset] = {}
+        for key in dataset_yaml:
+            cfg.dataset[dataset][key] = dataset_yaml[key]
 
     # get the right classifiers parameters
     with open(f'./configs/classifier/{classifier_name}.yaml', 'r') as file:
@@ -37,10 +55,10 @@ def preprocess_config(sub_dir, dataset, classifier_name='svm', reg, verbose=Fals
         cfg[key] = dataset_yaml[key]
 
     # replace the possibly incorrect config parameters
-    cfg.training_labels = cfg.data[reg]['subject_labels_file']
+    # cfg.training_labels = cfg.data[0]['subject_labels_file']  # pas besoin de cette ligne
     cfg.model_path = sub_dir
     cfg.embeddings_save_path = \
-        sub_dir + f"/{dataset}_embeddings"
+        sub_dir + f"/{folder_name}_embeddings"
     cfg.training_embeddings = \
         sub_dir + f"/{dataset}_embeddings/full_embeddings.csv"
     cfg.apply_transformations = False
@@ -52,7 +70,7 @@ def preprocess_config(sub_dir, dataset, classifier_name='svm', reg, verbose=Fals
 # creates embeddings and train classifiers for all models contained in folder
 @ignore_warnings(category=ConvergenceWarning)
 def embeddings_pipeline(dir_path,
-                        dataset='cingulate_ACCpatterns',
+                        datasets='cingulate_ACCpatterns', short_name=None,
                         classifier_name='svm',
                         overwrite=False, verbose=False, use_best_model=False):
     """
@@ -77,8 +95,9 @@ def embeddings_pipeline(dir_path,
                 # check if embeddings and ROC already computed
                 # if already computed and don't want to overwrite, then pass
                 # else apply the normal process
+                folder_name = get_save_folder_name(datasets=datasets, short_name=short_name)
                 if (
-                    os.path.exists(sub_dir + f"/{dataset}_embeddings")
+                    os.path.exists(sub_dir + f"/{folder_name}_embeddings")
                     and (not overwrite)
                 ):
                     print("Model already treated "
@@ -95,7 +114,7 @@ def embeddings_pipeline(dir_path,
                     print("Start post processing")
                     # get the config and correct it to suit
                     # what is needed for classifiers
-                    cfg = preprocess_config(sub_dir, dataset, 
+                    cfg = preprocess_config(sub_dir, datasets, folder_name,
                                             classifier_name=classifier_name)
                     if verbose:
                         print("CONFIG FILE", type(cfg))
@@ -137,13 +156,16 @@ def embeddings_pipeline(dir_path,
             else:
                 print(f"{sub_dir} not associated to a model. Continue")
                 embeddings_pipeline(sub_dir,
-                                    dataset=dataset,
+                                    datasets=datasets,
+                                    short_name=short_name,
                                     classifier_name=classifier_name,
                                     overwrite=overwrite,
+                                    use_best_model=use_best_model,
                                     verbose=verbose)
         else:
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-05-17",
-dataset='cingulate_ACCpatterns', verbose=False, classifier_name='svm', overwrite=True, use_best_model=False)
+embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-05-25",
+datasets=['cingulate_ACCpatterns', 'left_cingulate_ACCpatterns'], short_name='cing_ACC',
+classifier_name='svm', overwrite=True, use_best_model=False, verbose=True)
