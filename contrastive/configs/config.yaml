@@ -5,7 +5,7 @@ defaults:
   - dataset/right_cingulate_HCP_full_top-separated_Flanker_AgeAdj
   - dataset/left_cingulate_HCP_full_top-separated_Flanker_AgeAdj
   - model: SimCLR_supervised
-  - mode: regresser
+  - mode: classifier
   - augmentations: foldlabel
   - backbone: ConvNet
   - platform: cuda_not_brainvisa

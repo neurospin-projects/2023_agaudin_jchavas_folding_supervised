@@ -159,7 +159,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def training_step(self, train_batch, batch_idx):
         """Training step.
         """
-        (inputs, labels, filenames, view3) = self.get_full_inputs_from_batch_with_labels(train_batch)
+        (inputs, labels, filenames, view3) = \
+            self.get_full_inputs_from_batch_with_labels(train_batch)
         input_i = [inputs[i][:, 0, ...] for i in range(self.n_datasets)]
         input_j = [inputs[i][:, 1, ...] for i in range(self.n_datasets)]
         z_i = self.forward(input_i)
