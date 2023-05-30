@@ -9,7 +9,7 @@ import torch.nn.functional as F
 class LinearProjectionHead(pl.LightningModule):
 
     def __init__(self, num_representation_features=256,
-                 layers_shapes=[256,10]):
+                 layers_shapes=[256, 10]):
         super(LinearProjectionHead, self).__init__()
 
         self.num_representation_features = num_representation_features
@@ -33,7 +33,7 @@ class LinearProjectionHead(pl.LightningModule):
 class ReluProjectionHead(pl.LightningModule):
 
     def __init__(self, num_representation_features=256,
-                 layers_shapes=[256,10]):
+                 layers_shapes=[256, 10]):
         super(ReluProjectionHead, self).__init__()
 
         self.num_representation_features = num_representation_features

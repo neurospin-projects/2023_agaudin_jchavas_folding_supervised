@@ -162,9 +162,9 @@ class CrossEntropyLoss_Classification(nn.Module):
         output_i = output_i.float()
         output_j = output_j.float()
 
-        loss_i = self.loss(output_i[:, 0],
+        loss_i = self.loss(output_i,
                            labels[:, 0])
-        loss_j = self.loss(output_j[:, 0],
+        loss_j = self.loss(output_j,
                            labels[:, 0])
 
         return (loss_i + loss_j)
