@@ -24,7 +24,7 @@ class LinearProjectionHead(pl.LightningModule):
             input_size = output_size
         
         self.layers = nn.Sequential(OrderedDict(layers))
-    
+
     def forward(self, x):
         out = self.layers(x)
         return out
@@ -45,11 +45,22 @@ class ReluProjectionHead(pl.LightningModule):
             output_size = dim_i
             layers.append(
                 ('Linear%s' % i, nn.Linear(input_size, output_size)))
+            if i < (len(layers_shapes)-1):
+                layers.append(
+                    ('norm%s' % i, nn.BatchNorm1d(output_size)))
             layers.append((f'LeakyReLU{i}', nn.LeakyReLU()))
             input_size = output_size
-        
+
         self.layers = nn.Sequential(OrderedDict(layers))
-    
+
+        for m in self.layers:
+            if isinstance(m, nn.BatchNorm1d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.5)
+                nn.init.constant_(m.bias, 0)
+
     def forward(self, x):
         out = self.layers(x)
         return out

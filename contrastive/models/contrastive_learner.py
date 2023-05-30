@@ -115,7 +115,8 @@ class ContrastiveLearner(pl.LightningModule):
         #         drop_rate=config.drop_rate,
         #         feature_transform=False)
         else:
-            raise ValueError(f"No underlying backbone with backbone name {config.backbone_name}")
+            raise ValueError(f"No underlying backbone "
+                             f"with backbone name {config.backbone_name}")
         
         num_representation_features_total = config.num_representation_features * n_datasets
 
