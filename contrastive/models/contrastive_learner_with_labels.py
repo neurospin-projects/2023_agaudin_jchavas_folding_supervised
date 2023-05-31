@@ -238,7 +238,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         return batch_dictionary
 
-    def compute_outputs_skeletons(self, loader, reg):
+    def compute_outputs_skeletons(self, loader):
         """Computes the outputs of the model for each crop.
 
         This includes the projection head"""
@@ -252,7 +252,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             num_outputs = self.config.num_representation_features
         X = torch.zeros([0, num_outputs]).cpu()
         labels_all = torch.zeros(
-            [0, len(self.config.data[reg].label_names)]).cpu()
+            [0, len(self.config.data[0].label_names)]).cpu()
         filenames_list = []
 
         # Computes embeddings without computing gradient

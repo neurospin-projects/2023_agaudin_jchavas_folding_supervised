@@ -1,7 +1,6 @@
 import os
 import yaml
 import json
-import hydra
 import omegaconf
 import glob
 import torch
@@ -130,6 +129,7 @@ def supervised_test_eval(config, model_path, use_best_model=True):
     cpkt_path = files[0]
     model.load_pretrained_model(cpkt_path, encoder_only=False)
 
+    model.to(torch.device(config.device))
     model.eval()
 
     test_loader = data_module.test_dataloader()
@@ -191,16 +191,21 @@ def pipeline(dir_path, dataset, overwrite=False, use_best_model=True):
                         yaml.dump(omegaconf.OmegaConf.to_yaml(cfg), file)
 
                     supervised_test_eval(cfg, os.path.abspath(sub_dir),
-                                         use_best_model=use_best_model)
+                                         use_best_model=False)
+                    if use_best_model:  # do both
+                        log.info("Repeat with the best model")
+                        cfg = preprocess_config(sub_dir, dataset)
+                        supervised_test_eval(cfg, os.path.abspath(sub_dir),
+                                         use_best_model=True)
 
             else:
                 print(f"{sub_dir} not associated to a model. Continue")
                 pipeline(sub_dir, dataset, overwrite=False,
-                         test_intra=False, use_best_model=True)
+                         use_best_model=use_best_model)
         else:
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/supervised/pretrained_UKB/ACCpatterns/opposite_side",
-         dataset="cingulate_ACCpatterns_left", overwrite=True,
+pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-05-31",
+         dataset="cingulate_ACCpatterns", overwrite=True,
          use_best_model=True)
