@@ -17,8 +17,22 @@ from contrastive.data.datamodule import DataModule_Evaluation
 log = set_file_logger(__file__)
 
 
-def checks_before_compute(sub_dir, dataset, overwrite=False,
+def get_save_folder_name(datasets, short_name):
+    if short_name is not None:
+        folder_name = short_name
+    else:
+        folder_name = ''
+        for dataset in datasets:
+            folder_name = folder_name + dataset + '_'
+        folder_name = folder_name[:-1]  # remove the last _
+    
+    return folder_name
+
+
+def checks_before_compute(sub_dir, datasets, short_name, overwrite=False,
                           use_best_model=True):
+    """Checks if a model has to be treated or not"""
+
     config_path = sub_dir+'/.hydra/config.yaml'
     with open(config_path, 'r') as file:
         config = yaml.load(file, Loader=yaml.BaseLoader)
@@ -29,7 +43,8 @@ def checks_before_compute(sub_dir, dataset, overwrite=False,
         return False
 
     # check if test values are already saved
-    if os.path.exists(sub_dir + f"/{dataset}_results") and (not overwrite):
+    folder_name = get_save_folder_name(datasets, short_name)
+    if os.path.exists(sub_dir + f"/{folder_name}_supervised_results") and (not overwrite):
         print("Model already treated (existing folder with results). Set \
 overwrite to True if you still want to evaluate it.")
         return False
@@ -54,23 +69,22 @@ overwrite to True if you still want to evaluate it.")
 
 # Auxilary function used to process the config linked to the model.
 # For instance, change the embeddings save path to being next to the model.
-def preprocess_config(sub_dir, dataset):
+def preprocess_config(sub_dir, datasets):
 
     log.debug(os.getcwd())
     cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config.yaml')
 
-    # replace the dataset
-    # first, remove some keys of the older dataset
-    keys_to_remove = ['train_val_csv_file', 'train_csv_file', 'val_csv_file',
-                      'test_intra_csv_file', 'test_csv_file']
-    for key in keys_to_remove:
-        if key in cfg.keys():
-            cfg.pop(key)
-    # add the ones of the target dataset
-    with open(f'./configs/dataset/{dataset}.yaml', 'r') as file:
-        dataset_yaml = yaml.load(file, yaml.FullLoader)
-    for key in dataset_yaml:
-        cfg[key] = dataset_yaml[key]
+    # replace the datasets
+    # first, remove the keys of the older datasets
+    cfg['dataset'] = {}
+
+    # add the ones of the target datasets
+    for dataset in datasets:
+        with open(f'./configs/dataset/{dataset}.yaml', 'r') as file:
+            dataset_yaml = yaml.load(file, yaml.FullLoader)
+        cfg.dataset[dataset] = {}
+        for key in dataset_yaml:
+            cfg.dataset[dataset][key] = dataset_yaml[key]
 
     # replace the possibly incorrect config parameters
     cfg.with_labels = True
@@ -79,6 +93,7 @@ def preprocess_config(sub_dir, dataset):
     return cfg
 
 
+#  ARE YOU SURE YOU STILL NEED THAT 
 def compute_test_auc(model, dataloader):
     # get the model's output
     Y_pred, labels, filenames = model.compute_outputs_skeletons(dataloader)
@@ -100,7 +115,8 @@ def compute_test_auc(model, dataloader):
     return test_auc
 
 
-def supervised_test_eval(config, model_path, use_best_model=True):
+def supervised_test_eval(config, model_path, folder_name=None, use_best_model=True):
+    """Actually computes the test (and test_intra if existing) auc of a target model."""
 
     config = process_config(config)
 
@@ -143,7 +159,7 @@ def supervised_test_eval(config, model_path, use_best_model=True):
     log.info(f"test_auc = {test_auc}")
 
     # create a save path is necessary
-    save_path = model_path+f"/{config.dataset_name}_results"
+    save_path = model_path+f"/{folder_name}_supervised_results"
     log.debug(f"Save path = {save_path}")
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -162,7 +178,7 @@ def supervised_test_eval(config, model_path, use_best_model=True):
         json.dump(results_dico, file)
 
 
-def pipeline(dir_path, dataset, overwrite=False, use_best_model=True):
+def pipeline(dir_path, datasets, short_name=None, overwrite=False, use_best_model=True):
     # walks recursively through the subfolders
     for name in os.listdir(dir_path):
         sub_dir = dir_path + '/' + name
@@ -175,13 +191,13 @@ def pipeline(dir_path, dataset, overwrite=False, use_best_model=True):
                 print(f"Treating {sub_dir}")
                 # checks to know if the model should be treated
                 cont_bool = checks_before_compute(
-                    sub_dir, dataset, overwrite=overwrite,
-                    use_best_model=use_best_model)
+                    sub_dir, datasets, overwrite=overwrite,
+                    short_name=short_name, use_best_model=use_best_model)
                 if cont_bool:
                     print("Start post processing")
                     # get the config
                     # and correct it to suit what is needed for classifiers
-                    cfg = preprocess_config(sub_dir, dataset)
+                    cfg = preprocess_config(sub_dir, datasets)
                     log.debug(f"CONFIG FILE {type(cfg)}")
                     log.debug(json.dumps(omegaconf.OmegaConf.to_container(
                         cfg, resolve=True), indent=4, sort_keys=True))
@@ -190,22 +206,23 @@ def pipeline(dir_path, dataset, overwrite=False, use_best_model=True):
                             as file:
                         yaml.dump(omegaconf.OmegaConf.to_yaml(cfg), file)
 
+                    folder_name = get_save_folder_name(datasets, short_name)
                     supervised_test_eval(cfg, os.path.abspath(sub_dir),
-                                         use_best_model=False)
+                                         folder_name=folder_name, use_best_model=False)
                     if use_best_model:  # do both
                         log.info("Repeat with the best model")
-                        cfg = preprocess_config(sub_dir, dataset)
+                        cfg = preprocess_config(sub_dir, datasets)
                         supervised_test_eval(cfg, os.path.abspath(sub_dir),
-                                         use_best_model=True)
+                                         folder_name=folder_name, use_best_model=True)
 
             else:
                 print(f"{sub_dir} not associated to a model. Continue")
-                pipeline(sub_dir, dataset, overwrite=False,
-                         use_best_model=use_best_model)
+                pipeline(sub_dir, datasets, short_name=short_name,
+                         overwrite=overwrite, use_best_model=use_best_model)
         else:
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-05-31",
-         dataset="cingulate_ACCpatterns", overwrite=True,
-         use_best_model=True)
+pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-05-31/test",
+         datasets=["cingulate_ACCpatterns", "cingulate_ACCpatterns_left"],
+         short_name='cing_ACC', overwrite=True, use_best_model=True)

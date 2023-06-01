@@ -305,7 +305,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def compute_output_probabilities(self, loader):
         if self.config.mode == 'classifier':
             X, labels_all, filenames_list = self.compute_output_skeletons(
-                loader, 0)
+                loader)
             # compute the mean of the two views' outputs
             X = (X[::2, ...] + X[1::2, ...]) / 2
             # remove the doubleing of labels
@@ -319,7 +319,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 "You shouldn't compute probabilities with another mode.")
 
     def compute_output_auc(self, loader):
-        X, labels, _ = self.compute_outputs_skeletons(loader, 0)
+        X, labels, _ = self.compute_outputs_skeletons(loader)
         # compute the mean of the two views' outputs
         X = (X[::2, ...] + X[1::2, ...]) / 2
         # remove the doubleing of labels
