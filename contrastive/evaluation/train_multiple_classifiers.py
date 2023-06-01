@@ -430,7 +430,7 @@ def train_svm_classifiers(config):
         results_save_path = os.path.dirname(results_save_path)
     # add a subfolder with the evaluated label as name
     results_save_path = results_save_path + "/" + config.data[0].label_names[0]
-    if not os.path.exists(config.data[0].label_names[0]):
+    if not os.path.exists(results_save_path):
         os.makedirs(results_save_path)
 
     embeddings, labels = load_embeddings(
@@ -550,6 +550,13 @@ def train_svm_classifiers(config):
 
 @hydra.main(config_name='config_no_save', config_path="../configs")
 def train_classifiers(config):
+    """Train classifiers (either SVM or neural networks) to classify target embeddings
+    with the given label.
+    
+    All the relevant information should be passed thanks to the input config.
+    
+    It saves txt files containg the acuuracies, the aucs and figures of the ROC curves."""
+
     config = process_config(config)
 
     print("\nIn train_classifiers, after process_config, "

@@ -1,32 +1,21 @@
 import os
+import glob
 import yaml
 import json
 import omegaconf
-import glob
 import torch
 
 from sklearn.metrics import roc_auc_score
 
-from contrastive.utils.config import process_config
-from contrastive.utils.logs import set_root_logger_level, set_file_logger
+from contrastive.data.datamodule import DataModule_Evaluation
 from contrastive.models.contrastive_learner_with_labels import \
     ContrastiveLearner_WithLabels
-from contrastive.data.datamodule import DataModule_Evaluation
+from contrastive.utils.config import process_config
+from contrastive.utils.logs import set_root_logger_level, set_file_logger
 
+from utils_pipelines import get_save_folder_name, change_config_datasets, save_used_datasets
 
 log = set_file_logger(__file__)
-
-
-def get_save_folder_name(datasets, short_name):
-    if short_name is not None:
-        folder_name = short_name
-    else:
-        folder_name = ''
-        for dataset in datasets:
-            folder_name = folder_name + dataset + '_'
-        folder_name = folder_name[:-1]  # remove the last _
-    
-    return folder_name
 
 
 def checks_before_compute(sub_dir, datasets, short_name, overwrite=False,
@@ -70,49 +59,27 @@ overwrite to True if you still want to evaluate it.")
 # Auxilary function used to process the config linked to the model.
 # For instance, change the embeddings save path to being next to the model.
 def preprocess_config(sub_dir, datasets):
+    """Loads the associated config of the given model and changes what has to be done,
+    mainly the datasets and a few other keywords.
+    
+    Arguments:
+        - sub_dir: str. Path to the directory containing the saved model.
+        - datasets: list of str. List of the datasets to be used for the results generation.
+        
+    Output:
+        - cfg: the config as an omegaconf object."""
 
     log.debug(os.getcwd())
     cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config.yaml')
 
-    # replace the datasets
-    # first, remove the keys of the older datasets
-    cfg['dataset'] = {}
-
-    # add the ones of the target datasets
-    for dataset in datasets:
-        with open(f'./configs/dataset/{dataset}.yaml', 'r') as file:
-            dataset_yaml = yaml.load(file, yaml.FullLoader)
-        cfg.dataset[dataset] = {}
-        for key in dataset_yaml:
-            cfg.dataset[dataset][key] = dataset_yaml[key]
+    # replace the datasets in place
+    change_config_datasets(cfg, datasets)
 
     # replace the possibly incorrect config parameters
     cfg.with_labels = True
     cfg.apply_augmentations = False
 
     return cfg
-
-
-#  ARE YOU SURE YOU STILL NEED THAT 
-def compute_test_auc(model, dataloader):
-    # get the model's output
-    Y_pred, labels, filenames = model.compute_outputs_skeletons(dataloader)
-    log.debug(f"prediction shape {Y_pred.shape}")
-    log.debug(f"prediction = {Y_pred[:10]}")
-    log.debug(f"filenames {filenames[:10]}")
-    log.debug(f"labels {labels[:10]}")
-    # take only one view (normally both are the same)
-    Y_pred = Y_pred[::2, :]
-    filenames = filenames[::2]
-    labels = labels[::2]
-
-    # apply softmax (applied in the loss during training)
-    Y_pred = torch.nn.functional.softmax(Y_pred, dim=1)
-
-    # compute auc
-    test_auc = roc_auc_score(labels, Y_pred[:, 1])
-
-    return test_auc
 
 
 def supervised_test_eval(config, model_path, folder_name=None, use_best_model=True):
@@ -151,11 +118,11 @@ def supervised_test_eval(config, model_path, folder_name=None, use_best_model=Tr
     test_loader = data_module.test_dataloader()
     try:
         test_intra_loader = data_module.test_intra_dataloader()
-        test_intra_auc = compute_test_auc(model, test_intra_loader)
+        test_intra_auc = model.compute_output_auc(test_intra_loader)
     except:
         log.info("No test intra for this dataset.")
 
-    test_auc = compute_test_auc(model, test_loader)
+    test_auc = model.compute_output_auc(test_loader)
     log.info(f"test_auc = {test_auc}")
 
     # create a save path is necessary
@@ -177,8 +144,25 @@ def supervised_test_eval(config, model_path, folder_name=None, use_best_model=Tr
     with open(json_path, 'w') as file:
         json.dump(results_dico, file)
 
+    # save what are the datasets have been used for the performance computation
+    datasets = config.dataset.keys()
+    save_used_datasets(save_path, datasets)
+
 
 def pipeline(dir_path, datasets, short_name=None, overwrite=False, use_best_model=True):
+    """Pipeline to generate automatically the test aucs for supervised classifiers only.
+
+    Arguments:
+        - dir_path: str. Path where the models are stored and where is applied 
+        recursively the process.
+        - datasets: list of str. Datasets the results are generated from. /!\ Only 
+        uses the test (and test_intra) subsets.
+        - short_name: str or None. Name of the directory where to store both embeddings 
+        and aucs. If None, use datasets to generate the folder name.
+        - overwrite: bool. Redo the process on models where embeddings already exist.
+        - use_best_model: bool. Use the best model saved during to generate embeddings. 
+        The 'normal' model is always used, the best is only added.
+    """
     # walks recursively through the subfolders
     for name in os.listdir(dir_path):
         sub_dir = dir_path + '/' + name
@@ -223,6 +207,6 @@ def pipeline(dir_path, datasets, short_name=None, overwrite=False, use_best_mode
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-05-31/test",
+pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-01",
          datasets=["cingulate_ACCpatterns", "cingulate_ACCpatterns_left"],
          short_name='cing_ACC', overwrite=True, use_best_model=True)

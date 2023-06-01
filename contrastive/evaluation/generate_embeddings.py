@@ -28,13 +28,14 @@ import os
 import glob
 
 from contrastive.utils.config import process_config
+from contrastive.data.datamodule import DataModule_Evaluation
+from contrastive.evaluation.utils_pipelines import save_used_datasets
 from contrastive.models.contrastive_learner_visualization import \
     ContrastiveLearner_Visualization
-from contrastive.data.datamodule import DataModule_Evaluation
 
 
 def embeddings_to_pandas(embeddings, csv_path=None, verbose=False):
-    """Homogenize column names and saves to pandas
+    """Homogenize column names and saves to pandas.
 
     Args:
         embeddings: Output of the compute_representations function
@@ -71,6 +72,13 @@ def embeddings_to_pandas(embeddings, csv_path=None, verbose=False):
 
 @hydra.main(config_name='config_no_save', config_path="../configs")
 def compute_embeddings(config):
+    """Compute the embeddings (= output of the backbone(s)) for a given model. 
+    It relies on the hydra config framework, especially the backbone, datasets 
+    and model parts.
+    
+    It saves csv files for each subset of the datasets (train, val, test_intra, 
+    test) and one with all subjects."""
+    
     config = process_config(config)
 
     config.apply_augmentations = False
@@ -159,6 +167,8 @@ def compute_embeddings(config):
     full_df.to_csv(embeddings_path+"/full_embeddings.csv")
 
     print("ALL EMBEDDINGS GENERATED: OK")
+
+    save_used_datasets(embeddings_path, config.dataset.keys())
 
 
 if __name__ == "__main__":

@@ -5,41 +5,35 @@ import omegaconf
 
 from generate_embeddings import compute_embeddings
 from train_multiple_classifiers import train_classifiers
+from utils_pipelines import get_save_folder_name, change_config_datasets
 
 from sklearn.utils._testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
 
 
-def get_save_folder_name(datasets, short_name):
-    if short_name is not None:
-        folder_name = short_name
-    else:
-        folder_name = ''
-        for dataset in datasets:
-            folder_name = folder_name + dataset + '_'
-        folder_name = folder_name[:-1]  # remove the last _
-    
-    return folder_name
-
-
 # Auxilary function used to process the config linked to the model.
 # For instance, change the embeddings save path to being next to the model.
 def preprocess_config(sub_dir, datasets, folder_name, classifier_name='svm', verbose=False):
+    """Loads the associated config of the given model and changes what has to be done,
+    mainly the datasets, the classifier type and a few other keywords.
+    
+    Arguments:
+        - sub_dir: str. Path to the directory containing the saved model.
+        - datasets: list of str. List of the datasets to be used for the results generation.
+        - folder_name: str. Name of the directory where to store both embeddings and aucs.
+        - classifier_name: str. Should correspond to a classifier yaml file's name 
+        (currently either 'svm' or 'neural_network').
+        - verbose: bool. Verbose.
+        
+    Output:
+        - cfg: the config as an omegaconf object."""
+
     if verbose:
         print(os.getcwd())
     cfg = omegaconf.OmegaConf.load(sub_dir+'/.hydra/config.yaml')
 
     # replace the datasets
-    # first, remove the keys of the older datasets
-    cfg['dataset'] = {}
-
-    # add the ones of the target datasets
-    for dataset in datasets:
-        with open(f'./configs/dataset/{dataset}.yaml', 'r') as file:
-            dataset_yaml = yaml.load(file, yaml.FullLoader)
-        cfg.dataset[dataset] = {}
-        for key in dataset_yaml:
-            cfg.dataset[dataset][key] = dataset_yaml[key]
+    change_config_datasets(cfg, datasets)
 
     # get the right classifiers parameters
     with open(f'./configs/classifier/{classifier_name}.yaml', 'r') as file:
@@ -48,7 +42,6 @@ def preprocess_config(sub_dir, datasets, folder_name, classifier_name='svm', ver
         cfg[key] = dataset_yaml[key]
 
     # replace the possibly incorrect config parameters
-    # cfg.training_labels = cfg.data[0]['subject_labels_file']  # pas besoin de cette ligne
     cfg.model_path = sub_dir
     cfg.embeddings_save_path = \
         sub_dir + f"/{folder_name}_embeddings"
@@ -62,17 +55,23 @@ def preprocess_config(sub_dir, datasets, folder_name, classifier_name='svm', ver
 # main function
 # creates embeddings and train classifiers for all models contained in folder
 @ignore_warnings(category=ConvergenceWarning)
-def embeddings_pipeline(dir_path,
-                        datasets='cingulate_ACCpatterns', short_name=None,
-                        classifier_name='svm',
-                        overwrite=False, verbose=False, use_best_model=False):
-    """
-    - dir_path: path where to apply recursively the process.
-    - dataset: dataset the embeddings are generated from.
-    - classifier_name: parameter to select the desired classifer type
-    (currently neural_network or svm).
-    - overwrite: redo the process on models where embeddings already exist.
-    - verbose: verbose.
+def embeddings_pipeline(dir_path, datasets, short_name=None, classifier_name='svm',
+                        overwrite=False, use_best_model=False, verbose=False):
+    """Pipeline to generate automatically the embeddings and compute the 
+    associated aucs for all the models contained in a given directory.
+
+    Arguments:
+        - dir_path: str. Path where the models are stored and where is applied 
+        recursively the process.
+        - datasets: list of str. Datasets the embeddings are generated from.
+        - short_name: str or None. Name of the directory where to store both embeddings 
+        and aucs. If None, use datasets to generate the folder name.
+        - classifier_name: str. Parameter to select the desired classifer type
+        (currently neural_network or svm).
+        - overwrite: bool. Redo the process on models where embeddings already exist.
+        - use_best_model: bool. Use the best model saved during to generate embeddings. 
+        The 'normal' model is always used, the best is only added.
+        - verbose: bool. Verbose.
     """
 
     print("/!\\ Convergence warnings are disabled")
@@ -129,7 +128,6 @@ def embeddings_pipeline(dir_path,
                     train_classifiers(cfg)
 
                     # compute embeddings for the best model if saved
-                    # FULL BRICOLAGE
                     if (use_best_model and os.path.exists(sub_dir+'/logs/best_model_weights.pt')):
                         # apply the functions
                         cfg = omegaconf.OmegaConf.load(
@@ -159,6 +157,6 @@ def embeddings_pipeline(dir_path,
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-05-31/test",
-datasets=['cingulate_ACCpatterns'], short_name='cing_ACC',
+embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-01",
+datasets=['cingulate_ACCpatterns', 'cingulate_ACCpatterns_left'], short_name='cing_ACC',
 classifier_name='svm', overwrite=True, use_best_model=False, verbose=False)
