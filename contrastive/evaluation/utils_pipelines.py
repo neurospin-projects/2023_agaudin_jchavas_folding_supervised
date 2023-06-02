@@ -64,3 +64,25 @@ def save_used_datasets(save_path, datasets):
         for dataset in datasets:
             file.write(dataset)
             file.write('\n')
+
+
+def save_used_label(save_path, config):
+    """Save the label used for classification in a .txt file. Used both in 
+    supervised and embeddings pipelines.
+
+    Arguments:
+        - save_path: str. Where the txt file is saved. Either the name 
+        of the directory or directly the full path with the file name.
+        - config: omegaconf object. Contains the label used for test 
+        classification."""
+    
+    # if save path is only a directory
+    if os.path.isdir(save_path):
+        # add the actual file name at the end
+        save_path = os.path.join(save_path, 'label_used.txt')
+    
+    # get label from config
+    label = config.data[0].label_names[0]
+
+    with open(save_path, 'w') as file:
+        file.write(label)

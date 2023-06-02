@@ -23,6 +23,7 @@ from contrastive.data.utils import read_labels
 
 from contrastive.utils.config import process_config
 from contrastive.utils.logs import set_root_logger_level, set_file_logger
+from contrastive.evaluation.utils_pipelines import save_used_label
 
 from sklearn.utils._testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
@@ -125,7 +126,7 @@ def load_and_format_embeddings(dir_path, labels_path, config):
 
 
 def compute_indicators(Y, proba_pred):
-    # compute ROC curve and auc
+    """Compute ROC curve and auc, and accuracy."""
     if type(Y) == torch.tensor:
         labels_true = Y.detach_().numpy()
     else:
@@ -147,8 +148,9 @@ def compute_auc(column, label_col=None):
     return roc_auc_score(label_col, column)
 
 
-# get a model with performance that is representative of the group
 def get_average_model(labels_df):
+    """Get a model with performance that is representative of the group, 
+    i.e. the one with the median auc."""
     aucs = labels_df.apply(compute_auc, args=[labels_df.label])
     aucs = aucs[aucs.index != 'label']
     aucs = aucs[aucs == aucs.quantile(interpolation='nearest')]
@@ -157,6 +159,8 @@ def get_average_model(labels_df):
 
 def post_processing_results(labels, embeddings, Curves, aucs, accuracies,
                             values, columns_names, mode, results_save_path):
+    """Get the mean and the median AUC and accuracy, plot the ROC curves and 
+    the generated files."""
 
     labels_true = labels.label.values.astype('float64')
 
@@ -211,10 +215,10 @@ def post_processing_results(labels, embeddings, Curves, aucs, accuracies,
     # DEBUG embeddings.to_csv(results_save_path+f"/effective_embeddings.csv",
     #                         index=True)
 
-    return
-
 
 def train_nn_classifiers(config):
+    """Sets up the save paths, loads the embeddings and then loops 
+    to train the 250 neural networks."""
     # set up load and save paths
     train_embs_path = config.training_embeddings
     train_lab_paths = config.training_labels
@@ -405,6 +409,8 @@ def train_one_svm_classifier(config, inputs, i=0):
 
 @ignore_warnings(category=ConvergenceWarning)
 def train_svm_classifiers(config):
+    """Sets up the save paths, loads the embeddings and then loops 
+    to train the 250 SVMs."""
     # import the data
 
     # set up load and save paths
@@ -546,6 +552,8 @@ def train_svm_classifiers(config):
 
     # plt.show()
     plt.close('all')
+
+    save_used_label(os.path.dirname(results_save_path), config)
 
 
 @hydra.main(config_name='config_no_save', config_path="../configs")

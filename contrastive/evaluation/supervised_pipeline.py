@@ -5,15 +5,14 @@ import json
 import omegaconf
 import torch
 
-from sklearn.metrics import roc_auc_score
-
 from contrastive.data.datamodule import DataModule_Evaluation
 from contrastive.models.contrastive_learner_with_labels import \
     ContrastiveLearner_WithLabels
 from contrastive.utils.config import process_config
 from contrastive.utils.logs import set_root_logger_level, set_file_logger
 
-from utils_pipelines import get_save_folder_name, change_config_datasets, save_used_datasets
+from utils_pipelines import get_save_folder_name, change_config_datasets, \
+    save_used_datasets, save_used_label
 
 log = set_file_logger(__file__)
 
@@ -147,6 +146,7 @@ def supervised_test_eval(config, model_path, folder_name=None, use_best_model=Tr
     # save what are the datasets have been used for the performance computation
     datasets = config.dataset.keys()
     save_used_datasets(save_path, datasets)
+    save_used_label(save_path, config)
 
 
 def pipeline(dir_path, datasets, short_name=None, overwrite=False, use_best_model=True):
@@ -207,6 +207,6 @@ def pipeline(dir_path, datasets, short_name=None, overwrite=False, use_best_mode
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-01",
+pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-02",
          datasets=["cingulate_ACCpatterns", "cingulate_ACCpatterns_left"],
-         short_name='cing_ACC', overwrite=True, use_best_model=True)
+         short_name='cing_ACC', overwrite=False, use_best_model=True)

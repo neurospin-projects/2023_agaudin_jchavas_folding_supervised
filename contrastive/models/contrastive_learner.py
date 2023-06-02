@@ -197,7 +197,7 @@ class ContrastiveLearner(pl.LightningModule):
                     i += 1
 
     def load_pretrained_model(self, pretrained_model_path, encoder_only=False):
-        """load weights stored in a state_dict at pretrained_model_path
+        """Load weights stored in a state_dict at pretrained_model_path
         """
 
         pretrained_state_dict = torch.load(pretrained_model_path)['state_dict']
@@ -494,6 +494,7 @@ class ContrastiveLearner(pl.LightningModule):
         return X, filenames_list
 
     def plotting_now(self):
+        """Tells if it is the right epoch to plot the tSNE."""
         if self.config.nb_epochs_per_tSNE <= 0:
             return False
         elif self.current_epoch % self.config.nb_epochs_per_tSNE == 0 \
@@ -596,7 +597,7 @@ class ContrastiveLearner(pl.LightningModule):
         return batch_dictionary
 
     def validation_epoch_end(self, outputs):
-        """Computaion done at the end of each validation epoch"""
+        """Computation done at the end of each validation epoch"""
 
         # Computes t-SNE
         if self.config.mode == "encoder":
