@@ -315,9 +315,10 @@ def create_sets_with_labels(config):
             check_if_same_csv(config.data[0].subjects_all,
                               config.data[reg+1].subjects_all,
                               "subjects_all")
-            check_if_same_csv(config.data[0].train_val_csv_file,
-                              config.data[reg+1].train_val_csv_file,
-                              "train_csv", header=None)
+            if 'train_val_csv_file' in config.data[0].keys():
+                check_if_same_csv(config.data[0].train_val_csv_file,
+                                config.data[reg+1].train_val_csv_file,
+                                "train_val_csv", header=None)
             check_if_numpy_same_length(config.data[0].numpy_all,
                                        config.data[1].numpy_all,
                                        "numpy_all")

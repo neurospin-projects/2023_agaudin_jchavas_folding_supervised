@@ -81,8 +81,9 @@ def preprocess_config(sub_dir, datasets):
     return cfg
 
 
-def supervised_test_eval(config, model_path, folder_name=None, use_best_model=True):
-    """Actually computes the test (and test_intra if existing) auc of a target model."""
+def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=True):
+    """Actually computes the test, train and val (and test_intra if existing) auc 
+    of a target model."""
 
     config = process_config(config)
 
@@ -114,15 +115,24 @@ def supervised_test_eval(config, model_path, folder_name=None, use_best_model=Tr
     model.to(torch.device(config.device))
     model.eval()
 
+    # get the data and compute auc
+        # train and val auc
+    train_loader = data_module.train_dataloader()
+    val_loader = data_module.val_dataloader()
     test_loader = data_module.test_dataloader()
+
+    # test_intra
     try:
         test_intra_loader = data_module.test_intra_dataloader()
         test_intra_auc = model.compute_output_auc(test_intra_loader)
+        log.info(f"test_intra_auc = {test_intra_auc}")
     except:
         log.info("No test intra for this dataset.")
 
+    # train-val-test aucs
+    train_auc = model.compute_output_auc(train_loader)
+    val_auc = model.compute_output_auc(val_loader)
     test_auc = model.compute_output_auc(test_loader)
-    log.info(f"test_auc = {test_auc}")
 
     # create a save path is necessary
     save_path = model_path+f"/{folder_name}_supervised_results"
@@ -131,15 +141,18 @@ def supervised_test_eval(config, model_path, folder_name=None, use_best_model=Tr
         os.makedirs(save_path)
 
     # save the results
-    results_dico = {'test_auc': test_auc}
+    results_dico = {'train_auc': train_auc,
+                    'val_auc': val_auc,
+                    'test_auc': test_auc}
+    log.info(f"aucs = {results_dico}")
     # if test_intra has been computed
     if 'test_intra_auc' in locals():
         results_dico['test_intra_auc'] = test_intra_auc
 
     if use_best_model:
-        json_path = save_path+'/test_results_best_model.json'
+        json_path = save_path+'/aucs_best_model.json'
     else:
-        json_path = save_path+'/test_results.json'
+        json_path = save_path+'/aucs.json'
     with open(json_path, 'w') as file:
         json.dump(results_dico, file)
 
@@ -150,7 +163,7 @@ def supervised_test_eval(config, model_path, folder_name=None, use_best_model=Tr
 
 
 def pipeline(dir_path, datasets, short_name=None, overwrite=False, use_best_model=True):
-    """Pipeline to generate automatically the test aucs for supervised classifiers only.
+    """Pipeline to generate automatically the output aucs for supervised classifiers only.
 
     Arguments:
         - dir_path: str. Path where the models are stored and where is applied 
@@ -191,12 +204,12 @@ def pipeline(dir_path, datasets, short_name=None, overwrite=False, use_best_mode
                         yaml.dump(omegaconf.OmegaConf.to_yaml(cfg), file)
 
                     folder_name = get_save_folder_name(datasets, short_name)
-                    supervised_test_eval(cfg, os.path.abspath(sub_dir),
+                    supervised_auc_eval(cfg, os.path.abspath(sub_dir),
                                          folder_name=folder_name, use_best_model=False)
                     if use_best_model:  # do both
                         log.info("Repeat with the best model")
                         cfg = preprocess_config(sub_dir, datasets)
-                        supervised_test_eval(cfg, os.path.abspath(sub_dir),
+                        supervised_auc_eval(cfg, os.path.abspath(sub_dir),
                                          folder_name=folder_name, use_best_model=True)
 
             else:
@@ -207,6 +220,6 @@ def pipeline(dir_path, datasets, short_name=None, overwrite=False, use_best_mode
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-02",
-         datasets=["cingulate_ACCpatterns", "cingulate_ACCpatterns_left"],
-         short_name='cing_ACC', overwrite=False, use_best_model=True)
+pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-05",
+         datasets=["cingulate_schiz", "cingulate_schiz_left"],
+         short_name='cing_schiz', overwrite=False, use_best_model=True)
