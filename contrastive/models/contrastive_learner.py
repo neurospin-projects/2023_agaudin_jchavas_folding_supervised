@@ -198,7 +198,7 @@ class ContrastiveLearner(pl.LightningModule):
                     i += 1
 
     def load_pretrained_model(self, pretrained_model_path, encoder_only=False):
-        """load weights stored in a state_dict at pretrained_model_path
+        """Load weights stored in a state_dict at pretrained_model_path
         """
 
         pretrained_state_dict = torch.load(pretrained_model_path)['state_dict']
@@ -448,7 +448,7 @@ class ContrastiveLearner(pl.LightningModule):
         Representation are before the projection head"""
 
         # Initialization
-        X = torch.zeros([0, self.config.num_representation_features]).cpu()
+        X = torch.zeros([0, self.config.num_representation_features * self.n_datasets]).cpu()
         filenames_list = []
 
         # Computes representation (without gradient computation)
@@ -459,21 +459,28 @@ class ContrastiveLearner(pl.LightningModule):
                 if self.config.device != 'cpu':
                     inputs = change_list_device(inputs, 'cuda')
                 else:
-                    inputs = change_list_device(inputs, 'cuda')
+                    inputs = change_list_device(inputs, 'cpu')
                 if self.config.backbone_name == 'pointnet':
                     inputs = torch.squeeze(inputs).to(torch.float)
                 if self.config.device != 'cpu':
                     model = self.cuda()
                 else:
                     model = self.cpu()
-                input_i = [inputs[i][:, 0, ...] for i in range(self.n_datasets)]
-                input_j = [inputs[i][:, 1, ...] for i in range(self.n_datasets)]
-                model.forward(input_i)
-                X_i = first(self.save_output.outputs.values())
+                input_i = [inputs[k][:, 0, ...] for k in range(self.n_datasets)]
+                input_j = [inputs[k][:, 1, ...] for k in range(self.n_datasets)]
+                
+                X_i = []
+                for k in range(self.n_datasets):
+                    embedding = model.backbones[k].forward(input_i[k])
+                    X_i.append(embedding)
+                X_i = torch.cat(X_i, dim=1)
 
                 # Second views of the whole batch
-                model.forward(input_j)
-                X_j = first(self.save_output.outputs.values())
+                X_j = []
+                for k in range(self.n_datasets):
+                    embedding = model.backbones[k].forward(input_j[k])
+                    X_j.append(embedding)
+                X_j = torch.cat(X_j, dim=1)
 
                 # print("representations", X_i.shape, X_j.shape)
                 # First views and second views are put side by side
@@ -490,6 +497,7 @@ class ContrastiveLearner(pl.LightningModule):
         return X, filenames_list
 
     def plotting_now(self):
+        """Tells if it is the right epoch to plot the tSNE."""
         if self.config.nb_epochs_per_tSNE <= 0:
             return False
         elif self.current_epoch % self.config.nb_epochs_per_tSNE == 0 \
@@ -592,7 +600,7 @@ class ContrastiveLearner(pl.LightningModule):
         return batch_dictionary
 
     def validation_epoch_end(self, outputs):
-        """Computaion done at the end of each validation epoch"""
+        """Computation done at the end of each validation epoch"""
 
         # Computes t-SNE
         if self.config.mode == "encoder":

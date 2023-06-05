@@ -124,6 +124,7 @@ def create_sets_without_labels(config):
         skeleton_output = extract_data(
             config.data[reg].numpy_all,
             config.data[reg].crop_dir, config, reg)
+        skeleton_all.append(skeleton_output)
 
         # Loads and separates in train_val/test set foldlabels if requested
         if config.apply_augmentations and config.foldlabel:
@@ -131,10 +132,11 @@ def create_sets_without_labels(config):
                                                             skeleton_output,
                                                             reg)
         else:
+            foldlabel_output = None
             log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
-            
-        skeleton_all.append(skeleton_output)
+        
         foldlabel_all.append(foldlabel_output)
+            
 
     # Creates the dataset from these data by doing some preprocessing
     datasets = {}
@@ -164,7 +166,7 @@ def create_sets_without_labels(config):
         check_if_list_of_equal_dataframes(
             filenames,
             "filenames, " + subset_name)
-        
+
         datasets[subset_name] = ContrastiveDatasetFusion(
             filenames=filenames,
             arrays=arrays,
@@ -313,9 +315,10 @@ def create_sets_with_labels(config):
             check_if_same_csv(config.data[0].subjects_all,
                               config.data[reg+1].subjects_all,
                               "subjects_all")
-            check_if_same_csv(config.data[0].train_val_csv_file,
-                              config.data[reg+1].train_val_csv_file,
-                              "train_csv", header=None)
+            if 'train_val_csv_file' in config.data[0].keys():
+                check_if_same_csv(config.data[0].train_val_csv_file,
+                                config.data[reg+1].train_val_csv_file,
+                                "train_val_csv", header=None)
             check_if_numpy_same_length(config.data[0].numpy_all,
                                        config.data[1].numpy_all,
                                        "numpy_all")

@@ -7,6 +7,6 @@ temperature_supervised: 0.3
 sigma_labels: 2.0
 sigma: 5
 drop_rate: 0.05
-proportion_pure_contrastive: 1.0
+proportion_pure_contrastive: 1.0  # only used in the encoder case
 pretrained_model_path: #/path/to/FILE.ckpt
 load_encoder_only: True
