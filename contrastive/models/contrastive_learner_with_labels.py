@@ -239,7 +239,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         return batch_dictionary
 
-    def compute_outputs_skeletons(self, loader, reg):
+    def compute_outputs_skeletons(self, loader):
         """Computes the outputs of the model for each crop.
 
         This includes the projection head"""
@@ -253,7 +253,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             num_outputs = self.config.num_representation_features
         X = torch.zeros([0, num_outputs]).cpu()
         labels_all = torch.zeros(
-            [0, len(self.config.data[reg].label_names)]).cpu()
+            [0, len(self.config.data[0].label_names)]).cpu()
         filenames_list = []
 
         # Computes embeddings without computing gradient
@@ -320,7 +320,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 "You shouldn't compute probabilities with another mode.")
 
     def compute_output_auc(self, loader):
-        X, labels, _ = self.compute_outputs_skeletons(loader, 0)
+        X, labels, _ = self.compute_outputs_skeletons(loader)
         # compute the mean of the two views' outputs
         X = (X[::2, ...] + X[1::2, ...]) / 2
         # remove the doubleing of labels
@@ -345,7 +345,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         # Computes embeddings without computing gradient
         with torch.no_grad():
             for batch in loader:
-                (inputs, _, filenames, _) = self.get_full_inputs_from_batch_with_labels(batch)
+                (inputs, _, filenames, _) = \
+                    self.get_full_inputs_from_batch_with_labels(batch)
                 # First views of the whole batch
                 inputs = change_list_device(inputs, 'cuda')
                 model = self.cuda()
@@ -359,7 +360,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         return X, filenames_list
 
-    def compute_representations(self, loader, reg):
+    def compute_representations(self, loader):
         """Computes representations for each crop.
 
         Representation are before the projection head"""
@@ -367,23 +368,29 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         # Initialization
         X = torch.zeros([0, self.config.num_representation_features]).cpu()
         labels_all = torch.zeros(
-            [0, len(self.config.data[reg].label_names)]).cpu()
+            [0, len(self.config.data[0].label_names)]).cpu()
         filenames_list = []
 
         # Computes representation (without gradient computation)
         with torch.no_grad():
             for batch in loader:
-                (inputs, labels, filenames, _) = self.get_full_inputs_from_batch_with_labels(batch)
+                (inputs, labels, filenames, _) = \
+                    self.get_full_inputs_from_batch_with_labels(batch)
                 # We first compute the embeddings
                 # for the first views of the whole batch
                 inputs = change_list_device(inputs, 'cuda')
-                model = self.cuda()
-                model.forward(inputs[:, 0, :])
+                # model = self.cuda()
+                input_i = [inputs[i][:, 0, ...] for i in range(self.n_datasets)]
+                input_j = [inputs[i][:, 1, ...] for i in range(self.n_datasets)]
+                if self.config.backbone_name == 'pointnet':
+                    input_i = transform(input_i.cpu()).cuda().to(torch.float)
+                    input_j = transform(input_j.cpu()).cuda().to(torch.float)
+                self.forward(input_i)
                 X_i = first(self.save_output.outputs.values())
 
                 # We then compute the embeddings for the second views
                 # of the whole batch
-                model.forward(inputs[:, 1, :])
+                self.forward(input_j)
                 X_j = first(self.save_output.outputs.values())
 
                 # We now concatenate the embeddings

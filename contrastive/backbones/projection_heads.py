@@ -48,7 +48,7 @@ class ReluProjectionHead(pl.LightningModule):
             if i < (len(layers_shapes)-1):
                 layers.append(
                     ('norm%s' % i, nn.BatchNorm1d(output_size)))
-            layers.append((f'LeakyReLU{i}', nn.LeakyReLU()))
+                layers.append((f'LeakyReLU{i}', nn.LeakyReLU()))
             input_size = output_size
 
         self.layers = nn.Sequential(OrderedDict(layers))

@@ -1,12 +1,12 @@
 defaults:
   - _self_
   - hydra: local
-  - dataset/right_cingulate_HCP_full_nb_voxels
-  - dataset/left_cingulate_HCP_full_nb_voxels
+  - dataset/right_cingulate_HCP_full_top-separated_Flanker_AgeAdj
+  - dataset/left_cingulate_HCP_full_top-separated_Flanker_AgeAdj
   - model: SimCLR_supervised
   - mode: regresser
   - augmentations: foldlabel
-  - backbone: DenseNet
+  - backbone: ConvNet
   - platform: cuda_not_brainvisa
   - trainer: default
   - classifier: svm
