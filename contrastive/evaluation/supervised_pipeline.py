@@ -205,12 +205,14 @@ def pipeline(dir_path, datasets, short_name=None, overwrite=False, use_best_mode
 
                     folder_name = get_save_folder_name(datasets, short_name)
                     supervised_auc_eval(cfg, os.path.abspath(sub_dir),
-                                         folder_name=folder_name, use_best_model=False)
+                                        folder_name=folder_name,
+                                        use_best_model=False)
                     if use_best_model:  # do both
                         log.info("Repeat with the best model")
                         cfg = preprocess_config(sub_dir, datasets)
                         supervised_auc_eval(cfg, os.path.abspath(sub_dir),
-                                         folder_name=folder_name, use_best_model=True)
+                                        folder_name=folder_name,
+                                        use_best_model=True)
 
             else:
                 print(f"{sub_dir} not associated to a model. Continue")
