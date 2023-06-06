@@ -46,9 +46,12 @@ from toolz.itertoolz import first
 from collections import OrderedDict
 
 from contrastive.augmentations import ToPointnetTensor
-from contrastive.backbones.densenet import DenseNet
-from contrastive.backbones.convnet import ConvNet
-from contrastive.backbones.pointnet import PointNetCls
+#from contrastive.backbones.densenet import DenseNet
+#from contrastive.backbones.convnet import ConvNet
+#from contrastive.backbones.pointnet import PointNetCls
+from contrastive.backbones.backbones import *
+from contrastive.backbones.projection_heads import *
+from contrastive.data.utils import change_list_device
 from contrastive.losses import NTXenLoss
 from contrastive.losses import CrossEntropyLoss
 from contrastive.utils.plots.visualize_images import plot_bucket
@@ -83,36 +86,68 @@ class ContrastiveLearner(pl.LightningModule):
 
     def __init__(self, config, sample_data):
         super(ContrastiveLearner, self).__init__()
+
+        n_datasets = len(config.data)
+        log.info(f"n_datasets {n_datasets}")
+
+        self.backbones = nn.ModuleList()
         if config.backbone_name == 'densenet':
-            self.backbone = DenseNet(
-                growth_rate=config.growth_rate,
-                block_config=config.block_config,
-                num_init_features=config.num_init_features,
-                num_representation_features=config.num_representation_features,
-                num_outputs=config.num_representation_features,
-                # projection_head_type=config.projection_head_type,
-                mode=config.mode,
-                drop_rate=config.drop_rate,
-                in_shape=config.input_size,
-                depth=config.depth_decoder)
+            for i in range(n_datasets):
+                self.backbones.append(DenseNet(
+                    growth_rate=config.growth_rate,
+                    block_config=config.block_config,
+                    num_init_features=config.num_init_features,
+                    num_representation_features=config.num_representation_features,
+                    drop_rate=config.drop_rate,
+                    in_shape=config.data[i].input_size))
         elif config.backbone_name == "convnet":
-            self.backbone = ConvNet(
-                encoder_depth=config.encoder_depth,
-                num_representation_features=config.num_representation_features,
-                num_outputs=config.num_representation_features,
-                projection_head_hidden_layers=config.projection_head_hidden_layers,
-                drop_rate=config.drop_rate,
-                mode=config.mode,
-                in_shape=config.input_size,
-                pretrained_model_path=config.pretrained_model_path)
-        elif config.backbone_name == 'pointnet':
-            self.backbone = PointNetCls(
-                k=config.num_representation_features,
-                num_outputs=config.num_representation_features,
-                projection_head_hidden_layers=config.projection_head_hidden_layers,
-                drop_rate=config.drop_rate,
-                feature_transform=False)
+            for i in range(n_datasets):
+                self.backbones.append(ConvNet(
+                    encoder_depth=config.encoder_depth,
+                    num_representation_features=config.num_representation_features,
+                    drop_rate=config.drop_rate,
+                    in_shape=config.data[i].input_size))
+        # elif config.backbone_name == 'pointnet':
+        #     self.backbone = PointNetCls(
+        #         k=config.num_representation_features,
+        #         num_outputs=config.num_representation_features,
+        #         projection_head_hidden_layers=config.projection_head_hidden_layers,
+        #         drop_rate=config.drop_rate,
+        #         feature_transform=False)
+        else:
+            raise ValueError(f"No underlying backbone with backbone name {config.backbone_name}")
+        
+        num_representation_features_total = config.num_representation_features * n_datasets
+
+        # define the shape of the projection head
+        # prioritize the shapes explicitely specified in config
+        if config.proj_layers_shapes is not None:
+            layers_shapes = config.proj_layers_shapes
+        else:
+            # else, construct it in a standardized way
+            if config.mode == 'encoder':
+                output_shape = num_representation_features_total
+            elif config.mode == 'classifier':
+                output_shape = 2
+            elif config.mode == 'regresser':
+                output_shape = 1
+            else:
+                raise ValueError(f"Mode {config.mode} doesn't exist.")
+            layers_shapes = [num_representation_features_total] * (config.length_projection_head - 1) + [output_shape]
+
+        if config.projection_head_name == 'linear':
+            self.projection_head = LinearProjectionHead(
+                num_representation_features=num_representation_features_total,
+                layers_shapes=layers_shapes)
+        elif config.projection_head_name == 'relu':
+            self.projection_head = ReluProjectionHead(
+                num_representation_features=num_representation_features_total,
+                layers_shapes=layers_shapes)
+        else:
+            raise ValueError(f"No underlying projection head with name {config.projection_head_name}")
+
         self.config = config
+        self.n_datasets = n_datasets
         self.sample_data = sample_data
         self.sample_i = np.array([])
         self.sample_j = np.array([])
@@ -125,7 +160,24 @@ class ContrastiveLearner(pl.LightningModule):
             self.visu_anatomist = Visu_Anatomist()
 
     def forward(self, x):
-        return self.backbone.forward(x)
+        embeddings = []
+        for i in range(self.n_datasets):
+            embedding = self.backbones[i].forward(x[i])
+            embeddings.append(embedding)
+        embeddings = torch.cat(embeddings, dim=1)
+        out = self.projection_head.forward(embeddings)
+        return out
+
+    def get_full_inputs_from_batch(self, batch):
+        full_inputs = []
+        for (inputs, filenames) in batch:
+            if self.config.backbone_name == 'pointnet':
+                inputs = torch.squeeze(inputs).to(torch.float)
+            full_inputs.append(inputs)
+        
+        inputs = full_inputs
+        #inputs = torch.stack(full_inputs, dim=0)
+        return (inputs, filenames)
 
     def get_layers(self):
         i = 0
@@ -145,7 +197,7 @@ class ContrastiveLearner(pl.LightningModule):
                     i += 1
 
     def load_pretrained_model(self, pretrained_model_path, encoder_only=False):
-        """load weights stored in a state_dict at pretrained_model_path
+        """Load weights stored in a state_dict at pretrained_model_path
         """
 
         pretrained_state_dict = torch.load(pretrained_model_path)['state_dict']
@@ -281,13 +333,11 @@ class ContrastiveLearner(pl.LightningModule):
     def training_step(self, train_batch, batch_idx):
         """Training step.
         """
-        (inputs, filenames) = train_batch
-        if self.config.backbone_name == 'pointnet':
-            inputs = torch.squeeze(inputs).to(torch.float)
+        inputs, filenames = self.get_full_inputs_from_batch(train_batch)
 
         # print("TRAINING STEP", inputs.shape)
-        input_i = inputs[:, 0, :]
-        input_j = inputs[:, 1, :]
+        input_i = [inputs[i][:, 0, ...] for i in range(self.n_datasets)]
+        input_j = [inputs[i][:, 1, ...] for i in range(self.n_datasets)]
         z_i = self.forward(input_i)
         z_j = self.forward(input_j)
 
@@ -301,12 +351,12 @@ class ContrastiveLearner(pl.LightningModule):
 
         # Only computes graph on first step
         if self.global_step == 1:
-            self.logger.experiment.add_graph(self, input_i)
+            self.logger.experiment.add_graph(self, [input_i])
 
         # Records sample for first batch of each epoch
         if batch_idx == 0:
-            self.sample_i = input_i.cpu()
-            self.sample_j = input_j.cpu()
+            self.sample_i = change_list_device(input_i, 'cpu')
+            self.sample_j = change_list_device(input_j, 'cpu')
             self.sample_filenames = filenames
             if self.config.mode != "decoder":
                 self.sim_zij = sim_zij * self.config.temperature
@@ -337,18 +387,19 @@ class ContrastiveLearner(pl.LightningModule):
 
         # Computes embeddings without computing gradient
         with torch.no_grad():
-            for (inputs, filenames) in loader:
+            for batch in loader:
+                inputs, filenames = self.get_full_inputs_from_batch(batch)
                 # First views of the whole batch
-                inputs = inputs.cuda()
-                model = self.cuda()
-                input_i = inputs[:, 0, :]
-                input_j = inputs[:, 1, :]
+                inputs = change_list_device(inputs, 'cuda')
+                # model = self.cuda()
+                input_i = [inputs[i][:, 0, ...] for i in range(self.n_datasets)]
+                input_j = [inputs[i][:, 1, ...] for i in range(self.n_datasets)]
                 if self.config.backbone_name == 'pointnet':
                     input_i = transform(input_i.cpu()).cuda().to(torch.float)
                     input_j = transform(input_j.cpu()).cuda().to(torch.float)
-                X_i = model.forward(input_i)
+                X_i = self.forward(input_i)
                 # Second views of the whole batch
-                X_j = model.forward(input_j)
+                X_j = self.forward(input_j)
                 # First views and second views
                 # are put side by side
                 X_reordered = torch.cat([X_i, X_j], dim=-1)
@@ -375,7 +426,7 @@ class ContrastiveLearner(pl.LightningModule):
         with torch.no_grad():
             for (inputs, filenames) in loader:
                 # First views of the whole batch
-                inputs = inputs.cuda()
+                inputs = change_list_device(inputs, 'cuda')
                 model = self.cuda()
                 X_i = model.forward(inputs[:, 0, :])
                 print(f"shape X and X_i: {X.shape}, {X_i.shape}")
@@ -394,31 +445,39 @@ class ContrastiveLearner(pl.LightningModule):
         Representation are before the projection head"""
 
         # Initialization
-        X = torch.zeros([0, self.config.num_representation_features]).cpu()
+        X = torch.zeros([0, self.config.num_representation_features * self.n_datasets]).cpu()
         filenames_list = []
 
         # Computes representation (without gradient computation)
         with torch.no_grad():
-            for (inputs, filenames) in loader:
+            for batch in loader:
+                inputs, filenames = self.get_full_inputs_from_batch(batch)
                 # First views of the whole batch
                 if self.config.device != 'cpu':
-                    inputs = inputs.cuda()
+                    inputs = change_list_device(inputs, 'cuda')
                 else:
-                    inputs = inputs.cpu()
+                    inputs = change_list_device(inputs, 'cpu')
                 if self.config.backbone_name == 'pointnet':
                     inputs = torch.squeeze(inputs).to(torch.float)
                 if self.config.device != 'cpu':
                     model = self.cuda()
                 else:
                     model = self.cpu()
-                input_i = inputs[:, 0, :]
-                input_j = inputs[:, 1, :]
-                model.forward(input_i)
-                X_i = first(self.save_output.outputs.values())
+                input_i = [inputs[k][:, 0, ...] for k in range(self.n_datasets)]
+                input_j = [inputs[k][:, 1, ...] for k in range(self.n_datasets)]
+                
+                X_i = []
+                for k in range(self.n_datasets):
+                    embedding = model.backbones[k].forward(input_i[k])
+                    X_i.append(embedding)
+                X_i = torch.cat(X_i, dim=1)
 
                 # Second views of the whole batch
-                model.forward(input_j)
-                X_j = first(self.save_output.outputs.values())
+                X_j = []
+                for k in range(self.n_datasets):
+                    embedding = model.backbones[k].forward(input_j[k])
+                    X_j.append(embedding)
+                X_j = torch.cat(X_j, dim=1)
 
                 # print("representations", X_i.shape, X_j.shape)
                 # First views and second views are put side by side
@@ -433,6 +492,16 @@ class ContrastiveLearner(pl.LightningModule):
                 del inputs
 
         return X, filenames_list
+
+    def plotting_now(self):
+        """Tells if it is the right epoch to plot the tSNE."""
+        if self.config.nb_epochs_per_tSNE <= 0:
+            return False
+        elif self.current_epoch % self.config.nb_epochs_per_tSNE == 0 \
+                or self.current_epoch >= self.config.max_epochs:
+            return True
+        else:
+            return False
 
     def compute_tsne(self, loader, register):
         """Computes t-SNE.
@@ -463,8 +532,8 @@ class ContrastiveLearner(pl.LightningModule):
 
         if self.config.mode == "encoder":
             # Computes t-SNE both in representation and output space
-            if self.current_epoch % self.config.nb_epochs_per_tSNE == 0 \
-                    or self.current_epoch >= self.config.max_epochs:
+            if self.plotting_now():
+                print("Computing tsne\n")
                 X_tsne = self.compute_tsne(
                     self.sample_data.train_dataloader(), "output")
                 image_TSNE = plot_tsne(X_tsne, buffer=True)
@@ -500,12 +569,10 @@ class ContrastiveLearner(pl.LightningModule):
 
     def validation_step(self, val_batch, batch_idx):
         """Validation step"""
-
-        (inputs, filenames) = val_batch
-        if self.config.backbone_name == 'pointnet':
-            inputs = torch.squeeze(inputs).to(torch.float)
-        input_i = inputs[:, 0, :]
-        input_j = inputs[:, 1, :]
+        inputs, filenames = self.get_full_inputs_from_batch(val_batch)
+        
+        input_i = [inputs[i][:, 0, ...] for i in range(self.n_datasets)]
+        input_j = [inputs[i][:, 1, ...] for i in range(self.n_datasets)]
         z_i = self.forward(input_i)
         z_j = self.forward(input_j)
 
@@ -530,12 +597,12 @@ class ContrastiveLearner(pl.LightningModule):
         return batch_dictionary
 
     def validation_epoch_end(self, outputs):
-        """Computaion done at the end of each validation epoch"""
+        """Computation done at the end of each validation epoch"""
 
         # Computes t-SNE
         if self.config.mode == "encoder":
-            if self.current_epoch % self.config.nb_epochs_per_tSNE == 0 \
-                    or self.current_epoch >= self.config.max_epochs:
+            if self.plotting_now():
+                print("Computing tsne\n")
                 X_tsne = self.compute_tsne(
                     self.sample_data.val_dataloader(), "output")
                 image_TSNE = plot_tsne(X_tsne, buffer=True)

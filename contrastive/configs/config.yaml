@@ -1,6 +1,8 @@
 defaults:
+  - _self_
   - hydra: local
-  - dataset: cingulate_ACCpatterns
+  - dataset/cingulate_schiz
+  - dataset/cingulate_schiz_left
   - model: SimCLR_supervised
   - mode: classifier
   - augmentations: foldlabel
@@ -9,4 +11,7 @@ defaults:
   - trainer: default
   - classifier: svm
   - embeddings: embeddings
+  - projection_head: linear
   - override hydra/job_logging: custom
+
+data: ${oc.dict.values:dataset}

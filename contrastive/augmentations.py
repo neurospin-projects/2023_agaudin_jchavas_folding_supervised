@@ -106,6 +106,7 @@ class PaddingTensor(object):
         arr = tensor.numpy()
         orig_shape = arr.shape
         padding = []
+        # print(f"SHAPES: {orig_shape} - {self.shape}")
         for orig_i, final_i in zip(orig_shape, self.shape):
             shape_i = final_i - orig_i
             half_shape_i = shape_i // 2

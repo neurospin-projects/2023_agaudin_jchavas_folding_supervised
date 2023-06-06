@@ -1,4 +1,4 @@
-# @package _global_
+# @package dataset.cingulate_ACCpatterns_left
 dataset_name: cingulate_ACCpatterns_left
 numpy_all: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/CINGULATE/mask/Lskeleton.npy
 subjects_all: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/CINGULATE/mask/Lskeleton_subject.csv
@@ -8,6 +8,7 @@ crop_dir: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2
 crop_file_suffix: _cropped_skeleton.nii.gz
 foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/CINGULATE/mask/Llabels
 train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/train_val_ACCpatterns.csv
-subject_labels_file: /neurospin/dico/data/bv_databases/human/partially_labeled/ACCpatterns/all.csv
+subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/subjects_labels.csv
 subject_column_name: 'long_name'
-label_names: ["Left_PCS"]
+label_names: ["PCS_asymetry"]
+input_size: (1, 20, 42, 38)

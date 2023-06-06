@@ -1,4 +1,4 @@
-# @package _global_
+# @package dataset.cingulate_dHCP
 dataset_name: cingulate_Utrecht
 pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/dHCP/crops/2mm/F.C.M.ant./mask/Rskeleton.pkl
 #beware: subjects all are only the test subjects ? (SVM)

@@ -48,9 +48,20 @@ def process_config(config) -> DictConfig:
     """Does whatever operations on the config file.
     """
 
+    log.debug("\n\n========================\n"
+             "= START OF CONFIGURATION\n"
+             "========================\n")
     log.debug(OmegaConf.to_yaml(config))
+    log.debug("\n\n======================\n"
+             "= END OF CONFIGURATION\n"
+             "======================\n")
+
     log.info("Working directory : {}".format(os.getcwd()))
-    config.input_size = eval(config.input_size)
+
+    # Loops over datasets, contained as a list in config.data
+    for reg in range(len(config.data)):
+        config.data[reg].input_size = eval(config.data[reg].input_size)
+
     log.debug("config type: {}".format(type(config)))
     if "pretrained_model_path" not in config:
         config = OmegaConf.structured(OmegaConf.to_yaml(config))
@@ -76,10 +87,13 @@ def create_accessible_config(keys_to_keep, config_path):
     for key in config_dict.keys():
         if key in keys_to_keep:
             partial_config[key] = config_dict[key]
+    
+    if 'datasets' in keys_to_keep:
+        partial_config['datasets'] = list(config_dict['dataset'].keys())
 
     save_path = '/' + os.path.join(*config_path.split("/")[:-2])
-    print(save_path)
-    with open(save_path+'/partial_config.yaml', 'w') as file:
+    log.info(save_path)
+    with open(save_path + '/partial_config.yaml', 'w') as file:
         yaml.dump(partial_config, file)
 
 

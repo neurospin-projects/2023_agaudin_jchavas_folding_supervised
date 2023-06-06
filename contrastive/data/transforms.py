@@ -49,12 +49,12 @@ def transform_nothing_done():
         ])
 
 
-def transform_only_padding(config):
+def transform_only_padding(input_size, config):
     if config.backbone_name != 'pointnet':
         return \
             transforms.Compose([
                 SimplifyTensor(),
-                PaddingTensor(shape=config.input_size,
+                PaddingTensor(shape=input_size,
                               fill_value=config.fill_value),
                 BinarizeTensor(),
                 EndTensor()
@@ -63,7 +63,7 @@ def transform_only_padding(config):
         return \
             transforms.Compose([
                 SimplifyTensor(),
-                PaddingTensor(shape=config.input_size,
+                PaddingTensor(shape=input_size,
                               fill_value=config.fill_value),
                 BinarizeTensor(),
                 EndTensor(),
@@ -71,18 +71,18 @@ def transform_only_padding(config):
             ])
 
 
-def transform_foldlabel(sample_foldlabel, percentage, config):
+def transform_foldlabel(sample_foldlabel, percentage, input_size, config):
     if config.backbone_name != 'pointnet':
         return \
             transforms.Compose([
                 SimplifyTensor(),
-                PaddingTensor(shape=config.input_size,
+                PaddingTensor(shape=input_size,
                               fill_value=config.fill_value),
                 RemoveRandomBranchTensor(
                     sample_foldlabel=sample_foldlabel,
                     percentage=percentage,
                     variable_percentage=config.variable_percentage,
-                    input_size=config.input_size,
+                    input_size=input_size,
                     keep_bottom=config.keep_bottom),
                 BinarizeTensor(),
                 RotateTensor(max_angle=config.max_angle)
@@ -91,13 +91,13 @@ def transform_foldlabel(sample_foldlabel, percentage, config):
         return \
             transforms.Compose([
                 SimplifyTensor(),
-                PaddingTensor(shape=config.input_size,
+                PaddingTensor(shape=input_size,
                               fill_value=config.fill_value),
                 RemoveRandomBranchTensor(
                     sample_foldlabel=sample_foldlabel,
                     percentage=percentage,
                     variable_percentage=config.variable_percentage,
-                    input_size=config.input_size,
+                    input_size=input_size,
                     keep_bottom=config.keep_bottom),
                 RotateTensor(max_angle=config.max_angle),
                 BinarizeTensor(),
@@ -105,12 +105,12 @@ def transform_foldlabel(sample_foldlabel, percentage, config):
             ])
 
 
-def transform_no_foldlabel(from_skeleton, config):
+def transform_no_foldlabel(from_skeleton, input_size, config):
     if config.backbone_name != 'pointnet':
         return \
             transforms.Compose([
                 SimplifyTensor(),
-                PaddingTensor(shape=config.input_size,
+                PaddingTensor(shape=input_size,
                               fill_value=config.fill_value),
                 PartialCutOutTensor_Roll(from_skeleton=from_skeleton,
                                          keep_bottom=config.keep_bottom,
@@ -122,7 +122,7 @@ def transform_no_foldlabel(from_skeleton, config):
         return \
             transforms.Compose([
                 SimplifyTensor(),
-                PaddingTensor(shape=config.input_size,
+                PaddingTensor(shape=input_size,
                               fill_value=config.fill_value),
                 PartialCutOutTensor_Roll(from_skeleton=from_skeleton,
                                          keep_bottom=config.keep_bottom,
@@ -133,18 +133,19 @@ def transform_no_foldlabel(from_skeleton, config):
             ])
 
 
-def transform_both(sample_foldlabel, percentage, from_skeleton, config):
+def transform_both(sample_foldlabel, percentage, from_skeleton,
+                   input_size, config):
     if config.backbone_name != 'pointnet':
         return \
             transforms.Compose([
                 SimplifyTensor(),
-                PaddingTensor(shape=config.input_size,
+                PaddingTensor(shape=input_size,
                               fill_value=config.fill_value),
                 RemoveRandomBranchTensor(
                     sample_foldlabel=sample_foldlabel,
                     percentage=percentage,
                     variable_percentage=config.variable_percentage,
-                    input_size=config.input_size,
+                    input_size=input_size,
                     keep_bottom=config.keep_bottom),
                 PartialCutOutTensor_Roll(from_skeleton=from_skeleton,
                                          keep_bottom=config.keep_bottom,
@@ -156,13 +157,13 @@ def transform_both(sample_foldlabel, percentage, from_skeleton, config):
         return \
             transforms.Compose([
                 SimplifyTensor(),
-                PaddingTensor(shape=config.input_size,
+                PaddingTensor(shape=input_size,
                               fill_value=config.fill_value),
                 RemoveRandomBranchTensor(
                     sample_foldlabel=sample_foldlabel,
                     percentage=percentage,
                     variable_percentage=config.variable_percentage,
-                    input_size=config.input_size,
+                    input_size=input_size,
                     keep_bottom=config.keep_bottom),
                 PartialCutOutTensor_Roll(from_skeleton=from_skeleton,
                                          keep_bottom=config.keep_bottom,
@@ -174,7 +175,7 @@ def transform_both(sample_foldlabel, percentage, from_skeleton, config):
 
 
 def transform_foldlabel_resize(sample_foldlabel, percentage,
-                               resize_ratio, config):
+                               resize_ratio, input_size, config):
     if config.backbone_name != 'pointnet':
         return \
             transforms.Compose([
@@ -183,7 +184,7 @@ def transform_foldlabel_resize(sample_foldlabel, percentage,
                     sample_foldlabel=sample_foldlabel,
                     percentage=percentage,
                     variable_percentage=config.variable_percentage,
-                    input_size=config.input_size,
+                    input_size=input_size,
                     keep_bottom=config.keep_bottom),
                 BinarizeTensor(),
                 ResizeTensor(resize_ratio),
@@ -197,7 +198,7 @@ def transform_foldlabel_resize(sample_foldlabel, percentage,
                     sample_foldlabel=sample_foldlabel,
                     percentage=percentage,
                     variable_percentage=config.variable_percentage,
-                    input_size=config.input_size,
+                    input_size=input_size,
                     keep_bottom=config.keep_bottom),
                 RotateTensor(max_angle=config.max_angle),
                 BinarizeTensor(),
