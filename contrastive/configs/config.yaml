@@ -1,9 +1,8 @@
 defaults:
   - _self_
   - hydra: local
-  # - dataset/cingulate_ACCpatterns_1
-  - dataset/right_cingulate_HCP_full_top-separated_Flanker_AgeAdj
-  - dataset/left_cingulate_HCP_full_top-separated_Flanker_AgeAdj
+  - dataset/cingulate_schiz
+  - dataset/cingulate_schiz_left
   - model: SimCLR_supervised
   - mode: classifier
   - augmentations: foldlabel
