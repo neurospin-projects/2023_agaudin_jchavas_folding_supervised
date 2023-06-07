@@ -154,6 +154,7 @@ class ContrastiveLearner(pl.LightningModule):
         self.sample_k = np.array([])
         self.sample_filenames = []
         self.save_output = SaveOutput()
+        self.output_shape = output_shape
         self.hook_handles = []
         self.get_layers()
         if self.config.environment == "brainvisa":
@@ -381,7 +382,7 @@ class ContrastiveLearner(pl.LightningModule):
         This includes the projection head"""
 
         # Initialization
-        X = torch.zeros([0, self.config.num_representation_features]).cpu()
+        X = torch.zeros([0, self.output_shape]).cpu()
         filenames_list = []
         transform = ToPointnetTensor()
 

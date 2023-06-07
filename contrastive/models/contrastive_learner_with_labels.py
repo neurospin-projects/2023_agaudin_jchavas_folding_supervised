@@ -244,13 +244,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         This includes the projection head"""
 
         # Initialization
-        if self.config.mode == "regresser":
-            num_outputs = 1
-        elif self.config.mode == "classifier":
-            num_outputs = 2
-        else:
-            num_outputs = self.config.num_representation_features
-        X = torch.zeros([0, num_outputs]).cpu()
+        X = torch.zeros([0, self.output_shape]).cpu()
         labels_all = torch.zeros(
             [0, len(self.config.data[0].label_names)]).cpu()
         filenames_list = []
@@ -273,8 +267,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 X_j = self.forward(input_i)
 
                 # Reshape (necessary if num_outputs==1)
-                X_i = X_i.reshape(X_i.shape[0], num_outputs)
-                X_j = X_j.reshape(X_j.shape[0], num_outputs)
+                X_i = X_i.reshape(X_i.shape[0], self.output_shape)
+                X_j = X_j.reshape(X_j.shape[0], self.output_shape)
 
                 # We now concatenate the embeddings
 
