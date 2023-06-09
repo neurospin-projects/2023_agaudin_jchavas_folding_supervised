@@ -1,20 +1,20 @@
 # @package _global_
 batch_size: 16
 pin_mem: True
-lr: 4e-4
+lr: 0.1
 weight_decay: 5.0e-05
-max_epochs: 251
+max_epochs: 101
 nb_epochs_per_saving: 1
 nb_epochs_per_tSNE: -1
 nb_epochs_per_matrix_plot: -1
 nb_steps_per_flush_logs: 1
 log_every_n_steps: 2
-early_stopping_patience: 100
+early_stopping_patience: 50
 start_epoch: 0
 checkpoint_path:
 analysis_path: 
 verbose: 1
-checking: False
+checking: True
 # Data split and subject choice
 seed: 1
 partition: [0.9, 0.1]

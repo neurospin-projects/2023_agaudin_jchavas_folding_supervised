@@ -1,5 +1,5 @@
-# @package dataset.left_cingulate_HCP_full_top-separated
-dataset_name: left_cingulate_HCP_full_top-separated
+# @package dataset.cingulate_HCP_stratified_left
+dataset_name: cingulate_HCP_stratified_left
 pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/CINGULATE/mask/Lskeleton.pkl
 numpy_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/CINGULATE/mask/Lskeleton.npy
 subjects_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/CINGULATE/mask/Lskeleton_subject.csv
@@ -9,8 +9,11 @@ foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separa
 subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/CINGULATE/mask/Llabel_subject.csv
 crop_file_suffix: _cropped_skeleton.nii.gz
 pickle_benchmark: 
-train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/CINGULATE/mask/Lskeleton_subject_full.csv
+train_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/train_subjects.csv
+val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/val_subjects.csv
+test_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/test_subjects.csv
 subject_labels_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/hcp/participants.csv
 subject_column_name: 'Subject'
-label_names: ["Gender"]
+label_names: ["Flanker_AgeAdj"]
+label_scaling: 'MinMax'
 input_size: (1, 20, 42, 38)

@@ -1,5 +1,5 @@
-# @package _global_
-dataset_name: cingulate_HCP_full_nb_voxels
+# @package dataset.right_cingulate_HCP_full_nb_voxels
+dataset_name: right_cingulate_HCP_full_nb_voxels
 pickle_normal: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton.pkl
 numpy_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton.npy
 subjects_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton_subject.csv
@@ -12,6 +12,7 @@ pickle_benchmark:
 train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton_subject_full.csv
 subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/hcp/participants_with_cingulate_voxels.csv
 subject_column_name: 'Subject'
+input_size: (1, 17, 40, 38)
 label_names: ["nb_voxels"]
 label_scaling: 'MinMax'
 n_max: 1080

@@ -47,21 +47,22 @@ from toolz.itertoolz import first
 
 from sklearn.metrics import r2_score
 
+from contrastive.data.utils import change_list_device
+from contrastive.evaluation.auc_score import regression_roc_auc_score
 from contrastive.models.contrastive_learner import ContrastiveLearner
 from contrastive.losses import GeneralizedSupervisedNTXenLoss,\
-    CrossEntropyLoss_Classification
-from contrastive.losses import MSELoss_Regression
+    CrossEntropyLoss_Classification, MSELoss_Regression
 from contrastive.utils.plots.visualize_images \
     import plot_scatter_matrix_with_labels
 from contrastive.utils.plots.visualize_tsne import plot_tsne
-from contrastive.evaluation.auc_score import regression_roc_auc_score
 
 try:
     from soma import aims
 except ImportError:
     print("INFO: you are not in a brainvisa environment. Probably OK.")
 
-from contrastive.utils.logs import set_root_logger_level, set_file_logger
+from contrastive.utils.logs import set_file_logger
+
 log = set_file_logger(__file__)
 
 
@@ -81,6 +82,19 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def __init__(self, config, sample_data):
         super(ContrastiveLearner_WithLabels, self).__init__(
             config=config, sample_data=sample_data)
+
+    def get_full_inputs_from_batch_with_labels(self, batch):
+        full_inputs = []
+        full_view3 = []
+        for (inputs, labels, filenames, view3) in batch:
+            if self.config.backbone_name == 'pointnet':
+                inputs = torch.squeeze(inputs).to(torch.float)
+            full_inputs.append(inputs)
+            full_view3.append(view3)
+        
+        inputs = full_inputs
+        view3 = full_view3
+        return (inputs, labels, filenames, view3)
 
     def plot_scatter_matrices_with_labels(self, dataloader, key,
                                           mode="encoder"):
@@ -128,7 +142,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             temperature=temperature,
             temperature_supervised=temperature_supervised,
             sigma=self.config.sigma_labels,
-            proportion_pure_contrastive=self.config.proportion_pure_contrastive,
+            proportion_pure_contrastive=\
+                self.config.proportion_pure_contrastive,
             return_logits=True)
         return loss.forward(z_i, z_j, labels)
 
@@ -145,9 +160,10 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def training_step(self, train_batch, batch_idx):
         """Training step.
         """
-        (inputs, labels, filenames, view3) = train_batch
-        input_i = inputs[:, 0, :]
-        input_j = inputs[:, 1, :]
+        (inputs, labels, filenames, view3) = \
+            self.get_full_inputs_from_batch_with_labels(train_batch)
+        input_i = [inputs[i][:, 0, ...] for i in range(self.n_datasets)]
+        input_j = [inputs[i][:, 1, ...] for i in range(self.n_datasets)]
         z_i = self.forward(input_i)
         z_j = self.forward(input_j)
 
@@ -171,19 +187,19 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # Only computes graph on first step
         if self.global_step == 1:
-            self.logger.experiment.add_graph(self, inputs[:, 0, :])
+            self.logger.experiment.add_graph(self, [input_i])
 
         # Records sample for first batch of each epoch
         if batch_idx == 0:
-            self.sample_i = input_i.cpu()
-            self.sample_j = input_j.cpu()
-            self.sample_k = view3.cpu()
+            self.sample_i = change_list_device(input_i, 'cpu')
+            self.sample_j = change_list_device(input_j, 'cpu')
+            self.sample_k = change_list_device(view3, 'cpu')
             self.sample_filenames = filenames
             self.sample_labels = labels
             if self.config.environment == 'brainvisa' and self.config.checking:
                 vol_file = \
-                    f"{self.config.crop_dir}/{filenames[0]}" +\
-                    f"{self.config.crop_file_suffix}"
+                    f"{self.config.data[0].crop_dir}/{filenames[0]}" +\
+                    f"{self.config.data[0].crop_file_suffix}"
                 vol = aims.read(vol_file)
                 self.sample_ref_0 = np.asarray(vol)
                 if not np.array_equal(self.sample_ref_0[..., 0],
@@ -236,20 +252,26 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         else:
             num_outputs = self.config.num_representation_features
         X = torch.zeros([0, num_outputs]).cpu()
-        labels_all = torch.zeros([0, len(self.config.label_names)]).cpu()
+        labels_all = torch.zeros(
+            [0, len(self.config.data[0].label_names)]).cpu()
         filenames_list = []
 
         # Computes embeddings without computing gradient
         with torch.no_grad():
-            for (inputs, labels, filenames, _) in loader:
+            for batch in loader:
+                (inputs, labels, filenames, _) = \
+                    self.get_full_inputs_from_batch_with_labels(batch)
                 # First views of the whole batch
-                inputs = inputs.cuda()
-                model = self.cuda()
-                log.debug("COMPUTE OUTPUTS SKELETONS")
-                log.debug((inputs[:, 0, :] == inputs[:, 1, :]).all())
-                X_i = model.forward(inputs[:, 0, :])
+                inputs = change_list_device(inputs, 'cuda')
+                # model = self.cuda()
+                input_i = [inputs[i][:, 0, ...] for i in range(self.n_datasets)]
+                input_j = [inputs[i][:, 1, ...] for i in range(self.n_datasets)]
+                if self.config.backbone_name == 'pointnet':
+                    input_i = transform(input_i.cpu()).cuda().to(torch.float)
+                    input_j = transform(input_j.cpu()).cuda().to(torch.float)
+                X_i = self.forward(input_i)
                 # Second views of the whole batch
-                X_j = model.forward(inputs[:, 1, :])
+                X_j = self.forward(input_i)
 
                 # Reshape (necessary if num_outputs==1)
                 X_i = X_i.reshape(X_i.shape[0], num_outputs)
@@ -288,7 +310,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             # compute the mean of the two views' outputs
             X = (X[::2, ...] + X[1::2, ...]) / 2
             # remove the doubleing of labels
-            labels = labels[::2]
+            labels_all = labels_all[::2]
             filenames_list = filenames_list[::2]
             X = nn.functional.softmax(X, dim=1)
             return X, labels_all, filenames_list
@@ -322,9 +344,11 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # Computes embeddings without computing gradient
         with torch.no_grad():
-            for (inputs, labels, filenames, _) in loader:
+            for batch in loader:
+                (inputs, _, filenames, _) = \
+                    self.get_full_inputs_from_batch_with_labels(batch)
                 # First views of the whole batch
-                inputs = inputs.cuda()
+                inputs = change_list_device(inputs, 'cuda')
                 model = self.cuda()
                 X_i = model.forward(inputs[:, 0, :])
                 # First views re put side by side
@@ -343,22 +367,30 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         # Initialization
         X = torch.zeros([0, self.config.num_representation_features]).cpu()
-        labels_all = torch.zeros([0, len(self.config.label_names)]).cpu()
+        labels_all = torch.zeros(
+            [0, len(self.config.data[0].label_names)]).cpu()
         filenames_list = []
 
         # Computes representation (without gradient computation)
         with torch.no_grad():
-            for (inputs, labels, filenames, _) in loader:
+            for batch in loader:
+                (inputs, labels, filenames, _) = \
+                    self.get_full_inputs_from_batch_with_labels(batch)
                 # We first compute the embeddings
                 # for the first views of the whole batch
-                inputs = inputs.cuda()
-                model = self.cuda()
-                model.forward(inputs[:, 0, :])
+                inputs = change_list_device(inputs, 'cuda')
+                # model = self.cuda()
+                input_i = [inputs[i][:, 0, ...] for i in range(self.n_datasets)]
+                input_j = [inputs[i][:, 1, ...] for i in range(self.n_datasets)]
+                if self.config.backbone_name == 'pointnet':
+                    input_i = transform(input_i.cpu()).cuda().to(torch.float)
+                    input_j = transform(input_j.cpu()).cuda().to(torch.float)
+                self.forward(input_i)
                 X_i = first(self.save_output.outputs.values())
 
                 # We then compute the embeddings for the second views
                 # of the whole batch
-                model.forward(inputs[:, 1, :])
+                self.forward(input_j)
                 X_j = first(self.save_output.outputs.values())
 
                 # We now concatenate the embeddings
@@ -412,15 +444,6 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         # Returns tsne embeddings
         return X_tsne, labels
 
-    def plotting_now(self):
-        if self.config.nb_epochs_per_tSNE <= 0:
-            return False
-        elif self.current_epoch % self.config.nb_epochs_per_tSNE == 0 \
-                or self.current_epoch >= self.config.max_epochs:
-            return True
-        else:
-            return False
-
     def plotting_matrices_now(self):
         if self.config.nb_epochs_per_matrix_plot <= 0:
             return False
@@ -434,16 +457,16 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         if self.current_epoch == 0:
             best_auc = 0
         elif self.current_epoch > 0:
-            with open(save_path+"best_model_params.json", 'r') as file:
+            with open(save_path + "best_model_params.json", 'r') as file:
                 best_model_params = json.load(file)
                 best_auc = best_model_params['best_auc']
 
         if current_auc > best_auc:
             torch.save({'state_dict': self.state_dict()},
-                       save_path+'best_model_weights.pt')
+                       save_path + 'best_model_weights.pt')
             best_model_params = {
                 'epoch': self.current_epoch, 'best_auc': current_auc}
-            with open(save_path+"best_model_params.json", 'w') as file:
+            with open(save_path + "best_model_params.json", 'w') as file:
                 json.dump(best_model_params, file)
 
     def training_epoch_end(self, outputs):
@@ -517,9 +540,10 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def validation_step(self, val_batch, batch_idx):
         """Validation step"""
 
-        (inputs, labels, filenames, _) = val_batch
-        input_i = inputs[:, 0, :]
-        input_j = inputs[:, 1, :]
+        (inputs, labels, _, _) = self.get_full_inputs_from_batch_with_labels(val_batch)
+
+        input_i = [inputs[i][:, 0, ...] for i in range(self.n_datasets)]
+        input_j = [inputs[i][:, 1, ...] for i in range(self.n_datasets)]
 
         z_i = self.forward(input_i)
         z_j = self.forward(input_j)

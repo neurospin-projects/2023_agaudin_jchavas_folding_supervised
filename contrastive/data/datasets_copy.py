@@ -35,20 +35,15 @@
 """
 Tools to create pytorch dataloaders
 """
-import os
-from re import sub
-
-import numpy as np
-import pandas as pd
 import torch
 
 from contrastive.utils.logs import set_file_logger
 
-from contrastive.data.transforms import *
+from contrastive.data.transforms import \
+    transform_foldlabel, transform_no_foldlabel,\
+    transform_nothing_done, transform_only_padding
 
 from contrastive.augmentations import PaddingTensor
-
-from contrastive.data.transforms import transform_nothing_done
 
 log = set_file_logger(__file__)
 
@@ -116,28 +111,31 @@ class ContrastiveDatasetFusion():
     Applies different transformations to data depending on the type of input.
     """
 
-    def __init__(self, array, filenames, config, apply_transform=True,
-                 labels=None, foldlabel_array=None):
+    def __init__(self, arrays, filenames, config, apply_transform=True,
+                 labels=None, foldlabel_arrays=None):
         """
+        Every data argument is a list over regions
+
         Args:
             data_tensor (tensor): contains MRIs as numpy arrays
             filenames (list of strings): list of subjects' IDs
             config (Omegaconf dict): contains configuration information
         """
-        self.arr = array
-        self.foldlabel_arr = foldlabel_array
+        self.arrs = arrays
+        self.foldlabel_arrs = foldlabel_arrays
         self.labels = labels
-        self.nb_train = len(filenames)
+        self.nb_train = len(filenames[0])
         self.filenames = filenames
         self.config = config
         self.transform = apply_transform
 
-        log.debug(self.nb_train)
-        log.debug(filenames[:5])
-        if labels is not None and labels.shape[0] > 0:
-            log.debug(labels[:5])
-            log.debug(f"There are {labels[labels[config.label_names[0]].isna()].shape[0]} NaN labels")
-            log.debug(labels[labels[config.label_names[0]].isna()])
+        log.debug(f"nb_train = {self.nb_train}")
+        log.debug(f"filenames[:5] = {filenames[:5]}")
+        if labels is not None and labels[0].shape[0] > 0:
+            label0 = labels[0]
+            log.debug(f"labels[:5] = {label0[:5]}")
+            log.debug(f"There are {label0[label0[config.data[0].label_names[0]].isna()].shape[0]} NaN labels")
+            log.debug(label0[label0[config.data[0].label_names[0]].isna()])
 
     def __len__(self):
         return (self.nb_train)
@@ -158,78 +156,96 @@ class ContrastiveDatasetFusion():
 
         # Gets data corresponding to idx
         log.debug(f"length = {self.nb_train}")
-        log.debug(f"filenames = {self.filenames}")
-        sample = get_sample(self.arr, idx, 'float32')
-        filename = get_filename(self.filenames, idx)
-        if self.foldlabel_arr is not None:
-            sample_foldlabel = get_sample(self.foldlabel_arr, idx, 'int32')
-            sample_foldlabel = padd_foldlabel(sample_foldlabel,
-                                              self.config.input_size)
+        log.debug(f"filenames = {self.filenames[0]}")
+        samples = [get_sample(arr, idx, 'float32') for arr in self.arrs]
+        filenames = [get_filename(filename, idx)
+                     for filename in self.filenames]
+
+        if self.foldlabel_arrs[0] is not None:
+            sample_foldlabels = [get_sample(foldlabel_arr, idx, 'int32')
+                                 for foldlabel_arr in self.foldlabel_arrs]
+            sample_foldlabels = [padd_foldlabel(sample_foldlabel,
+                                                self.config.data[reg].input_size)
+                                 for reg, sample_foldlabel in enumerate(sample_foldlabels)]
+
         if self.labels is not None:
-            check_consistency(filename, self.labels, idx)
-            labels = get_label(self.labels, idx)
+            for reg in range(len(filenames)):
+                check_consistency(filenames[reg], self.labels[reg], idx)
+            labels = [get_label(label, idx) for label in self.labels]
+
+        self.transform1 = []
+        self.transform2 = []
+        self.transform3 = []
 
         # compute the transforms
-        if self.transform:
-            if self.config.foldlabel:
-                if self.config.resize:
-                    # Dims in Tensor and np array are ordered differently
-                    target_size = self.config.input_size[1:] + [self.config.input_size[0]]
-                    resize_ratio = np.array(target_size)/np.array(sample.size())
-                    self.transform1 = transform_foldlabel_resize(sample_foldlabel,
-                                                                 self.config.percentage,
-                                                                 resize_ratio,
-                                                                 self.config)
-                    self.transform2 = transform_foldlabel_resize(sample_foldlabel,
-                                                                 self.config.percentage,
-                                                                 resize_ratio,
-                                                                 self.config)
-                elif self.config.both:
-                    self.transform1 = transform_both(sample_foldlabel,
-                                                     self.config.percentage,
-                                                     from_skeleton=True,
-                                                     config=self.config)
-                    self.transform2 = transform_both(sample_foldlabel,
-                                                     self.config.percentage,
-                                                     from_skeleton=False,
-                                                     config=self.config)
+        for reg in range(len(filenames)):
+            if self.transform:
+                if self.config.foldlabel:
+                    transform1 = transform_foldlabel(
+                        sample_foldlabels[reg],
+                        self.config.percentage,
+                        self.config.data[reg].input_size,
+                        self.config)
+                    transform2 = transform_foldlabel(
+                        sample_foldlabels[reg],
+                        self.config.percentage,
+                        self.config.data[reg].input_size,
+                        self.config)
                 else:
-                    self.transform1 = transform_foldlabel(sample_foldlabel,
-                                                          self.config.percentage,
-                                                          self.config)
-                    self.transform2 = transform_foldlabel(sample_foldlabel,
-                                                          self.config.percentage,
-                                                          self.config)
+                    transform1 = transform_no_foldlabel(
+                        from_skeleton=True,
+                        input_size=self.config.data[reg].input_size,
+                        config=self.config)
+                    transform2 = transform_no_foldlabel(
+                        from_skeleton=False,
+                        input_size=self.config.data[reg].input_size,
+                        config=self.config)
             else:
-                self.transform1 = transform_no_foldlabel(from_skeleton=True,
-                                                         config=self.config)
-                self.transform2 = transform_no_foldlabel(from_skeleton=False,
-                                                         config=self.config)
-        else:
-            self.transform1 = transform_only_padding(self.config)
-            self.transform2 = transform_only_padding(self.config)
+                transform1 = transform_only_padding(
+                    self.config.data[reg].input_size, self.config)
+                transform2 = transform_only_padding(
+                    self.config.data[reg].input_size, self.config)
+            self.transform1.append(transform1)
+            self.transform2.append(transform2)
+
+            if self.config.with_labels:
+                if self.config.mode == "decoder":
+                    transform3 = transform_only_padding(
+                        self.config.data[reg].input_size,
+                        self.config)
+                else:
+                    transform3 = transform_nothing_done()
+                    if not self.transform:
+                        transform3 = transform_only_padding(
+                            self.config.data[reg].input_size,
+                            self.config)
+                self.transform3.append(transform3)
 
         # Computes the views
-        view1 = self.transform1(sample)
-        view2 = self.transform2(sample)
+        view1 = []
+        view2 = []
+        for reg in range(len(filenames)):
+            view1.append(self.transform1[reg](samples[reg]))
+            view2.append(self.transform2[reg](samples[reg]))
 
-        if self.config.mode == "decoder":
-            self.transform3 = transform_only_padding(self.config)
-            view3 = self.transform3(sample)
-            views = torch.stack((view1, view2, view3), dim=0)
-            if self.config.with_labels:
-                tuple_with_path = (views, labels, filename)
+        # Computes the outputs as tuples
+        concatenated_tuple = ()
+        for reg in range(len(filenames)):
+            if self.config.mode == "decoder":
+                view3 = self.transform3(samples[reg])
+                views = torch.stack((view1, view2, view3), dim=0)
+                if self.config.with_labels:
+                    tuple_with_path = ((views, labels, filenames[reg]),)
+                else:
+                    tuple_with_path = ((views, filenames[reg]),)
             else:
-                tuple_with_path = (views, filename)
-        else:
-            views = torch.stack((view1, view2), dim=0)
-            if self.config.with_labels:
-                self.transform3 = transform_nothing_done()
-                if not self.transform:
-                    self.transform3 = transform_only_padding(self.config)
-                view3 = self.transform3(sample)
-                tuple_with_path = (views, labels, filename, view3)
-            else:
-                tuple_with_path = (views, filename)
+                views = torch.stack((view1[reg], view2[reg]), dim=0)
+                if self.config.with_labels:
+                    view3 = self.transform3[reg](samples[reg])
+                    tuple_with_path = (
+                        (views, labels[reg], filenames[reg], view3),)
+                else:
+                    tuple_with_path = ((views, filenames[reg]),)
+            concatenated_tuple += tuple_with_path
 
-        return tuple_with_path
+        return concatenated_tuple

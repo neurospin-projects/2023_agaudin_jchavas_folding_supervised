@@ -23,6 +23,7 @@ from contrastive.data.utils import read_labels
 
 from contrastive.utils.config import process_config
 from contrastive.utils.logs import set_root_logger_level, set_file_logger
+from contrastive.evaluation.utils_pipelines import save_used_label
 
 from sklearn.utils._testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
@@ -75,11 +76,11 @@ def load_embeddings(dir_path, labels_path, config):
     # get the labels (0 = no paracingulate, 1 = paracingulate)
     # and match them to the embeddings
     # /!\ use read_labels
-    label_scaling = (None if 'label_scaling' not in config.keys()
-                     else config.label_scaling)
-    labels = read_labels(labels_path, config.subject_column_name,
-                         config.label_names, label_scaling)
-    labels.rename(columns={config.label_names[0]: 'label'}, inplace=True)
+    label_scaling = (None if 'label_scaling' not in config.data[0].keys()
+                     else config.data[0].label_scaling)
+    labels = read_labels(labels_path, config.data[0].subject_column_name,
+                         config.data[0].label_names, label_scaling)
+    labels.rename(columns={config.data[0].label_names[0]: 'label'}, inplace=True)
     labels = labels[labels.Subject.isin(embeddings.index)]
     labels.sort_values(by='Subject', inplace=True, ignore_index=True)
     print("sorted labels", labels.head())
@@ -125,7 +126,7 @@ def load_and_format_embeddings(dir_path, labels_path, config):
 
 
 def compute_indicators(Y, proba_pred):
-    # compute ROC curve and auc
+    """Compute ROC curve and auc, and accuracy."""
     if type(Y) == torch.tensor:
         labels_true = Y.detach_().numpy()
     else:
@@ -147,8 +148,9 @@ def compute_auc(column, label_col=None):
     return roc_auc_score(label_col, column)
 
 
-# get a model with performance that is representative of the group
 def get_average_model(labels_df):
+    """Get a model with performance that is representative of the group, 
+    i.e. the one with the median auc."""
     aucs = labels_df.apply(compute_auc, args=[labels_df.label])
     aucs = aucs[aucs.index != 'label']
     aucs = aucs[aucs == aucs.quantile(interpolation='nearest')]
@@ -157,6 +159,8 @@ def get_average_model(labels_df):
 
 def post_processing_results(labels, embeddings, Curves, aucs, accuracies,
                             values, columns_names, mode, results_save_path):
+    """Get the mean and the median AUC and accuracy, plot the ROC curves and 
+    the generated files."""
 
     labels_true = labels.label.values.astype('float64')
 
@@ -211,10 +215,10 @@ def post_processing_results(labels, embeddings, Curves, aucs, accuracies,
     # DEBUG embeddings.to_csv(results_save_path+f"/effective_embeddings.csv",
     #                         index=True)
 
-    return
-
 
 def train_nn_classifiers(config):
+    """Sets up the save paths, loads the embeddings and then loops 
+    to train the 250 neural networks."""
     # set up load and save paths
     train_embs_path = config.training_embeddings
     train_lab_paths = config.training_labels
@@ -405,6 +409,8 @@ def train_one_svm_classifier(config, inputs, i=0):
 
 @ignore_warnings(category=ConvergenceWarning)
 def train_svm_classifiers(config):
+    """Sets up the save paths, loads the embeddings and then loops 
+    to train the 250 SVMs."""
     # import the data
 
     # set up load and save paths
@@ -420,15 +426,18 @@ def train_svm_classifiers(config):
 
     EoI_path = (config.embeddings_of_interest if config.embeddings_of_interest
                 else train_embs_path)
-    LoI_path = (config.labels_of_interest if config.labels_of_interest
-                else train_lab_paths)
 
     # if not specified, the outputs of the classifier will be stored next
     # to the embeddings used to generate them
     results_save_path = (config.results_save_path if config.results_save_path
                          else EoI_path)
+    # remove the 'full_embeddings.csv if it is there
     if not os.path.isdir(results_save_path):
         results_save_path = os.path.dirname(results_save_path)
+    # add a subfolder with the evaluated label as name
+    results_save_path = results_save_path + "/" + config.data[0].label_names[0]
+    if not os.path.exists(results_save_path):
+        os.makedirs(results_save_path)
 
     embeddings, labels = load_embeddings(
         train_embs_path, train_lab_paths, config)
@@ -437,14 +446,15 @@ def train_svm_classifiers(config):
 
     Y = labels.label
 
-    if np.unique(Y).shape[0] > 2:
-        per_50 = np.percentile(Y, 50.)
-        Z = Y.copy(deep=True)
-        Z[Y <= per_50] = 0
-        Z[Y > per_50] = 1
-        Z = Z.astype(int)
-        labels.label = Z.copy(deep=True)
-        Y = labels.label
+    # debug regression
+    # if np.unique(Y).shape[0] > 2:
+    #     per_50 = np.percentile(Y, 50.)
+    #     Z = Y.copy(deep=True)
+    #     Z[Y <= per_50] = 0
+    #     Z[Y > per_50] = 1
+    #     Z = Z.astype(int)
+    #     labels.label = Z.copy(deep=True)
+    #     Y = labels.label
 
     if test_embs_path:
         test_embeddings, test_labels = load_embeddings(
@@ -543,9 +553,18 @@ def train_svm_classifiers(config):
     # plt.show()
     plt.close('all')
 
+    save_used_label(os.path.dirname(results_save_path), config)
+
 
 @hydra.main(config_name='config_no_save', config_path="../configs")
 def train_classifiers(config):
+    """Train classifiers (either SVM or neural networks) to classify target embeddings
+    with the given label.
+    
+    All the relevant information should be passed thanks to the input config.
+    
+    It saves txt files containg the acuuracies, the aucs and figures of the ROC curves."""
+
     config = process_config(config)
 
     print("\nIn train_classifiers, after process_config, "
