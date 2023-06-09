@@ -1,7 +1,7 @@
 # @package _global_
 model: SimCLR_supervised
 with_labels: True
-input_size: (1, 17, 40, 38)
+input_size: (1, 22, 49, 46)
 temperature_initial: 0.1
 temperature: 0.1
 temperature_supervised: 0.3

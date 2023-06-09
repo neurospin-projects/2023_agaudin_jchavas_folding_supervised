@@ -1,7 +1,7 @@
 # @package _global_
 # define path and parameters needed for the classifier on the latent space
 model_path: /neurospin/dico/agaudin/Runs/04_pointnet/Output/2022-10-07/09-22-42_1
-embeddings_save_path: /neurospin/dico/agaudin/Runs/04_pointnet/Output/PCA
-pca_Xfit: /neurospin/dico/data/deep_folding/current/datasets/hcp/HCP_2.npy
-pca_Xtransform: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/ACCpatterns_1.npy
-n_pca: 30
+embeddings_save_path: /neurospin/dico/jlaval/Runs/01_deep_supervised/Program/Output/PCA/Preterm_Preterm_test/
+pca_Xfit: /neurospin/dico/data/deep_folding/current/datasets/utrecht_dHCP/crops/2mm/CINGULATE_40wks/mask/Rskeleton_train_val.npy
+pca_Xtransform: /neurospin/dico/data/deep_folding/current/datasets/utrecht_dHCP/crops/2mm/CINGULATE_40wks/mask/Rskeleton_test.npy
+n_pca: 10

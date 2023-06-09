@@ -1,9 +1,9 @@
 defaults:
   - hydra: local
-  - dataset: cingulate_HCP_half_1
+  - dataset: S.T.s_dHCP_374_subjects.yaml 
   - model: SimCLR_supervised
   - mode: encoder
-  - augmentations: foldlabel_resize
+  - augmentations: foldlabel
   - backbone: ConvNet
   - platform: cuda_not_brainvisa
   - trainer: default
