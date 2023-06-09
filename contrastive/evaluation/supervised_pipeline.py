@@ -26,8 +26,8 @@ def checks_before_compute(sub_dir, datasets, short_name, overwrite=False,
         config = yaml.load(file, Loader=yaml.BaseLoader)
 
     # check if the model is a classifier
-    if config['mode'] != 'classifier':
-        print(f"{sub_dir} is not a classifier. Continue.")
+    if (config['mode'] != 'classifier') and (config['mode'] != 'regresser'):
+        print(f"{sub_dir} is neither a classifier nor a regressor. Continue.")
         return False
 
     # check if test values are already saved
@@ -132,7 +132,10 @@ def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=Tru
     # train-val-test aucs
     train_auc = model.compute_output_auc(train_loader)
     val_auc = model.compute_output_auc(val_loader)
-    test_auc = model.compute_output_auc(test_loader)
+    if len(test_loader) > 0:
+        test_auc = model.compute_output_auc(test_loader)
+    else:
+        test_auc = 0
 
     # create a save path is necessary
     save_path = model_path+f"/{folder_name}_supervised_results"
@@ -222,6 +225,7 @@ def pipeline(dir_path, datasets, short_name=None, overwrite=False, use_best_mode
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-05",
-         datasets=["cingulate_schiz", "cingulate_schiz_left"],
-         short_name='cing_schiz', overwrite=False, use_best_model=True)
+pipeline("/volatile/jc225751/Runs/61_classifier_regresser/Output/regresser/two_regions_stratified",
+         datasets=["cingulate_HCP_stratified_right",
+                   "cingulate_HCP_stratified_left"],
+         short_name='cing_HCP_Flanker', overwrite=False, use_best_model=True)
