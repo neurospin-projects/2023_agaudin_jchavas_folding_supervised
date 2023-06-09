@@ -1,4 +1,6 @@
-import hydra
+# Get the output of a target model for all subsets of a the given dataset.
+
+
 import omegaconf
 import torch
 import pandas as pd
@@ -146,6 +148,14 @@ def compute_embeddings(config, model_path, folder_name=None, use_best_model=Fals
 
 
 def get_outputs(model_path, datasets, short_name, use_best_model):
+    """Get the output of a target model for all subsets of a the given dataset.
+    
+    Arguments:
+        - model_path: str. Path to the model folder.
+        - datasets: list of str. Name of the datasets used as inputs. 
+        Most likely, they are the same than the one used for training.
+        - short_name: str. A shorter name to give to the folder where the otputs are saved.
+        - use_best_model: bool. Choose which weights to use to generate the outputs."""
     # get the config
     cfg = preprocess_config(model_path, datasets)
     log.debug(f"CONFIG FILE {type(cfg)}")
@@ -162,7 +172,7 @@ def get_outputs(model_path, datasets, short_name, use_best_model):
                        use_best_model=use_best_model)
 
 
-get_outputs(model_path='/neurospin/dico/agaudin/Runs/09_new_repo/Output/supervised/schiz/both/15-44-37_2',
+get_outputs(model_path='/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-08/excessive_weights/11-41-54_1',
             datasets=["cingulate_schiz", "cingulate_schiz_left"],
             short_name='cing_schiz',
             use_best_model=True)
