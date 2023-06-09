@@ -1,9 +1,9 @@
 defaults:
   - _self_
   - hydra: local
-  - dataset/cingulate_ACCpatterns_left
+  - dataset/S.T.s_dHCP_374_subjects
   - model: SimCLR_supervised
-  - mode: classifier
+  - mode: encoder
   - augmentations: foldlabel
   - backbone: ConvNet
   - platform: cuda_not_brainvisa
