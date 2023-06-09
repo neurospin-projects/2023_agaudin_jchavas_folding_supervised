@@ -151,8 +151,8 @@ def embeddings_pipeline(dir_path,
 # 'cingulate_ACCpatterns_1'
 # 'cingulate_Utrecht_dHCP'
 embeddings_pipeline(
-    "/volatile/jc225751/Runs/61_classifier_regresser/Output/self-supervised",
-    dataset='cingulate_ACCpatterns_1',
+    "/neurospin/dico/jlaval/Runs/01_deep_supervised/Output/regresser/2023-05-23/",
+    dataset='cingulate_Utrecht_dHCP_new_crop',
     verbose=True,
     classifier_name='svm',
-    overwrite=True)
+    overwrite=False)
