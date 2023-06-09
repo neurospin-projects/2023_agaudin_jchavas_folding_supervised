@@ -3,6 +3,7 @@ defaults:
   - hydra: local
   - dataset/cingulate_schiz
   - dataset/cingulate_schiz_left
+  - label: diagnosis
   - model: SimCLR_supervised
   - mode: classifier
   - augmentations: foldlabel

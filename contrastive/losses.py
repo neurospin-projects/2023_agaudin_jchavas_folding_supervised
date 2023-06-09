@@ -154,9 +154,9 @@ class CrossEntropyLoss_Classification(nn.Module):
     Cross entropy loss between outputs and labels
     """
 
-    def __init__(self, device=None):
+    def __init__(self, device=None, class_weights=None):
         super().__init__()
-        self.loss = nn.CrossEntropyLoss()
+        self.loss = nn.CrossEntropyLoss(weight=class_weights)
 
     def forward(self, output_i, output_j, labels):
         output_i = output_i.float()

@@ -15,5 +15,4 @@ pickle_benchmark:
 train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/utrecht_40wks/crops/2mm/F.C.M.ant./mask/Rskeleton_subject.csv
 subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/utrecht_40wks/crops/2mm/F.C.M.ant./mask/fake_labels.csv
 subject_column_name: 'Subject'
-label_names: ["fake_label"]
 n_max: 1080

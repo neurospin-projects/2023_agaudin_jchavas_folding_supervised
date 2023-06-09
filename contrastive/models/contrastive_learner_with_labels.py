@@ -82,6 +82,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def __init__(self, config, sample_data):
         super(ContrastiveLearner_WithLabels, self).__init__(
             config=config, sample_data=sample_data)
+        self.class_weights = torch.Tensor(config.data[0].class_weights).to(device=config.device)
 
     def get_full_inputs_from_batch_with_labels(self, batch):
         full_inputs = []
@@ -146,9 +147,11 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             return_logits=True)
         return loss.forward(z_i, z_j, labels)
 
-    def cross_entropy_loss_classification(self, output_i, output_j, labels):
+    def cross_entropy_loss_classification(self, output_i, output_j, labels,
+                                          class_weights=None):
         """Loss function for decoder"""
-        loss = CrossEntropyLoss_Classification(device=self.device)
+        loss = CrossEntropyLoss_Classification(device=self.device,
+                                               class_weights=self.class_weights)
         return loss.forward(output_i, output_j, labels)
 
     def mse_loss_regression(self, output_i, output_j, labels):
@@ -171,7 +174,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             batch_loss = self.cross_entropy_loss(sample, z_i, z_j)
         elif self.config.mode == "classifier":
             batch_loss = self.cross_entropy_loss_classification(
-                z_i, z_j, labels)
+                z_i, z_j, labels, self.config.data[0].class_weights)
             batch_label_loss = torch.tensor(0.)
         elif self.config.mode == "regresser":
             batch_loss = self.mse_loss_regression(z_i, z_j, labels)
@@ -246,7 +249,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         # Initialization
         X = torch.zeros([0, self.output_shape]).cpu()
         labels_all = torch.zeros(
-            [0, len(self.config.data[0].label_names)]).cpu()
+            [0, len(self.config.label_names)]).cpu()
         filenames_list = []
 
         # Computes embeddings without computing gradient
@@ -360,7 +363,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         # Initialization
         X = torch.zeros([0, self.config.num_representation_features]).cpu()
         labels_all = torch.zeros(
-            [0, len(self.config.data[reg].label_names)]).cpu()
+            [0, len(self.config.label_names)]).cpu()
         filenames_list = []
 
         # Computes representation (without gradient computation)

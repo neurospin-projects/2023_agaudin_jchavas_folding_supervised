@@ -12,8 +12,4 @@ pickle_benchmark:
 train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/hcp/crops/2mm/CINGULATE/mask/Rskeleton_subject_full.csv
 subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/hcp/participants_with_shuffled_Flanker_AgedAdj.csv
 subject_column_name: 'Subject'
-#label_names: ["NEOFAC_A", "NEOFAC_O", "NEOFAC_C", "NEOFAC_N", "NEOFAC_E"]
-label_names: ["Flanker_AgeAdj"]
-label_scaling: 'MinMax'
-# label_names: ["Gender"]
 input_size: (1, 17, 40, 38)

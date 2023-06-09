@@ -82,7 +82,7 @@ def save_used_label(save_path, config):
         save_path = os.path.join(save_path, 'label_used.txt')
     
     # get label from config
-    label = config.data[0].label_names[0]
+    label = config.label_names[0]
 
     with open(save_path, 'w') as file:
         file.write(label)

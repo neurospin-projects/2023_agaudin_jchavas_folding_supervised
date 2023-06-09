@@ -76,11 +76,11 @@ def load_embeddings(dir_path, labels_path, config):
     # get the labels (0 = no paracingulate, 1 = paracingulate)
     # and match them to the embeddings
     # /!\ use read_labels
-    label_scaling = (None if 'label_scaling' not in config.data[0].keys()
-                     else config.data[0].label_scaling)
+    label_scaling = (None if 'label_scaling' not in config.keys()
+                     else config.label_scaling)
     labels = read_labels(labels_path, config.data[0].subject_column_name,
-                         config.data[0].label_names, label_scaling)
-    labels.rename(columns={config.data[0].label_names[0]: 'label'}, inplace=True)
+                         config.label_names, label_scaling)
+    labels.rename(columns={config.label_names[0]: 'label'}, inplace=True)
     labels = labels[labels.Subject.isin(embeddings.index)]
     labels.sort_values(by='Subject', inplace=True, ignore_index=True)
     print("sorted labels", labels.head())
@@ -435,7 +435,7 @@ def train_svm_classifiers(config):
     if not os.path.isdir(results_save_path):
         results_save_path = os.path.dirname(results_save_path)
     # add a subfolder with the evaluated label as name
-    results_save_path = results_save_path + "/" + config.data[0].label_names[0]
+    results_save_path = results_save_path + "/" + config.label_names[0]
     if not os.path.exists(results_save_path):
         os.makedirs(results_save_path)
 

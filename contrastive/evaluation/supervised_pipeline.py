@@ -220,6 +220,6 @@ def pipeline(dir_path, datasets, short_name=None, overwrite=False, use_best_mode
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-05",
+pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-08",
          datasets=["cingulate_schiz", "cingulate_schiz_left"],
          short_name='cing_schiz', overwrite=False, use_best_model=True)

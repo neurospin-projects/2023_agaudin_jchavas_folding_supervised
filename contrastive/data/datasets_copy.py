@@ -134,8 +134,8 @@ class ContrastiveDatasetFusion():
         if labels is not None and labels[0].shape[0] > 0:
             label0 = labels[0]
             log.debug(f"labels[:5] = {label0[:5]}")
-            log.debug(f"There are {label0[label0[config.data[0].label_names[0]].isna()].shape[0]} NaN labels")
-            log.debug(label0[label0[config.data[0].label_names[0]].isna()])
+            log.debug(f"There are {label0[label0[config.label_names[0]].isna()].shape[0]} NaN labels")
+            log.debug(label0[label0[config.label_names[0]].isna()])
 
     def __len__(self):
         return (self.nb_train)
