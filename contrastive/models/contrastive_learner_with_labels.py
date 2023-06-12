@@ -82,7 +82,10 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def __init__(self, config, sample_data):
         super(ContrastiveLearner_WithLabels, self).__init__(
             config=config, sample_data=sample_data)
-        self.class_weights = torch.Tensor(config.data[0].class_weights).to(device=config.device)
+        if 'class_weights' in config.keys():
+            self.class_weights = torch.Tensor(config.class_weights).to(device=config.device)
+        else:
+            self.class_weights = None
 
     def get_full_inputs_from_batch_with_labels(self, batch):
         full_inputs = []
@@ -174,7 +177,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             batch_loss = self.cross_entropy_loss(sample, z_i, z_j)
         elif self.config.mode == "classifier":
             batch_loss = self.cross_entropy_loss_classification(
-                z_i, z_j, labels, self.config.data[0].class_weights)
+                z_i, z_j, labels, self.class_weights)
             batch_label_loss = torch.tensor(0.)
         elif self.config.mode == "regresser":
             batch_loss = self.mse_loss_regression(z_i, z_j, labels)
