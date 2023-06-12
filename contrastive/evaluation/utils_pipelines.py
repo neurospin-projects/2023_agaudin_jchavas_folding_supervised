@@ -44,6 +44,29 @@ def change_config_datasets(config, new_datasets):
             config.dataset[dataset][key] = dataset_yaml[key]
 
 
+def change_config_label(config, new_label):
+    """Replace the 'label' entry of a config 
+    with the new target label. Works in place.
+    
+    Arguments:
+        - config: a config object (omegaconf).
+        - new_label: str corresponding to the name 
+        of a target yaml file."""
+    
+    # remove the keywords of the old label
+    current_label = config.label_names[0]
+    with open(f'./configs/label/{current_label}.yaml', 'r') as file:
+        old_label_yaml = yaml.load(file, yaml.FullLoader)
+    for key in old_label_yaml:
+        config.pop(key)
+
+    # add the ones of the target label
+    with open(f'./configs/label/{new_label}.yaml', 'r') as file:
+        label_yaml = yaml.load(file, yaml.FullLoader)
+    for key in label_yaml:
+        config[key] = label_yaml[key]
+
+
 def save_used_datasets(save_path, datasets):
     """Save the datasets given in order in a .txt file. Used in embeddings and supervised
     pipelines to know which datasets have been used for the results generation.

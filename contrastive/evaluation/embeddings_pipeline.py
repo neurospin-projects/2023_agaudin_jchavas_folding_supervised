@@ -5,7 +5,7 @@ import omegaconf
 
 from generate_embeddings import compute_embeddings
 from train_multiple_classifiers import train_classifiers
-from utils_pipelines import get_save_folder_name, change_config_datasets
+from utils_pipelines import get_save_folder_name, change_config_datasets, change_config_label
 
 from sklearn.utils._testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
@@ -13,13 +13,14 @@ from sklearn.exceptions import ConvergenceWarning
 
 # Auxilary function used to process the config linked to the model.
 # For instance, change the embeddings save path to being next to the model.
-def preprocess_config(sub_dir, datasets, folder_name, classifier_name='svm', verbose=False):
+def preprocess_config(sub_dir, datasets, label, folder_name, classifier_name='svm', verbose=False):
     """Loads the associated config of the given model and changes what has to be done,
     mainly the datasets, the classifier type and a few other keywords.
     
     Arguments:
         - sub_dir: str. Path to the directory containing the saved model.
         - datasets: list of str. List of the datasets to be used for the results generation.
+        - label: str. Name of the label to be used for evaluation.
         - folder_name: str. Name of the directory where to store both embeddings and aucs.
         - classifier_name: str. Should correspond to a classifier yaml file's name 
         (currently either 'svm' or 'neural_network').
@@ -34,6 +35,8 @@ def preprocess_config(sub_dir, datasets, folder_name, classifier_name='svm', ver
 
     # replace the datasets
     change_config_datasets(cfg, datasets)
+    # replace the label
+    change_config_label(cfg, label)
 
     # get the right classifiers parameters
     with open(f'./configs/classifier/{classifier_name}.yaml', 'r') as file:
@@ -55,7 +58,7 @@ def preprocess_config(sub_dir, datasets, folder_name, classifier_name='svm', ver
 # main function
 # creates embeddings and train classifiers for all models contained in folder
 @ignore_warnings(category=ConvergenceWarning)
-def embeddings_pipeline(dir_path, datasets, short_name=None, classifier_name='svm',
+def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_name='svm',
                         overwrite=False, use_best_model=False, verbose=False):
     """Pipeline to generate automatically the embeddings and compute the 
     associated aucs for all the models contained in a given directory.
@@ -64,6 +67,7 @@ def embeddings_pipeline(dir_path, datasets, short_name=None, classifier_name='sv
         - dir_path: str. Path where the models are stored and where is applied 
         recursively the process.
         - datasets: list of str. Datasets the embeddings are generated from.
+        - label: str. Name of the label to be used for evaluation.
         - short_name: str or None. Name of the directory where to store both embeddings 
         and aucs. If None, use datasets to generate the folder name.
         - classifier_name: str. Parameter to select the desired classifer type
@@ -82,7 +86,7 @@ def embeddings_pipeline(dir_path, datasets, short_name=None, classifier_name='sv
         if os.path.isdir(sub_dir):
             # check if directory associated to a model
             if os.path.exists(sub_dir+'/.hydra/config.yaml'):
-                print("Treating", sub_dir)
+                print("\nTreating", sub_dir)
 
                 # check if embeddings and ROC already computed
                 # if already computed and don't want to overwrite, then pass
@@ -106,7 +110,7 @@ def embeddings_pipeline(dir_path, datasets, short_name=None, classifier_name='sv
                     print("Start post processing")
                     # get the config and correct it to suit
                     # what is needed for classifiers
-                    cfg = preprocess_config(sub_dir, datasets, folder_name,
+                    cfg = preprocess_config(sub_dir, datasets, label, folder_name,
                                             classifier_name=classifier_name)
                     if verbose:
                         print("CONFIG FILE", type(cfg))
@@ -116,9 +120,6 @@ def embeddings_pipeline(dir_path, datasets, short_name=None, classifier_name='sv
                     with open(sub_dir+'/.hydra/config_classifiers.yaml', 'w') \
                             as file:
                         yaml.dump(omegaconf.OmegaConf.to_yaml(cfg), file)
-
-                    print("\nbefore compute_embeddings: "
-                          f"training_labels = {cfg.training_labels}\n")
 
                     # apply the functions
                     compute_embeddings(cfg)
@@ -148,6 +149,7 @@ def embeddings_pipeline(dir_path, datasets, short_name=None, classifier_name='sv
                 print(f"{sub_dir} not associated to a model. Continue")
                 embeddings_pipeline(sub_dir,
                                     datasets=datasets,
+                                    label=label,
                                     short_name=short_name,
                                     classifier_name=classifier_name,
                                     overwrite=overwrite,
@@ -157,6 +159,7 @@ def embeddings_pipeline(dir_path, datasets, short_name=None, classifier_name='sv
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-01",
+embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-12",
 datasets=['cingulate_ACCpatterns', 'cingulate_ACCpatterns_left'], short_name='cing_ACC',
+label='PCS_asymetry',
 classifier_name='svm', overwrite=True, use_best_model=False, verbose=False)

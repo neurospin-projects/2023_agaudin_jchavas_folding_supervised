@@ -10,6 +10,6 @@ foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/cr
 input_size: (1, 18, 41, 38)
 pickle_benchmark: 
 train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/ACCpatterns/train_val_ACCpatterns.csv
-subject_labels_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/ACCpatterns/all.csv
+subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/subjects_labels.csv
 subject_column_name: 'long_name'
 input_size: (1, 20, 42, 38)

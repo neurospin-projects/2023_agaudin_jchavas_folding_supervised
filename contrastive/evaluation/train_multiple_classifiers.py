@@ -71,7 +71,7 @@ def load_embeddings(dir_path, labels_path, config):
                                    axis=0, ignore_index=False)
 
     embeddings.sort_index(inplace=True)
-    print("sorted embeddings:", embeddings.head())
+    log.debug(f"sorted embeddings: {embeddings.head()}")
 
     # get the labels (0 = no paracingulate, 1 = paracingulate)
     # and match them to the embeddings
@@ -83,11 +83,11 @@ def load_embeddings(dir_path, labels_path, config):
     labels.rename(columns={config.label_names[0]: 'label'}, inplace=True)
     labels = labels[labels.Subject.isin(embeddings.index)]
     labels.sort_values(by='Subject', inplace=True, ignore_index=True)
-    print("sorted labels", labels.head())
+    log.debug(f"sorted labels: {labels.head()}")
 
     embeddings = embeddings[embeddings.index.isin(labels.Subject)]
     embeddings.sort_index(inplace=True)
-    print("sorted embeddings:", embeddings.head())
+    log.debug(f"sorted embeddings: {embeddings.head()}")
 
     # /!\ multiple labels is not handled
 
@@ -417,13 +417,10 @@ def train_svm_classifiers(config):
     train_embs_path = config.training_embeddings
     test_embs_path = config.test_embeddings
     # /!\ in fact all_labels (=train_val and test labels)
-    train_lab_paths = config.training_labels
+    train_lab_paths = config.data[0].subject_labels_file
 
     # if not specified, the embeddings the results are created from
     # are the ones used for training
-    log.info("training_labels file in train_svm_classifiers = "
-             f"{train_lab_paths}")
-
     EoI_path = (config.embeddings_of_interest if config.embeddings_of_interest
                 else train_embs_path)
 
@@ -566,9 +563,6 @@ def train_classifiers(config):
     It saves txt files containg the acuuracies, the aucs and figures of the ROC curves."""
 
     config = process_config(config)
-
-    print("\nIn train_classifiers, after process_config, "
-          f"training_labels = {config['training_labels']}\n")
 
     set_root_logger_level(config.verbose)
 
