@@ -218,7 +218,9 @@ def post_processing_results(labels, embeddings, Curves, aucs, accuracies,
 
 def train_nn_classifiers(config):
     """Sets up the save paths, loads the embeddings and then loops 
-    to train the 250 neural networks."""
+    to train the 250 neural networks.
+    
+    OBSOLETE"""
     # set up load and save paths
     train_embs_path = config.training_embeddings
     train_lab_paths = config.training_labels

@@ -12,7 +12,7 @@ from contrastive.utils.config import process_config
 from contrastive.utils.logs import set_root_logger_level, set_file_logger
 
 from utils_pipelines import get_save_folder_name, change_config_datasets, \
-    save_used_datasets, save_used_label
+    change_config_label, save_used_datasets, save_used_label
 
 log = set_file_logger(__file__)
 
@@ -57,13 +57,14 @@ overwrite to True if you still want to evaluate it.")
 
 # Auxilary function used to process the config linked to the model.
 # For instance, change the embeddings save path to being next to the model.
-def preprocess_config(sub_dir, datasets):
+def preprocess_config(sub_dir, datasets, label):
     """Loads the associated config of the given model and changes what has to be done,
     mainly the datasets and a few other keywords.
     
     Arguments:
         - sub_dir: str. Path to the directory containing the saved model.
         - datasets: list of str. List of the datasets to be used for the results generation.
+        - label: str. Name of the chosen label yaml file.
         
     Output:
         - cfg: the config as an omegaconf object."""
@@ -73,6 +74,7 @@ def preprocess_config(sub_dir, datasets):
 
     # replace the datasets in place
     change_config_datasets(cfg, datasets)
+    change_config_label(cfg, label)
 
     # replace the possibly incorrect config parameters
     cfg.with_labels = True
@@ -162,7 +164,7 @@ def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=Tru
     save_used_label(save_path, config)
 
 
-def pipeline(dir_path, datasets, short_name=None, overwrite=False, use_best_model=True):
+def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_best_model=True):
     """Pipeline to generate automatically the output aucs for supervised classifiers only.
 
     Arguments:
@@ -170,6 +172,7 @@ def pipeline(dir_path, datasets, short_name=None, overwrite=False, use_best_mode
         recursively the process.
         - datasets: list of str. Datasets the results are generated from. /!\ Only 
         uses the test (and test_intra) subsets.
+        - label: str. Label chosen for the auc computation.
         - short_name: str or None. Name of the directory where to store both embeddings 
         and aucs. If None, use datasets to generate the folder name.
         - overwrite: bool. Redo the process on models where embeddings already exist.
@@ -194,7 +197,7 @@ def pipeline(dir_path, datasets, short_name=None, overwrite=False, use_best_mode
                     print("Start post processing")
                     # get the config
                     # and correct it to suit what is needed for classifiers
-                    cfg = preprocess_config(sub_dir, datasets)
+                    cfg = preprocess_config(sub_dir, datasets, label)
                     log.debug(f"CONFIG FILE {type(cfg)}")
                     log.debug(json.dumps(omegaconf.OmegaConf.to_container(
                         cfg, resolve=True), indent=4, sort_keys=True))
@@ -208,18 +211,19 @@ def pipeline(dir_path, datasets, short_name=None, overwrite=False, use_best_mode
                                          folder_name=folder_name, use_best_model=False)
                     if use_best_model:  # do both
                         log.info("Repeat with the best model")
-                        cfg = preprocess_config(sub_dir, datasets)
+                        cfg = preprocess_config(sub_dir, datasets, label)
                         supervised_auc_eval(cfg, os.path.abspath(sub_dir),
                                          folder_name=folder_name, use_best_model=True)
 
             else:
                 print(f"{sub_dir} not associated to a model. Continue")
-                pipeline(sub_dir, datasets, short_name=short_name,
+                pipeline(sub_dir, datasets, label, short_name=short_name,
                          overwrite=overwrite, use_best_model=use_best_model)
         else:
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-08",
+pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-12",
          datasets=["cingulate_schiz", "cingulate_schiz_left"],
+         label='diagnosis',
          short_name='cing_schiz', overwrite=False, use_best_model=True)

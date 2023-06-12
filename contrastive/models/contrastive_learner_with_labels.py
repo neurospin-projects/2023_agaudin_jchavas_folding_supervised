@@ -55,6 +55,7 @@ from contrastive.losses import GeneralizedSupervisedNTXenLoss,\
 from contrastive.utils.plots.visualize_images \
     import plot_scatter_matrix_with_labels
 from contrastive.utils.plots.visualize_tsne import plot_tsne
+from contrastive.utils.test_timeit import timeit
 
 try:
     from soma import aims
@@ -250,9 +251,9 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         This includes the projection head"""
 
         # Initialization
-        X = torch.zeros([0, self.output_shape]).cpu()
+        X = torch.zeros([0, self.output_shape]).cuda()
         labels_all = torch.zeros(
-            [0, len(self.config.label_names)]).cpu()
+            [0, len(self.config.label_names)]).cuda()
         filenames_list = []
 
         # Computes embeddings without computing gradient
@@ -285,13 +286,13 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 # N being the number of samples in the batch
                 X_reordered = X_reordered.view(-1, X_i.shape[-1])
                 # At the end, it is concataneted with previous X
-                X = torch.cat((X, X_reordered.cpu()), dim=0)
+                X = torch.cat((X, X_reordered.cuda()), dim=0)
 
                 # We now concatenate the labels
                 labels_reordered = torch.cat([labels, labels], dim=-1)
                 labels_reordered = labels_reordered.view(-1, labels.shape[-1])
                 # At the end, labels are concatenated
-                labels_all = torch.cat((labels_all, labels_reordered.cpu()),
+                labels_all = torch.cat((labels_all, labels_reordered.cuda()),
                                        dim=0)
 
                 filenames_duplicate = [
@@ -300,9 +301,11 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 filenames_list = filenames_list + filenames_duplicate
                 del inputs
 
-        return X, labels_all, filenames_list
+        return X.cpu(), labels_all.cpu(), filenames_list
 
     def compute_output_probabilities(self, loader):
+        """Only available in classifier mode.
+        Gets the output of the model and convert it to probabilities thanks to softmax."""
         if self.config.mode == 'classifier':
             X, labels_all, filenames_list = self.compute_output_skeletons(
                 loader)
@@ -319,6 +322,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 "You shouldn't compute probabilities with another mode.")
 
     def compute_output_auc(self, loader):
+        """Only available in classifier and regresser modes.
+        Computes the auc from the outputs of the model and the associated labels."""
         X, labels, _ = self.compute_outputs_skeletons(loader)
         # compute the mean of the two views' outputs
         X = (X[::2, ...] + X[1::2, ...]) / 2
@@ -364,9 +369,9 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         Representation are before the projection head"""
 
         # Initialization
-        X = torch.zeros([0, self.config.num_representation_features]).cpu()
+        X = torch.zeros([0, self.config.num_representation_features]).cuda()
         labels_all = torch.zeros(
-            [0, len(self.config.label_names)]).cpu()
+            [0, len(self.config.label_names)]).cuda()
         filenames_list = []
 
         # Computes representation (without gradient computation)
@@ -394,14 +399,14 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 # N being the number of samples in the batch
                 X_reordered = X_reordered.view(-1, X_i.shape[-1])
                 # At the end, it is concataneted with previous X
-                X = torch.cat((X, X_reordered.cpu()), dim=0)
+                X = torch.cat((X, X_reordered.cuda()), dim=0)
 
                 # We now concatenate the labels
 
                 labels_reordered = torch.cat([labels, labels], dim=-1)
                 labels_reordered = labels_reordered.view(-1, labels.shape[-1])
                 # At the end, labels are concatenated
-                labels_all = torch.cat((labels_all, labels_reordered.cpu()),
+                labels_all = torch.cat((labels_all, labels_reordered.cuda()),
                                        dim=0)
 
                 filenames_duplicate = [
@@ -410,7 +415,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 filenames_list = filenames_list + filenames_duplicate
                 del inputs
 
-        return X, labels_all, filenames_list
+        return X.cpu(), labels_all.cpu(), filenames_list
 
     def compute_tsne(self, loader, register):
         """Computes t-SNE.
