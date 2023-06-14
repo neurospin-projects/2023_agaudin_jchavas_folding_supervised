@@ -280,12 +280,13 @@ class RemoveRandomBranchTensor(object):
         # log.debug(f"arr_skel.shape = {arr_skel.shape}")
         # log.debug(f"arr_foldlabel.shape = {arr_foldlabel.shape}")
         assert (arr_skel.shape == arr_foldlabel.shape)
-        assert (self.percentage >= 0)
 
         # percentage can be a tuple or an int
         if len(self.percentage) > 1:
-            percentage = np.random.uniform(self.percentage[0], self.percentage[1])
+            assert ((int(self.percentage[0]) >= 0) & (int(self.percentage[1]) >= 0))
+            percentage = np.random.uniform(int(self.percentage[0]), int(self.percentage[1]))
         else:
+            assert (self.percentage >= 0)
             if self.variable_percentage:
                 percentage = np.random.uniform(0, self.percentage)
             else:
