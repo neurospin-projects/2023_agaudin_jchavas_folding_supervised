@@ -4,6 +4,8 @@ import yaml
 import json
 import omegaconf
 import torch
+import numpy as np
+import pandas as pd
 
 from contrastive.data.datamodule import DataModule_Evaluation
 from contrastive.models.contrastive_learner_with_labels import \
@@ -124,18 +126,18 @@ def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=Tru
     # test_intra
     try:
         test_intra_loader = data_module.test_intra_dataloader()
-        test_intra_auc = model.compute_output_auc(test_intra_loader)
+        test_intra_auc, _, _ = model.compute_output_auc(test_intra_loader)
         log.info(f"test_intra_auc = {test_intra_auc}")
     except:
         log.info("No test intra for this dataset.")
 
     # train-val-test aucs
-    train_auc = model.compute_output_auc(train_loader)
-    val_auc = model.compute_output_auc(val_loader)
+    train_auc, train_y, train_pred  = model.compute_output_auc(train_loader)
+    val_auc, val_y, val_pred = model.compute_output_auc(val_loader)
     if len(test_loader) > 0:
-        test_auc = model.compute_output_auc(test_loader)
+        test_auc, test_y, test_pred = model.compute_output_auc(test_loader)
     else:
-        test_auc = 0
+        test_auc, test_y, test_pred = 0, np.array([]), np.array([])
 
     # create a save path is necessary
     save_path = model_path+f"/{folder_name}_supervised_results"
@@ -158,6 +160,20 @@ def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=Tru
         json_path = save_path+'/aucs.json'
     with open(json_path, 'w') as file:
         json.dump(results_dico, file)
+
+    # save predictions
+    df_train_predictions = pd.DataFrame({'train y': train_y,
+                                         'train pred': train_pred})
+    csv_path = save_path+'/train_predictions.csv'
+    df_train_predictions.to_csv(csv_path, sep=',', index=False)
+    df_val_predictions = pd.DataFrame({'val y': val_y,
+                                       'val pred': val_pred})
+    csv_path = save_path+'/val_predictions.csv'
+    df_val_predictions.to_csv(csv_path, sep=',', index=False)
+    df_test_predictions = pd.DataFrame({'test y': test_y,
+                                        'test pred':test_pred})
+    csv_path = save_path+'/test_predictions.csv'
+    df_test_predictions.to_csv(csv_path, sep=',', index=False)
 
     # save what are the datasets have been used for the performance computation
     datasets = config.dataset.keys()
@@ -225,7 +241,7 @@ def pipeline(dir_path, datasets, short_name=None, overwrite=False, use_best_mode
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/volatile/jc225751/Runs/61_classifier_regresser/Output/regresser/two_regions_stratified",
-         datasets=["cingulate_HCP_stratified_right",
-                   "cingulate_HCP_stratified_left"],
-         short_name='cing_HCP_Flanker', overwrite=False, use_best_model=True)
+#datasets=["cingulate_HCP_stratified_right","cingulate_HCP_stratified_left"]
+pipeline("/neurospin/dico/jlaval/Runs/01_deep_supervised/Program/Output/2023-06-13/",
+         datasets=["STs_dHCP_155_subjects"],
+         short_name='STs_dHCP_155', overwrite=True, use_best_model=True)

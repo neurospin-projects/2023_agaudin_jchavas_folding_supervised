@@ -331,7 +331,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             X = nn.functional.softmax(X, dim=1)
             auc = roc_auc_score(labels, X[:, 1])
 
-        return auc
+        return auc, labels.numpy()[:,0], X.numpy()[:,0]
 
     def compute_decoder_outputs_skeletons(self, loader):
         """Computes the outputs of the model for each crop.
