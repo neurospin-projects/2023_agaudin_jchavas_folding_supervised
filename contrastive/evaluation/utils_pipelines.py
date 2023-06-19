@@ -54,11 +54,12 @@ def change_config_label(config, new_label):
         of a target yaml file."""
     
     # remove the keywords of the old label
-    current_label = config.label_names[0]
-    with open(f'./configs/label/{current_label}.yaml', 'r') as file:
-        old_label_yaml = yaml.load(file, yaml.FullLoader)
-    for key in old_label_yaml:
-        config.pop(key)
+    if 'label_names' in config.keys():
+        current_label = config.label_names[0]
+        with open(f'./configs/label/{current_label}.yaml', 'r') as file:
+            old_label_yaml = yaml.load(file, yaml.FullLoader)
+        for key in old_label_yaml:
+            config.pop(key)
 
     # add the ones of the target label
     with open(f'./configs/label/{new_label}.yaml', 'r') as file:

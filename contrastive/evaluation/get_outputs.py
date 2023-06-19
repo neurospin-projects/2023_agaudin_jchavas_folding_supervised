@@ -11,8 +11,7 @@ import yaml
 
 from contrastive.utils.config import process_config
 from contrastive.data.datamodule import DataModule_Evaluation
-from contrastive.evaluation.utils_pipelines import get_save_folder_name, \
-    change_config_datasets, save_used_datasets, save_used_label
+from contrastive.evaluation.utils_pipelines import *
 from contrastive.models.contrastive_learner_with_labels import \
     ContrastiveLearner_WithLabels
 
@@ -22,7 +21,7 @@ log = set_file_logger(__file__)
 
 # Auxilary function used to process the config linked to the model.
 # For instance, change the embeddings save path to being next to the model.
-def preprocess_config(sub_dir, datasets):
+def preprocess_config(sub_dir, datasets, label):
     """Loads the associated config of the given model and changes what has to be done,
     mainly the datasets and a few other keywords.
     
@@ -38,6 +37,7 @@ def preprocess_config(sub_dir, datasets):
 
     # replace the datasets in place
     change_config_datasets(cfg, datasets)
+    change_config_label(cfg, label)
 
     # replace the possibly incorrect config parameters
     cfg.with_labels = True
@@ -147,7 +147,7 @@ def compute_embeddings(config, model_path, folder_name=None, use_best_model=Fals
     save_used_label(save_path, config)
 
 
-def get_outputs(model_path, datasets, short_name, use_best_model):
+def get_outputs(model_path, datasets, label, short_name, use_best_model):
     """Get the output of a target model for all subsets of a the given dataset.
     
     Arguments:
@@ -157,7 +157,7 @@ def get_outputs(model_path, datasets, short_name, use_best_model):
         - short_name: str. A shorter name to give to the folder where the otputs are saved.
         - use_best_model: bool. Choose which weights to use to generate the outputs."""
     # get the config
-    cfg = preprocess_config(model_path, datasets)
+    cfg = preprocess_config(model_path, datasets, label)
     log.debug(f"CONFIG FILE {type(cfg)}")
     log.debug(json.dumps(omegaconf.OmegaConf.to_container(
         cfg, resolve=True), indent=4, sort_keys=True))
@@ -172,7 +172,8 @@ def get_outputs(model_path, datasets, short_name, use_best_model):
                        use_best_model=use_best_model)
 
 
-get_outputs(model_path='/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-08/excessive_weights/11-41-54_1',
+get_outputs(model_path='/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-08/excessive_weights/11-41-54_0',
             datasets=["cingulate_schiz", "cingulate_schiz_left"],
+            label='diagnosis',
             short_name='cing_schiz',
             use_best_model=True)

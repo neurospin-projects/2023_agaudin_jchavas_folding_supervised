@@ -130,6 +130,7 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
 
                     # compute embeddings for the best model if saved
                     if (use_best_model and os.path.exists(sub_dir+'/logs/best_model_weights.pt')):
+                        print("COMPUTE AGAIN WITH THE BEST MODEL")
                         # apply the functions
                         cfg = omegaconf.OmegaConf.load(
                             sub_dir+'/.hydra/config_classifiers.yaml')
@@ -159,7 +160,7 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-12",
-datasets=['cingulate_ACCpatterns', 'cingulate_ACCpatterns_left'], short_name='cing_ACC',
-label='PCS_asymetry',
-classifier_name='svm', overwrite=True, use_best_model=False, verbose=False)
+embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/supervised/schiz/both",
+datasets=['cingulate_schiz', 'cingulate_schiz_left'], short_name='cing_schiz',
+label='diagnosis',
+classifier_name='svm', overwrite=False, use_best_model=True, verbose=False)

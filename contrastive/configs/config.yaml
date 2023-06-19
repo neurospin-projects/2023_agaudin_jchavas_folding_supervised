@@ -1,8 +1,7 @@
 defaults:
   - _self_
   - hydra: local
-  - dataset/cingulate_schiz
-  - dataset/cingulate_schiz_left
+  - dataset/cingulate_schiz_strat_bis
   - label: diagnosis
   - model: SimCLR_supervised
   - mode: classifier

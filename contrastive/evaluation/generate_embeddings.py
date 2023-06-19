@@ -98,16 +98,13 @@ def compute_embeddings(config):
     if 'use_best_model' in config.keys():
         paths = config.model_path+"/logs/best_model_weights.pt"
     files = glob.glob(paths)
-    print("model_weights:", files[0])
+    #print("model_weights:", files[0])
     cpkt_path = files[0]
     checkpoint = torch.load(
         cpkt_path, map_location=torch.device(config.device))
     model.load_state_dict(checkpoint['state_dict'])
 
     model.eval()
-
-    print(config.model)
-    print(config.backbone_name)
 
     # create folder where to save the embeddings
     embeddings_path = config.embeddings_save_path
