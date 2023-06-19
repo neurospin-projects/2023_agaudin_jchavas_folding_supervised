@@ -377,7 +377,7 @@ def train_one_svm_classifier(config, inputs, i=0):
     outputs = {}
 
     # SVC predict_proba
-    model = SVC(kernel='linear', probability=True,
+    model = SVC(kernel='linear', probability=True, class_weight='balanced',
                 max_iter=config.class_max_epochs, random_state=i)
     labels_proba = cross_val_predict(model, X, Y, cv=5, method='predict_proba')
     curves, roc_auc, accuracy = compute_indicators(Y, labels_proba)
