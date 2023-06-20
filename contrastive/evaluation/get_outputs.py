@@ -172,8 +172,8 @@ def get_outputs(model_path, datasets, label, short_name, use_best_model):
                        use_best_model=use_best_model)
 
 
-get_outputs(model_path='/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-08/excessive_weights/11-41-54_0',
-            datasets=["cingulate_schiz", "cingulate_schiz_left"],
+get_outputs(model_path='/neurospin/dico/agaudin/Runs/09_new_repo/Output/supervised/schiz/strat_bis_R/16-42-45_1',
+            datasets=["cingulate_schiz_strat_bis"],
             label='diagnosis',
-            short_name='cing_schiz',
+            short_name='cing_schiz_strat_bis',
             use_best_model=True)

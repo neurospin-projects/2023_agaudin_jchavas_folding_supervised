@@ -337,10 +337,12 @@ def create_sets_with_labels(config):
         # Column subject_column_name is renamed 'Subject'
         label_scaling = (None if 'label_scaling' not in config.keys()
                          else config.data[reg].label_scaling)
+        #retrocompatibility 
+        label_names = config.label_names if 'label_names' in config else config.data[0].label_names
         subject_labels = read_labels(
             config.data[reg].subject_labels_file,
             config.data[reg].subject_column_name,
-            config.label_names,
+            label_names,
             label_scaling)
 
         if config.environment == "brainvisa" and config.checking:

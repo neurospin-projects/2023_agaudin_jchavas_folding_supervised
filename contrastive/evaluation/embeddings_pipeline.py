@@ -160,7 +160,7 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/supervised/schiz/both",
-datasets=['cingulate_schiz', 'cingulate_schiz_left'], short_name='cing_schiz',
+embeddings_pipeline("/neurospin/dico/jchavas/Runs/59_analysis_ukbiobank/Output/trained_on_ukbiobank/chosen_model",
+datasets=['cingulate_schiz'], short_name='cing_schiz',
 label='diagnosis',
 classifier_name='svm', overwrite=False, use_best_model=True, verbose=False)
