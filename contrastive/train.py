@@ -165,9 +165,11 @@ def train(config):
              f"{len(model.hook_handles)}")
 
     # save model with structure
-    save_path = './logs/trained_model.pt'
-    torch.save(model, save_path)
-    print(f"Full model successfully saved at {os.path.abspath(save_path)}.")
+    # save_path = './logs/trained_model.pt'
+    # torch.save(model, save_path)
+    # print(f"Full model successfully saved at {os.path.abspath(save_path)}.")
+
+    print(f"End of training for model {os.path.abspath('./')}")
 
 
 if __name__ == "__main__":
