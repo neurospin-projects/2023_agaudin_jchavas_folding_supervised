@@ -1,10 +1,10 @@
 defaults:
   - _self_
   - hydra: local
-  - dataset/cingulate_schiz_strat_bis
-  - label: diagnosis
-  - model: SimCLR_supervised
-  - mode: classifier
+  - dataset/left_cingulate_ACCpatterns
+  - label: Left_PCS
+  - model: SimCLR
+  - mode: encoder
   - augmentations: foldlabel
   - backbone: ConvNet
   - platform: cuda_not_brainvisa
