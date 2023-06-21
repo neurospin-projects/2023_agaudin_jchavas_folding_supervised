@@ -74,15 +74,14 @@ def plot_bucket(img, buffer):
     """Plots as 3D buckets the first 3D image of the batch
 
     Args:
-        img: list of batch of images of size [size_batch, 1, size_X, size_Y, size_Z]
+        img: batch of images of size [size_batch, 1, size_X, size_Y, size_Z]
         buffer (boolean): True -> returns PNG image buffer
                           False -> plots the figure
     """
 
-    arr = img[0][0, 0, :, :, :]
-    size_X, size_Y, size_Z = arr.shape
+    arr = img[0, 0, :, :, :]
     logger.debug(np.unique(arr, return_counts=True))
-    logger.debug(img[0].shape)
+    logger.debug(img.shape)
     logger.debug(arr.shape)
     bucket = np.argwhere(arr)
     bucket_t = (bucket).T
@@ -92,9 +91,9 @@ def plot_bucket(img, buffer):
 
     fig = plt.figure()
     ax = Axes3D(fig)
-    ax.set_xlim3d(0, size_X/2)
-    ax.set_ylim3d(0, size_Y)
-    ax.set_zlim3d(0, size_Z)
+    ax.set_xlim3d(0, 12)
+    ax.set_ylim3d(0, 40)
+    ax.set_zlim3d(0, 40)
     ax.scatter(x, y, z)
 
     if buffer:

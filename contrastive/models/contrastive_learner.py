@@ -115,8 +115,7 @@ class ContrastiveLearner(pl.LightningModule):
         #         drop_rate=config.drop_rate,
         #         feature_transform=False)
         else:
-            raise ValueError(f"No underlying backbone "
-                             f"with backbone name {config.backbone_name}")
+            raise ValueError(f"No underlying backbone with backbone name {config.backbone_name}")
         
         num_representation_features_total = config.num_representation_features * n_datasets
 
@@ -316,10 +315,8 @@ class ContrastiveLearner(pl.LightningModule):
             filter(lambda p: p.requires_grad, self.parameters()),
             lr=self.config.lr,
             weight_decay=self.config.weight_decay)
-        # scheduler = torch.optim.lr_scheduler.StepLR(
-        #     optimizer=optimizer,
-        #     step_size=10,
-        #     gamma=0.5)
+        # steps = 140
+        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, steps)
 
         return optimizer
 
