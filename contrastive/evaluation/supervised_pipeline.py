@@ -26,8 +26,8 @@ def checks_before_compute(sub_dir, datasets, short_name, overwrite=False,
         config = yaml.load(file, Loader=yaml.BaseLoader)
 
     # check if the model is a classifier
-    if config['mode'] != 'classifier':
-        print(f"{sub_dir} is not a classifier. Continue.")
+    if (config['mode'] != 'classifier') and (config['mode'] != 'regresser'):
+        print(f"{sub_dir} is neither a classifier nor a regressor. Continue.")
         return False
 
     # check if test values are already saved
@@ -134,7 +134,10 @@ def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=Tru
     # train-val-test aucs
     train_auc = model.compute_output_auc(train_loader)
     val_auc = model.compute_output_auc(val_loader)
-    test_auc = model.compute_output_auc(test_loader)
+    if len(test_loader) > 0:
+        test_auc = model.compute_output_auc(test_loader)
+    else:
+        test_auc = 0
 
     # create a save path is necessary
     save_path = model_path+f"/{folder_name}_supervised_results"
@@ -208,12 +211,14 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
 
                     folder_name = get_save_folder_name(datasets, short_name)
                     supervised_auc_eval(cfg, os.path.abspath(sub_dir),
-                                         folder_name=folder_name, use_best_model=False)
+                                        folder_name=folder_name,
+                                        use_best_model=False)
                     if use_best_model:  # do both
                         log.info("Repeat with the best model")
                         cfg = preprocess_config(sub_dir, datasets, label)
                         supervised_auc_eval(cfg, os.path.abspath(sub_dir),
-                                         folder_name=folder_name, use_best_model=True)
+                                        folder_name=folder_name,
+                                        use_best_model=True)
 
             else:
                 print(f"{sub_dir} not associated to a model. Continue")
@@ -227,3 +232,4 @@ pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-20",
          datasets=["cingulate_schiz_strat_bis"],
          label='diagnosis',
          short_name='cingulate_schiz_strat_bis', overwrite=False, use_best_model=True)
+
