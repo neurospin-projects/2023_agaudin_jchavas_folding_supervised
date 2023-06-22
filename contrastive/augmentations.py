@@ -223,9 +223,13 @@ def remove_branches_up_to_percent(arr_foldlabel, arr_skel,
                                                          arr_skel)
 
     if keep_bottom:
-        arr_foldlabel = remove_bottom_branches(arr_foldlabel)
-
-    branches, counts = np.unique(arr_foldlabel, return_counts=True)
+        arr_foldlabel_without_bottom = remove_bottom_branches(arr_foldlabel)
+        branches, counts = np.unique(arr_foldlabel_without_bottom,
+                                     return_counts=True)
+    else:
+        branches, counts = np.unique(arr_foldlabel,
+                                     return_counts=True)
+        
     total_pixels = count_non_null(arr_skel)
     # We take as index branches indexes that are not 0
     log.debug(f"Number of branches = {branches.size}")
