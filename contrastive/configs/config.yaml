@@ -11,7 +11,7 @@ defaults:
   - trainer: default
   - classifier: svm
   - embeddings: embeddings
-  - projection_head: linear
+  - projection_head: sigmoid
   - override hydra/job_logging: custom
 
 data: ${oc.dict.values:dataset}

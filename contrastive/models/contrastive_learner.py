@@ -46,10 +46,9 @@ from toolz.itertoolz import first
 from collections import OrderedDict
 
 from contrastive.augmentations import ToPointnetTensor
-#from contrastive.backbones.densenet import DenseNet
-#from contrastive.backbones.convnet import ConvNet
+from contrastive.backbones.densenet import DenseNet
+from contrastive.backbones.convnet import ConvNet
 #from contrastive.backbones.pointnet import PointNetCls
-from contrastive.backbones.backbones import *
 from contrastive.backbones.projection_heads import *
 from contrastive.data.utils import change_list_device
 from contrastive.losses import NTXenLoss
@@ -135,16 +134,12 @@ class ContrastiveLearner(pl.LightningModule):
                 raise ValueError(f"Mode {config.mode} doesn't exist.")
             layers_shapes = [num_representation_features_total] * (config.length_projection_head - 1) + [output_shape]
 
-        if config.projection_head_name == 'linear':
-            self.projection_head = LinearProjectionHead(
-                num_representation_features=num_representation_features_total,
-                layers_shapes=layers_shapes)
-        elif config.projection_head_name == 'relu':
-            self.projection_head = ReluProjectionHead(
-                num_representation_features=num_representation_features_total,
-                layers_shapes=layers_shapes)
-        else:
-            raise ValueError(f"No underlying projection head with name {config.projection_head_name}")
+        activation = config.projection_head_name
+        log.info(f"activation = {activation}")
+        self.projection_head = ProjectionHead(
+            num_representation_features=num_representation_features_total,
+            layers_shapes=layers_shapes,
+            activation=activation)
 
         self.config = config
         self.n_datasets = n_datasets
