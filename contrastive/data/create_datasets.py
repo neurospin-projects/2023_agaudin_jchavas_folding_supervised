@@ -48,7 +48,7 @@ except ImportError:
 
 from contrastive.utils.logs import set_file_logger, set_root_logger_level
 
-from contrastive.data.datasets_copy import ContrastiveDatasetFusion
+from contrastive.data.datasets import ContrastiveDatasetFusion
 
 from contrastive.data.utils import \
     check_subject_consistency, extract_data, check_if_same_subjects,\
