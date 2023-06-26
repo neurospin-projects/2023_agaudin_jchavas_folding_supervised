@@ -1,0 +1,10 @@
+# @package dataset.L_asymetry
+dataset_name: L_asymetry
+numpy_all: /neurospin/dico/data/deep_folding/current/datasets/benchmarks/asymetry/Larrays.npy
+subjects_all: /neurospin/dico/data/deep_folding/current/datasets/benchmarks/asymetry/subjects.csv
+crop_dir: /neurospin/dico/data/deep_folding/current/datasets/benchmarks/asymetry/crops
+crop_file_suffix: _cropped_skeleton.nii.gz
+train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/benchmarks/asymetry/train_val_subjects.csv
+subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/benchmarks/asymetry/labels.csv
+subject_column_name: 'Sub_ID'
+input_size: (1, 20, 42, 38)

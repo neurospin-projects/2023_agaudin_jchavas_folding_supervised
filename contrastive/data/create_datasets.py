@@ -201,7 +201,7 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels, reg):
 
     # Makes some sanity checks on ordering of label subjects
     for subset_name in subsets:
-        check_if_same_subjects(skeleton_output[subset_name][0],
+        check_if_same_subjects(skeleton_output[subset_name][0][['Subject']],
                                skeleton_output[subset_name][2][['Subject']],
                                f"{subset_name} labels")
 
