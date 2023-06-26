@@ -278,6 +278,17 @@ class ConvNet(pl.LightningModule):
             for (name, param) in self.named_parameters():
                 print(f"{name}: learning = {param.requires_grad}")
 
+        # Init. with kaiming
+        for m in self.encoder():
+            if isinstance(m, nn.Conv3d):
+                nn.init.kaiming_normal_(m.weight)
+            elif isinstance(m, nn.BatchNorm3d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.5)
+                nn.init.constant_(m.bias, 0)
+
     def forward(self, x):
         # Eventually keep the input images for visualization
         # self.input_imgs = x.detach().cpu().numpy()

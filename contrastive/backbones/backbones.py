@@ -146,6 +146,17 @@ class ConvNet(pl.LightningModule):
              ))
         self.encoder = nn.Sequential(OrderedDict(modules_encoder))
 
+        # Init. with kaiming
+        for m in self.encoder:
+            if isinstance(m, nn.Conv3d):
+                nn.init.kaiming_normal_(m.weight)
+            elif isinstance(m, nn.BatchNorm3d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.5)
+                nn.init.constant_(m.bias, 0)
+
     def forward(self, x):
         out = self.encoder(x)
         return out.squeeze(dim=1)
@@ -302,7 +313,9 @@ class DenseNet(pl.LightningModule):
         self.encoder.add_module('Relu', nn.ReLU())
         self.encoder.add_module('3D avg pooling', nn.AdaptiveAvgPool3d(1))
         self.encoder.add_module('Flatten', nn.Flatten())
-        self.encoder.add_module('Linear', nn.Linear(num_features, self.num_representation_features))
+        self.encoder.add_module(
+            'Linear',
+            nn.Linear(num_features, self.num_representation_features))
         self.encoder.add_module('Relu', nn.ReLU())
 
         # Init. with kaiming
