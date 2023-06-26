@@ -1,10 +1,10 @@
 defaults:
   - _self_
   - hydra: local
-  - dataset/cingulate_HCP_stratified_left
+  # - dataset/cingulate_HCP_stratified_left
   - dataset/cingulate_HCP_stratified_right
   - model: SimCLR_supervised
-  - mode: classifier
+  - mode: encoder
   - augmentations: foldlabel
   - backbone: ConvNet
   - platform: cuda_not_brainvisa
