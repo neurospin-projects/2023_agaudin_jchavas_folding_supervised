@@ -163,4 +163,4 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
 embeddings_pipeline("/volatile/jc225751/Runs/61_classifier_regresser/Program/Output/2023-06-26/SimCLR",
 datasets=['cingulate_ACCpatterns'], short_name='cing_ACC_right',
 label='Right_PCS',
-classifier_name='svm', overwrite=True, use_best_model=True, verbose=False)
+classifier_name='svm', overwrite=False, use_best_model=True, verbose=False)
