@@ -225,7 +225,7 @@ def pipeline(dir_path, datasets, short_name=None, overwrite=False, use_best_mode
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/volatile/jc225751/Runs/61_classifier_regresser/Output/regresser/two_regions_stratified",
+pipeline("/volatile/jc225751/Runs/61_classifier_regresser/Program/Output",
          datasets=["cingulate_HCP_stratified_right",
                    "cingulate_HCP_stratified_left"],
          short_name='cing_HCP_Flanker', overwrite=False, use_best_model=True)
