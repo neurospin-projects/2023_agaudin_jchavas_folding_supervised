@@ -53,13 +53,13 @@ class ReluProjectionHead(pl.LightningModule):
 
         self.layers = nn.Sequential(OrderedDict(layers))
 
-        for m in self.layers:
-            if isinstance(m, nn.BatchNorm1d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0, 0.5)
-                nn.init.constant_(m.bias, 0)
+        # for m in self.layers:
+        #     if isinstance(m, nn.BatchNorm1d):
+        #         nn.init.constant_(m.weight, 1)
+        #         nn.init.constant_(m.bias, 0)
+        #     elif isinstance(m, nn.Linear):
+        #         nn.init.normal_(m.weight, 0, 0.5)
+        #         nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
         out = self.layers(x)

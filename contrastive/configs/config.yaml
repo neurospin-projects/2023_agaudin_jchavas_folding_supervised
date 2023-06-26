@@ -3,6 +3,7 @@ defaults:
   - hydra: local
   # - dataset/cingulate_HCP_stratified_left
   - dataset/cingulate_HCP_stratified_right
+  - label: Gender
   - model: SimCLR_supervised
   - mode: encoder
   - augmentations: foldlabel
