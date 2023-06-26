@@ -160,7 +160,7 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-20",
-datasets=['left_cingulate_ACCpatterns'], short_name='cing_ACC_left',
-label='Left_PCS',
+embeddings_pipeline("/volatile/jc225751/Runs/61_classifier_regresser/Program/Output/2023-06-26/SimCLR",
+datasets=['cingulate_ACCpatterns'], short_name='cing_ACC_right',
+label='Right_PCS',
 classifier_name='svm', overwrite=False, use_best_model=True, verbose=False)
