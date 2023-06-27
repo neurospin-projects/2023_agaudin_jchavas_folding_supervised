@@ -700,3 +700,14 @@ class ResizeTensor(object):
                            order=0)
 
         return torch.from_numpy(resized_arr)
+
+
+class GaussianNoiseTensor(object):
+    """Add gaussian noise to a 3D image."""
+
+    def __init__(self, sigma):
+        self.sigma = sigma
+    
+    def __call__(self, tensor):
+        noise = torch.randn(tensor.shape)
+        return tensor + self.sigma * noise

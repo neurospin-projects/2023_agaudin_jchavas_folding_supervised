@@ -191,6 +191,8 @@ class ContrastiveDatasetFusion():
                         self.config.percentage,
                         self.config.data[reg].input_size,
                         self.config)
+
+                # cutout with or without noise
                 else:
                     transform1 = transform_no_foldlabel(
                         from_skeleton=True,
