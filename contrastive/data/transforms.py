@@ -106,31 +106,20 @@ def transform_foldlabel(sample_foldlabel, percentage, input_size, config):
 
 
 def transform_no_foldlabel(from_skeleton, input_size, config):
-    if config.backbone_name != 'pointnet':
-        return \
-            transforms.Compose([
-                SimplifyTensor(),
-                PaddingTensor(shape=input_size,
-                              fill_value=config.fill_value),
-                PartialCutOutTensor_Roll(from_skeleton=from_skeleton,
-                                         keep_bottom=config.keep_bottom,
-                                         patch_size=config.patch_size),
-                BinarizeTensor(),
-                RotateTensor(max_angle=config.max_angle)
-            ])
-    else:
-        return \
-            transforms.Compose([
-                SimplifyTensor(),
-                PaddingTensor(shape=input_size,
-                              fill_value=config.fill_value),
-                PartialCutOutTensor_Roll(from_skeleton=from_skeleton,
-                                         keep_bottom=config.keep_bottom,
-                                         patch_size=config.patch_size),
-                RotateTensor(max_angle=config.max_angle),
-                BinarizeTensor(),
-                ToPointnetTensor(n_max=config.n_max)
-            ])
+    transforms_list = [SimplifyTensor(),
+                       PaddingTensor(shape=input_size,
+                                     fill_value=config.fill_value),
+                       PartialCutOutTensor_Roll(from_skeleton=from_skeleton,
+                                                keep_bottom=config.keep_bottom,
+                                                patch_size=config.patch_size),
+                       BinarizeTensor(),
+                       RotateTensor(max_angle=config.max_angle)]
+    if config.backbone_name == 'pointnet':
+        transforms_list.append(ToPointnetTensor(n_max=config.n_max))
+    if config.sigma_noise > 0:
+        transforms_list.append(GaussianNoiseTensor(sigma=config.sigma_noise))
+    
+    return transforms.Compose(transforms_list)
 
 
 def transform_both(sample_foldlabel, percentage, from_skeleton,

@@ -147,8 +147,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             temperature=temperature,
             temperature_supervised=temperature_supervised,
             sigma=self.config.sigma_labels,
-            proportion_pure_contrastive=\
-                self.config.proportion_pure_contrastive,
+            proportion_pure_contrastive=self.config.proportion_pure_contrastive,
             return_logits=True)
         return loss.forward(z_i, z_j, labels)
 
@@ -350,8 +349,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         # Computes embeddings without computing gradient
         with torch.no_grad():
             for batch in loader:
-                (inputs, _, filenames, _) = \
-                    self.get_full_inputs_from_batch_with_labels(batch)
+                (inputs, _, filenames, _) = self.get_full_inputs_from_batch_with_labels(batch)
                 # First views of the whole batch
                 inputs = change_list_device(inputs, 'cuda')
                 model = self.cuda()
@@ -365,7 +363,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         return X, filenames_list
 
-    def compute_representations(self, loader):
+    def compute_representations(self, loader, reg):
         """Computes representations for each crop.
 
         Representation are before the projection head"""
@@ -379,23 +377,17 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         # Computes representation (without gradient computation)
         with torch.no_grad():
             for batch in loader:
-                (inputs, labels, filenames, _) = \
-                    self.get_full_inputs_from_batch_with_labels(batch)
+                (inputs, labels, filenames, _) = self.get_full_inputs_from_batch_with_labels(batch)
                 # We first compute the embeddings
                 # for the first views of the whole batch
                 inputs = change_list_device(inputs, 'cuda')
-                # model = self.cuda()
-                input_i = [inputs[i][:, 0, ...] for i in range(self.n_datasets)]
-                input_j = [inputs[i][:, 1, ...] for i in range(self.n_datasets)]
-                if self.config.backbone_name == 'pointnet':
-                    input_i = transform(input_i.cpu()).cuda().to(torch.float)
-                    input_j = transform(input_j.cpu()).cuda().to(torch.float)
-                self.forward(input_i)
+                model = self.cuda()
+                model.forward(inputs[:, 0, :])
                 X_i = first(self.save_output.outputs.values())
 
                 # We then compute the embeddings for the second views
                 # of the whole batch
-                self.forward(input_j)
+                model.forward(inputs[:, 1, :])
                 X_j = first(self.save_output.outputs.values())
 
                 # We now concatenate the embeddings

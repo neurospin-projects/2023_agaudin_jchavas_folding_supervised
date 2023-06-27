@@ -48,7 +48,7 @@ except ImportError:
 
 from contrastive.utils.logs import set_file_logger, set_root_logger_level
 
-from contrastive.data.datasets_copy import ContrastiveDatasetFusion
+from contrastive.data.datasets import ContrastiveDatasetFusion
 
 from contrastive.data.utils import \
     check_subject_consistency, extract_data, check_if_same_subjects,\
@@ -201,7 +201,7 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels, reg):
 
     # Makes some sanity checks on ordering of label subjects
     for subset_name in subsets:
-        check_if_same_subjects(skeleton_output[subset_name][0],
+        check_if_same_subjects(skeleton_output[subset_name][0][['Subject']],
                                skeleton_output[subset_name][2][['Subject']],
                                f"{subset_name} labels")
 

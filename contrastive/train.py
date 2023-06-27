@@ -102,8 +102,9 @@ def train(config):
                     'environment', 'batch_size', 'pin_mem', 'partition',
                     'lr', 'weight_decay', 'max_epochs',
                     'early_stopping_patience', 'random_state', 'seed',
-                    'backbone_name', 'sigma_labels', 'label_names'
-                    'proportion_pure_contrastive', 'percentage']
+                    'backbone_name', 'sigma_labels', 'label_names',
+                    'proportion_pure_contrastive', 'percentage', 
+                    'projection_head_name']
     if config.model == 'SimCLR_supervised':
         keys_to_keep.extend(
             ['temperature_supervised',

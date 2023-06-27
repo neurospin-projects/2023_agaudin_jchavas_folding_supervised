@@ -1,10 +1,8 @@
 from collections import OrderedDict
 
 import pytorch_lightning as pl
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.utils.checkpoint as cp
 
 from torch import Tensor
 
@@ -92,29 +90,12 @@ class ConvNet(pl.LightningModule):
 
     def __init__(self, in_channels=1, encoder_depth=3,
                  num_representation_features=256,
-                 num_outputs=64, projection_head_hidden_layers=None,
-                 drop_rate=0.1, mode="encoder", num_classes=2,
-                 memory_efficient=False,
-                 in_shape=None,
-                 pretrained_model_path=None):
+                 drop_rate=0.1, memory_efficient=False,
+                 in_shape=None):
 
         super(ConvNet, self).__init__()
 
-        assert mode in {'encoder',
-                        'evaluation',
-                        'decoder',
-                        'classifier',
-                        'regresser'},\
-            "Unknown mode selected: %s" % mode
-
-        self.mode = mode
         self.num_representation_features = num_representation_features
-        self.num_outputs = num_outputs
-        self.num_classes = num_classes
-        if projection_head_hidden_layers:
-            self.projection_head_hidden_layers = projection_head_hidden_layers
-        else:
-            self.projection_head_hidden_layers = [num_outputs]
         self.drop_rate = drop_rate
 
         # Decoder part
@@ -162,162 +143,6 @@ class ConvNet(pl.LightningModule):
              ))
         self.encoder = nn.Sequential(OrderedDict(modules_encoder))
 
-        if (self.mode == "encoder") or (self.mode == 'evaluation'):
-            # build a projection head
-            projection_head = []
-            input_size = self.num_representation_features
-            for i, dim_i in enumerate(self.projection_head_hidden_layers):
-                output_size = dim_i
-                projection_head.append(
-                    ('Linear%s' % i, nn.Linear(input_size, output_size)))
-                input_size = output_size
-            projection_head.append(
-                ('Output layer',
-                 nn.Linear(input_size, self.num_outputs)
-                 ))
-            self.projection_head = nn.Sequential(OrderedDict(projection_head))
-
-        elif self.mode == "classifier":
-            modules_classifier = []
-            i = 0
-            modules_classifier.append((f'LeakyReLU{i}', nn.LeakyReLU()))
-            modules_classifier.append(
-                (f'Linear{i}',
-                 nn.Linear(self.num_representation_features,
-                           self.num_representation_features)
-                 ))
-            i = 1
-            modules_classifier.append((f'LeakyReLU{i}', nn.LeakyReLU()))
-            modules_classifier.append(
-                (f'Linear{i}',
-                 nn.Linear(self.num_representation_features,
-                           self.num_classes)
-                 ))
-            self.classifier = nn.Sequential(OrderedDict(modules_classifier))
-
-        elif self.mode == "regresser":
-            modules_regresser = []
-            i = 0
-            modules_regresser.append((f'LeakyReLU{i}', nn.LeakyReLU()))
-            modules_regresser.append(
-                (f'Linear{i}',
-                 nn.Linear(self.num_representation_features,
-                           self.num_representation_features)
-                 ))
-            i = 1
-            modules_regresser.append((f'LeakyReLU{i}', nn.LeakyReLU()))
-            modules_regresser.append(
-                (f'Linear{i}',
-                 nn.Linear(self.num_representation_features, 1)
-                 ))
-            self.regresser = nn.Sequential(OrderedDict(modules_regresser))
-
-        elif self.mode == "decoder":
-            self.hidden_representation = nn.Linear(
-                self.num_features, self.num_representation_features)
-            self.develop = nn.Linear(
-                self.num_representation_features,
-                64 * self.z_dim_h * self.z_dim_w * self.z_dim_d)
-            modules_decoder = []
-            out_channels = 64
-            for step in range(self.depth-1):
-                in_channels = out_channels
-                out_channels = in_channels // 2
-                ini = 1 if step == 0 else 0
-                modules_decoder.append(
-                    ('convTrans3d%s' % step,
-                     nn.ConvTranspose3d(in_channels, out_channels,
-                                        kernel_size=2, stride=2, padding=0,
-                                        output_padding=(ini, 0, 0))
-                     ))
-                modules_decoder.append(
-                    ('normup%s' % step, nn.BatchNorm3d(out_channels)))
-                modules_decoder.append(('ReLU%s' % step, nn.ReLU()))
-                modules_decoder.append(
-                    ('convTrans3d%sa' % step,
-                     nn.ConvTranspose3d(out_channels, out_channels,
-                                        kernel_size=3, stride=1, padding=1)
-                     ))
-                modules_decoder.append(
-                    ('normup%sa' % step, nn.BatchNorm3d(out_channels)))
-                modules_decoder.append(('ReLU%sa' % step, nn.ReLU()))
-            modules_decoder.append(
-                ('convtrans3dn',
-                 nn.ConvTranspose3d(16, 1, kernel_size=2, stride=2, padding=0)
-                 ))
-            modules_decoder.append(
-                ('conv_final', nn.Conv3d(1, 2, kernel_size=1, stride=1)))
-            self.decoder = nn.Sequential(OrderedDict(modules_decoder))
-
-            # This loads pretrained weight
-            pretrained = torch.load(pretrained_model_path)
-            model_dict = self.state_dict()
-            for n, p in pretrained['state_dict'].items():
-                if n in model_dict:
-                    model_dict[n] = p
-            self.load_state_dict(model_dict)
-
-            # This freezes all layers except projection head layers
-            layer_counter = 0
-            for (name, module) in self.named_children():
-                print(f"Module name = {name}")
-
-            for (name, module) in self.named_children():
-                if name == 'features':
-                    for layer in module.children():
-                        for param in layer.parameters():
-                            param.requires_grad = False
-
-                        print('Layer "{}" in module "{}" was frozen!'.format(
-                            layer_counter, name))
-                        layer_counter += 1
-            for param in self.hidden_representation.parameters():
-                param.requires_grad = False
-            print('Layer "{}" in module "{}" was frozen!'.format(
-                layer_counter, "representation"))
-            for (name, param) in self.named_parameters():
-                print(f"{name}: learning = {param.requires_grad}")
-
-        # Init. with kaiming
-        for m in self.encoder():
-            if isinstance(m, nn.Conv3d):
-                nn.init.kaiming_normal_(m.weight)
-            elif isinstance(m, nn.BatchNorm3d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0, 0.5)
-                nn.init.constant_(m.bias, 0)
-
     def forward(self, x):
-        # Eventually keep the input images for visualization
-        # self.input_imgs = x.detach().cpu().numpy()
         out = self.encoder(x)
-
-        if (self.mode == "encoder") or (self.mode == 'evaluation'):
-            out = self.projection_head(out)
-
-        elif self.mode == "classifier":
-            out = self.classifier(out)
-            # /!\ softmax shouldn't be added here, as it is handled in the loss
-            # (and in the postprocessing steps if required)
-
-        elif self.mode == "regresser":
-            out = self.regresser(out)
-
-        elif self.mode == "decoder":
-            out = F.relu(out, inplace=True)
-            out = F.adaptive_avg_pool3d(out, 1)
-            out = torch.flatten(out, 1)
-
-            out = self.hidden_representation(out)
-            out = F.relu(out, inplace=True)
-            out = self.develop(out)
-            out = out.view(out.size(0), 16 * 2**(self.depth-1),
-                           self.z_dim_h, self.z_dim_w, self.z_dim_d)
-            out = self.decoder(out)
-
         return out.squeeze(dim=1)
-
-    def get_current_visuals(self):
-        return self.input_imgs
