@@ -46,8 +46,8 @@ class ReluProjectionHead(pl.LightningModule):
             layers.append(
                 ('Linear%s' % i, nn.Linear(input_size, output_size)))
             if i < (len(layers_shapes)-1):
-                layers.append(
-                    ('norm%s' % i, nn.BatchNorm1d(output_size)))
+                # layers.append(
+                #     ('norm%s' % i, nn.BatchNorm1d(output_size)))
                 layers.append((f'LeakyReLU{i}', nn.LeakyReLU()))
             input_size = output_size
 
