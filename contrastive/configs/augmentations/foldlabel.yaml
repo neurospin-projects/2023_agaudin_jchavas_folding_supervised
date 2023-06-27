@@ -9,3 +9,4 @@ checkerboard_size: 4
 keep_bottom: True
 percentage: 40
 variable_percentage: False
+sigma_noise: 0.2  # set to positive to allow noise

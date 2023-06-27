@@ -72,37 +72,24 @@ def transform_only_padding(input_size, config):
 
 
 def transform_foldlabel(sample_foldlabel, percentage, input_size, config):
-    if config.backbone_name != 'pointnet':
-        return \
-            transforms.Compose([
-                SimplifyTensor(),
-                PaddingTensor(shape=input_size,
-                              fill_value=config.fill_value),
-                RemoveRandomBranchTensor(
-                    sample_foldlabel=sample_foldlabel,
-                    percentage=percentage,
-                    variable_percentage=config.variable_percentage,
-                    input_size=input_size,
-                    keep_bottom=config.keep_bottom),
-                BinarizeTensor(),
-                RotateTensor(max_angle=config.max_angle)
-            ])
-    else:
-        return \
-            transforms.Compose([
-                SimplifyTensor(),
-                PaddingTensor(shape=input_size,
-                              fill_value=config.fill_value),
-                RemoveRandomBranchTensor(
-                    sample_foldlabel=sample_foldlabel,
-                    percentage=percentage,
-                    variable_percentage=config.variable_percentage,
-                    input_size=input_size,
-                    keep_bottom=config.keep_bottom),
-                RotateTensor(max_angle=config.max_angle),
-                BinarizeTensor(),
-                ToPointnetTensor(n_max=config.n_max)
-            ])
+    transforms_list = [SimplifyTensor(),
+                       PaddingTensor(shape=input_size,
+                                     fill_value=config.fill_value),
+                       RemoveRandomBranchTensor(
+                            sample_foldlabel=sample_foldlabel,
+                            percentage=percentage,
+                            variable_percentage=config.variable_percentage,
+                            input_size=input_size,
+                            keep_bottom=config.keep_bottom),
+                       BinarizeTensor(),
+                       RotateTensor(max_angle=config.max_angle)]
+    
+    if config.backbone_name == 'pointnet':
+        transforms_list.append(ToPointnetTensor(n_max=config.n_max))
+    if config.sigma_noise > 0:
+        transforms_list.append(GaussianNoiseTensor(sigma=config.sigma_noise))
+    
+    return transforms.Compose(transforms_list)
 
 
 def transform_no_foldlabel(from_skeleton, input_size, config):
