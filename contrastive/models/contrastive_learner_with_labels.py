@@ -363,6 +363,8 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         return X, filenames_list
 
+
+    # CHANGE THAT!!!!!!!!!!!!!!!!!
     def compute_representations(self, loader, reg):
         """Computes representations for each crop.
 
