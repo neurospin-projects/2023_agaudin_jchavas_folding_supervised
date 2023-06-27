@@ -15,4 +15,5 @@ test_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separa
 # subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/hcp/participants_age_continuous.csv
 subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/participants.csv
 subject_column_name: 'Subject'
+label_scaling:
 input_size: (1, 20, 42, 38)

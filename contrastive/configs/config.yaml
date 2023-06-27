@@ -1,18 +1,18 @@
 defaults:
   - _self_
   - hydra: local
-  # - dataset/cingulate_HCP_stratified_left
+  - dataset/cingulate_HCP_stratified_left
   - dataset/cingulate_HCP_stratified_right
-  - label: Gender
+  - label: Flanker_class
   - model: SimCLR_supervised
-  - mode: encoder
+  - mode: classifier
   - augmentations: foldlabel
   - backbone: ConvNet
   - platform: cuda_not_brainvisa
   - trainer: default
   - classifier: svm
   - embeddings: embeddings
-  - projection_head: linear
+  - projection_head: relu
   - override hydra/job_logging: custom
 
 data: ${oc.dict.values:dataset}
