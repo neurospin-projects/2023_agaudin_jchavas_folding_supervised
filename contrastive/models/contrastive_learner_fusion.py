@@ -42,10 +42,9 @@ import numpy as np
 import torch
 import pytorch_lightning as pl
 from sklearn.manifold import TSNE
-from toolz.itertoolz import first
 from collections import OrderedDict
 
-from sklearn.metrics import r2_score
+from sklearn.metrics import roc_auc_score, r2_score
 
 from contrastive.augmentations import ToPointnetTensor
 from contrastive.backbones.densenet import DenseNet
@@ -53,6 +52,7 @@ from contrastive.backbones.convnet import ConvNet
 #from contrastive.backbones.pointnet import PointNetCls
 from contrastive.backbones.projection_heads import *
 from contrastive.data.utils import change_list_device
+from contrastive.evaluation.auc_score import regression_roc_auc_score
 from contrastive.losses import *
 from contrastive.utils.plots.visualize_images import plot_bucket, \
     plot_histogram, plot_histogram_weights, plot_scatter_matrix, \
@@ -151,7 +151,8 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         self.sample_j = np.array([])
         self.sample_k = np.array([])
         self.sample_filenames = []
-        self.save_output = SaveOutput()
+        print("PENSER À VIRER LE TRUC EN-DESSOUS SI BESOIN")
+        self.save_output = SaveOutput()  # probablement à virer
         self.output_shape = output_shape
         self.hook_handles = []
         self.get_layers()
@@ -184,6 +185,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         return (inputs, filenames)
     
     def get_full_inputs_from_batch_with_labels(self, batch):
+        print("A-T-ON ENCORE BESOIN DE LA VIEW3 ?")
         full_inputs = []
         full_view3 = []
         for (inputs, labels, filenames, view3) in batch:
@@ -233,6 +235,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 params,
                 self.current_epoch)
 
+
     def plot_histograms(self):
         """Plots all zii, zjj, zij and weights histograms"""
 
@@ -256,6 +259,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                                                    buffer=True)
         self.logger.experiment.add_image(
             'histo_weights', histogram_weights, self.current_epoch)
+
 
     def plot_scatter_matrices(self, dataloader, key):
         """Plots scatter matrices of output and representations spaces"""
@@ -297,6 +301,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             self.current_epoch)
         
         return score
+
 
     def plot_views(self):
         """Plots different 3D views"""
@@ -404,8 +409,6 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         else:
             batch_loss, sim_zij, sim_zii, sim_zjj = self.nt_xen_loss(z_i, z_j)
 
-        self.log('train_loss', float(batch_loss))
-
         # Only computes graph on first step
         if self.global_step == 1:
             self.logger.experiment.add_graph(self, [input_i])
@@ -415,20 +418,31 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             self.sample_i = change_list_device(input_i, 'cpu')
             self.sample_j = change_list_device(input_j, 'cpu')
             self.sample_filenames = filenames
-            if self.config.mode != "decoder":
+            if self.config.with_labels:
+                self.sample_k = change_list_device(view3, 'cpu')
+                self.sample_labels = labels
+            if self.config.mode == "encoder":
                 self.sim_zij = sim_zij * self.config.temperature
                 self.sim_zii = sim_zii * self.config.temperature
                 self.sim_zjj = sim_zjj * self.config.temperature
-
+            if self.config.environment == 'brainvisa' and self.config.checking:
+                bv_checks()
+        
         # logs - a dictionary
+        self.log('train_loss', float(batch_loss))
         logs = {"train_loss": float(batch_loss)}
 
         batch_dictionary = {
             # REQUIRED: It is required for us to return "loss"
             "loss": batch_loss,
             # optional for batch logging purposes
-            "log": logs,
-        }
+            "log": logs}
+
+        if self.config.with_labels:
+            # add label_loss (a part of the loss) to log
+            self.log('train_label_loss', float(batch_label_loss))
+            logs['train_label_loss'] = float(batch_label_loss)
+            batch_dictionary['label_loss'] = batch_label_loss
 
         return batch_dictionary
 
@@ -438,14 +452,21 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         This includes the projection head"""
 
         # Initialization
-        X = torch.zeros([0, self.output_shape]).cpu()
+        X = torch.zeros([0, self.output_shape]).cuda()
+        labels_all = torch.zeros(
+            [0, len(self.config.label_names)]).cuda()
         filenames_list = []
         transform = ToPointnetTensor()
 
         # Computes embeddings without computing gradient
         with torch.no_grad():
             for batch in loader:
-                inputs, filenames = self.get_full_inputs_from_batch(batch)
+                if self.config.with_labels:
+                    (inputs, labels, filenames, _) = \
+                        self.get_full_inputs_from_batch_with_labels(batch)
+                else:
+                    inputs, filenames = self.get_full_inputs_from_batch(batch)
+                
                 # First views of the whole batch
                 inputs = change_list_device(inputs, 'cuda')
                 # model = self.cuda()
@@ -457,21 +478,75 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 X_i = self.forward(input_i)
                 # Second views of the whole batch
                 X_j = self.forward(input_j)
-                # First views and second views
-                # are put side by side
+
+                """# Reshape (necessary if num_outputs==1)
+                X_i = X_i.reshape(X_i.shape[0], self.output_shape)
+                X_j = X_j.reshape(X_j.shape[0], self.output_shape)"""
+
+                # First views and second views are put side by side
                 X_reordered = torch.cat([X_i, X_j], dim=-1)
                 X_reordered = X_reordered.view(-1, X_i.shape[-1])
-                X = torch.cat((X, X_reordered.cpu()), dim=0)
+                X = torch.cat((X, X_reordered.cuda()), dim=0)
+
+                # concat filenames
                 filenames_duplicate = [item
                                        for item in filenames
                                        for repetitions in range(2)]
                 filenames_list = filenames_list + filenames_duplicate
                 del inputs
 
-        return X, filenames_list
+                # deal with labels if required
+                if self.config.with_labels:
+                    # We now concatenate the labels
+                    labels_reordered = torch.cat([labels, labels], dim=-1)
+                    labels_reordered = labels_reordered.view(-1, labels.shape[-1])
+                    # At the end, labels are concatenated
+                    labels_all = torch.cat((labels_all, labels_reordered.cuda()),
+                                        dim=0)
+        
+        if self.config.with_labels:
+            return X.cpu(), labels_all.cpu(), filenames_list
+        else:
+            return X.cpu(), filenames_list
+    
+    def compute_output_probabilities(self, loader):
+            """Only available in classifier mode.
+            Gets the output of the model and convert it to probabilities thanks to softmax."""
+            if self.config.mode == 'classifier':
+                X, labels_all, filenames_list = self.compute_output_skeletons(
+                    loader)
+                # compute the mean of the two views' outputs
+                X = (X[::2, ...] + X[1::2, ...]) / 2
+                # remove the doubleing of labels
+                labels_all = labels_all[::2]
+                filenames_list = filenames_list[::2]
+                X = nn.functional.softmax(X, dim=1)
+                return X, labels_all, filenames_list
+            else:
+                raise ValueError(
+                    "The config.mode is not 'classifier'. "
+                    "You shouldn't compute probabilities with another mode.")
+
+    def compute_output_auc(self, loader):
+        """Only available in classifier and regresser modes.
+        Computes the auc from the outputs of the model and the associated labels."""
+        X, labels, _ = self.compute_outputs_skeletons(loader)
+        # compute the mean of the two views' outputs
+        X = (X[::2, ...] + X[1::2, ...]) / 2
+        # remove the doubleing of labels
+        labels = labels[::2]
+        if self.config.mode == "regresser":
+            auc = regression_roc_auc_score(labels, X[:, 0])
+        else:
+            X = nn.functional.softmax(X, dim=1)
+            auc = roc_auc_score(labels, X[:, 1])
+
+        return auc
+
 
     def compute_decoder_outputs_skeletons(self, loader):
-        """Computes the outputs of the model for each crop.
+        """Computes the outputs of the model for each crop,
+        but for decoder mode.
 
         This includes the projection head"""
 
@@ -481,7 +556,11 @@ class ContrastiveLearnerFusion(pl.LightningModule):
 
         # Computes embeddings without computing gradient
         with torch.no_grad():
-            for (inputs, filenames) in loader:
+            for batch in loader:
+                if self.config.with_labels:
+                    (inputs, _, filenames, _) = self.get_full_inputs_from_batch_with_labels(batch)
+                else:
+                    (inputs, filenames) = self.get_full_inputs_from_batch(batch)
                 # First views of the whole batch
                 inputs = change_list_device(inputs, 'cuda')
                 model = self.cuda()
@@ -490,11 +569,12 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 # First views re put side by side
                 X = torch.cat((X, X_i.cpu()), dim=0)
                 filenames_duplicate = [item
-                                       for item in filenames]
+                                        for item in filenames]
                 filenames_list = filenames_list + filenames_duplicate
                 del inputs
 
         return X, filenames_list
+
 
     def compute_representations(self, loader):
         """Computes representations for each crop.
@@ -502,27 +582,37 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         Representation are before the projection head"""
 
         # Initialization
-        X = torch.zeros([0, self.config.num_representation_features * self.n_datasets]).cpu()
+        X = torch.zeros(
+            [0, self.config.num_representation_features * self.n_datasets]).cuda()
+        labels_all = torch.zeros(
+            [0, len(self.config.label_names)]).cuda()
         filenames_list = []
 
         # Computes representation (without gradient computation)
         with torch.no_grad():
             for batch in loader:
-                inputs, filenames = self.get_full_inputs_from_batch(batch)
-                # First views of the whole batch
+                if self.config.with_labels:
+                    (inputs, labels, filenames, _) = self.get_full_inputs_from_batch_with_labels(batch)
+                else:
+                    inputs, filenames = self.get_full_inputs_from_batch(batch)
+                
+               # deal with devices
                 if self.config.device != 'cpu':
                     inputs = change_list_device(inputs, 'cuda')
                 else:
                     inputs = change_list_device(inputs, 'cpu')
-                if self.config.backbone_name == 'pointnet':
-                    inputs = torch.squeeze(inputs).to(torch.float)
                 if self.config.device != 'cpu':
                     model = self.cuda()
                 else:
                     model = self.cpu()
+                # deal with pointnet
+                if self.config.backbone_name == 'pointnet':
+                    inputs = torch.squeeze(inputs).to(torch.float)
+                
                 input_i = [inputs[k][:, 0, ...] for k in range(self.n_datasets)]
                 input_j = [inputs[k][:, 1, ...] for k in range(self.n_datasets)]
-                
+
+                # First views of the whole batch               
                 X_i = []
                 for k in range(self.n_datasets):
                     embedding = model.backbones[k].forward(input_i[k])
@@ -536,7 +626,6 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                     X_j.append(embedding)
                 X_j = torch.cat(X_j, dim=1)
 
-                # print("representations", X_i.shape, X_j.shape)
                 # First views and second views are put side by side
                 X_reordered = torch.cat([X_i, X_j], dim=-1)
                 X_reordered = X_reordered.view(-1, X_i.shape[-1])
@@ -548,7 +637,20 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 filenames_list = filenames_list + filenames_duplicate
                 del inputs
 
-        return X, filenames_list
+                # deal with labels if required
+                if self.config.with_labels:
+                    # We now concatenate the labels
+                    labels_reordered = torch.cat([labels, labels], dim=-1)
+                    labels_reordered = labels_reordered.view(-1, labels.shape[-1])
+                    # At the end, labels are concatenated
+                    labels_all = torch.cat((labels_all, labels_reordered.cuda()),
+                                        dim=0)
+        
+        if self.config.with_labels:
+            return X.cpu(), labels_all.cpu(), filenames_list
+        else:
+            return X.cpu(), filenames_list
+
 
     def plotting_now(self):
         """Tells if it is the right epoch to plot the tSNE."""
@@ -560,6 +662,16 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         else:
             return False
 
+    def plotting_matrices_now(self):
+        if self.config.nb_epochs_per_matrix_plot <= 0:
+            return False
+        elif (self.current_epoch % self.config.nb_epochs_per_matrix_plot == 0)\
+                or (self.current_epoch >= self.config.max_epochs):
+            return True
+        else:
+            return False
+
+
     def compute_tsne(self, loader, register):
         """Computes t-SNE.
 
@@ -567,12 +679,17 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         or in the output space"""
 
         if register == "output":
-            X, _ = self.compute_outputs_skeletons(loader)
+            func = self.compute_outputs_skeletons
         elif register == "representation":
-            X, _ = self.compute_representations(loader)
+            func = self.compute_representations
         else:
             raise ValueError(
-                "Argument register must be either output or representation")
+                "Argument register must be either 'output' or 'representation'")
+
+        if self.config.with_labels:
+            X, labels, _ = func(loader)
+        else:
+            X, _ = func(loader)
 
         tsne = TSNE(n_components=2, perplexity=5, init='pca', random_state=50)
 
@@ -582,12 +699,34 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         X_tsne = tsne.fit_transform(Y)
 
         # Returns tsne embeddings
-        return X_tsne
+        if self.config.with_labels:
+            return X_tsne, labels
+        else:
+            return X_tsne
+
+
+    def save_best_auc_model(self, current_auc, save_path='./logs/'):
+        if self.current_epoch == 0:
+            best_auc = 0
+        elif self.current_epoch > 0:
+            with open(save_path + "best_model_params.json", 'r') as file:
+                best_model_params = json.load(file)
+                best_auc = best_model_params['best_auc']
+
+        if current_auc > best_auc:
+            torch.save({'state_dict': self.state_dict()},
+                       save_path + 'best_model_weights.pt')
+            best_model_params = {
+                'epoch': self.current_epoch, 'best_auc': current_auc}
+            with open(save_path + "best_model_params.json", 'w') as file:
+                json.dump(best_model_params, file)
+
 
     def training_epoch_end(self, outputs):
         """Computation done at the end of the epoch"""
 
-        if self.config.mode == "encoder":
+        # score = 0
+        if self.config.mode in ["encoder", "regresser"]:
             # Computes t-SNE both in representation and output space
             if self.plotting_now():
                 print("Computing tsne\n")
@@ -602,64 +741,112 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 self.logger.experiment.add_image(
                     'TSNE representation image',
                     image_TSNE, self.current_epoch)
+            
+            # Plots scatter matrices
+            if self.plotting_matrices_now():
+                # Plots zxx and weights histograms
+                if (self.config.mode == "encoder"):
+                    self.plot_histograms()
 
-                # Computes histogram of sim_zij
-                histogram_sim_zij = plot_histogram(self.sim_zij, buffer=True)
-                self.logger.experiment.add_image(
-                    'histo_sim_zij', histogram_sim_zij, self.current_epoch)
+                # Plots scatter matrices
+                self.plot_scatter_matrices()
 
-        # Plots views
-        # if self.config.backbone_name != 'pointnet':
-        #     self.plot_views() # far too slow and I don't get what it is doing
+                # # Plots scatter matrices with label values
+                # score = self.plot_scatter_matrices_with_labels(
+                #     self.sample_data.train_dataloader(),
+                #     "train",
+                #     self.config.mode)
+                # # Computes histogram of sim_zij
+                # histogram_sim_zij = plot_histogram(self.sim_zij, buffer=True)
+                # self.logger.experiment.add_image(
+                #     'histo_sim_zij', histogram_sim_zij, self.current_epoch)
+
+        if self.config.mode in ['classifier', 'regresser']:
+            train_auc = self.compute_output_auc(
+                self.sample_data.train_dataloader())
+            self.logger.experiment.add_scalar(
+                "AUC/Train",
+                train_auc,
+                self.current_epoch)
+
+        if self.plotting_matrices_now():
+            # logs histograms
+            self.custom_histogram_adder()
+            # Plots views
+            self.plot_views()
 
         # calculates average loss
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-
-        # logs histograms
-        # self.custom_histogram_adder()
 
         # logging using tensorboard logger
         self.logger.experiment.add_scalar(
             "Loss/Train",
             avg_loss,
             self.current_epoch)
+        # if score != 0:
+        #     self.logger.experiment.add_scalar(
+        #         "Score/Train",
+        #         score,
+        #         self.current_epoch)
 
-    def validation_step(self, val_batch, batch_idx):
+
+    def validation_step(self, val_batch):
         """Validation step"""
-        inputs, filenames = self.get_full_inputs_from_batch(val_batch)
+        if self.config.with_labels:
+            (inputs, labels, _) = \
+                self.get_full_inputs_from_batch_with_labels(val_batch)
+        else:
+            inputs, _ = self.get_full_inputs_from_batch(val_batch)
         
         input_i = [inputs[i][:, 0, ...] for i in range(self.n_datasets)]
         input_j = [inputs[i][:, 1, ...] for i in range(self.n_datasets)]
         z_i = self.forward(input_i)
         z_j = self.forward(input_j)
 
+        # compute the right loss depending on the learning mode
         if self.config.mode == "decoder":
             sample = inputs[:, 2, :]
             batch_loss = self.cross_entropy_loss(sample, z_i, z_j)
+        elif self.config.mode == "classifier":
+            batch_loss = self.cross_entropy_loss_classification(
+                z_i, z_j, labels)
+            batch_label_loss = torch.tensor(0.)
+        elif self.config.mode == "regresser":
+            batch_loss = self.mse_loss_regression(z_i, z_j, labels)
+            batch_label_loss = torch.tensor(0.)
+        elif self.config.proportion_pure_contrastive != 1:
+            batch_loss, batch_label_loss, _ = \
+                self.generalized_supervised_nt_xen_loss(z_i, z_j, labels)
         else:
             batch_loss, sim_zij, sim_zii, sim_zjj = self.nt_xen_loss(z_i, z_j)
+        
         self.log('val_loss', float(batch_loss))
-
         # logs- a dictionary
         logs = {"val_loss": float(batch_loss)}
-
         batch_dictionary = {
             # REQUIRED: It ie required for us to return "loss"
-            "loss": batch_loss,
-
+            "val_loss": batch_loss,
             # optional for batch logging purposes
             "log": logs,
         }
 
+        if self.config.with_labels:
+            # add label_loss (a part of the loss) to log
+            self.log('val_label_loss', float(batch_label_loss))
+            logs['val_label_loss'] = float(batch_label_loss)
+            batch_dictionary['val_label_loss'] = batch_label_loss
+
         return batch_dictionary
+
 
     def validation_epoch_end(self, outputs):
         """Computation done at the end of each validation epoch"""
 
+        # score = 0
         # Computes t-SNE
-        if self.config.mode == "encoder":
+        if self.config.mode in ["encoder", "regresser"]:
             if self.plotting_now():
-                print("Computing tsne\n")
+                log.info("Computing tsne\n")
                 X_tsne = self.compute_tsne(
                     self.sample_data.val_dataloader(), "output")
                 image_TSNE = plot_tsne(X_tsne, buffer=True)
@@ -673,30 +860,58 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                     'TSNE representation validation image',
                     image_TSNE,
                     self.current_epoch)
+        
+            # # Plots scatter matrices
+            # if self.plotting_matrices_now():
+            #     score = self.plot_scatter_matrices_with_labels(
+            #         self.sample_data.val_dataloader(),
+            #         "val",
+            #         self.config.mode)
+        
+        # compute val auc
+        if self.config.mode in ['classifier', 'regresser']:
+            val_auc = self.compute_output_auc(
+                self.sample_data.val_dataloader())
+            self.logger.experiment.add_scalar(
+                "AUC/Val",
+                val_auc,
+                self.current_epoch)
+
+            # save the model that has the best val auc during train
+            self.save_best_auc_model(val_auc, save_path='./logs/')
 
         # calculates average loss
-        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
 
         # logs losses using tensorboard logger
         self.logger.experiment.add_scalar(
             "Loss/Validation",
             avg_loss,
             self.current_epoch)
+        # if score != 0:
+        #     self.logger.experiment.add_scalar(
+        #         "score/Validation",
+        #         score,
+        #         self.current_epoch)
 
-        # save model if best
-        save_path = './logs/'
-        if self.current_epoch == 0:
-            best_loss = np.inf
-        elif self.current_epoch > 0:
-            with open(save_path+"best_model_params.json", 'r') as file:
-                best_model_params = json.load(file)
-                best_loss = best_model_params['best_loss']
+        # save best model by loss if no auc to do so
+        if not self.config.with_labels:
+            # save model if best validation loss
+            save_path = './logs/'
+            if self.current_epoch == 0:
+                best_loss = np.inf
+            elif self.current_epoch > 0:
+                # load the current best loss
+                with open(save_path+"best_model_params.json", 'r') as file:
+                    best_model_params = json.load(file)
+                    best_loss = best_model_params['best_loss']
 
-        avg_loss = avg_loss.cpu().item()
-        if avg_loss < best_loss:
-            torch.save({'state_dict': self.state_dict()},
-                       save_path+'best_model_weights.pt')
-            best_model_params = {
-                'epoch': self.current_epoch, 'best_loss': avg_loss}
-            with open(save_path+"best_model_params.json", 'w') as file:
-                json.dump(best_model_params, file)
+            # compare to the current loss and replace the best if necessary
+            avg_loss = avg_loss.cpu().item()
+            if avg_loss < best_loss:
+                torch.save({'state_dict': self.state_dict()},
+                        save_path+'best_model_weights.pt')
+                best_model_params = {
+                    'epoch': self.current_epoch, 'best_loss': avg_loss}
+                with open(save_path+"best_model_params.json", 'w') as file:
+                    json.dump(best_model_params, file)
