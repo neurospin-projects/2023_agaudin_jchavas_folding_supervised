@@ -1,3 +1,5 @@
 # @package _global_
 test: False
 mode: encoder
+with_labels: False
+proportion_pure_contrastive: 1.0

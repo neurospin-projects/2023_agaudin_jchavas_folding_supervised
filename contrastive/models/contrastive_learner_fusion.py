@@ -53,6 +53,7 @@ from contrastive.backbones.convnet import ConvNet
 from contrastive.backbones.projection_heads import *
 from contrastive.data.utils import change_list_device
 from contrastive.evaluation.auc_score import regression_roc_auc_score
+from contrastive.models.models_utils import bv_checks
 from contrastive.losses import *
 from contrastive.utils.plots.visualize_images import plot_bucket, \
     plot_histogram, plot_histogram_weights, plot_scatter_matrix, \
@@ -68,16 +69,6 @@ except ImportError:
 from contrastive.utils.logs import set_root_logger_level, set_file_logger
 log = set_file_logger(__file__)
 
-
-class SaveOutput:
-    def __init__(self):
-        self.outputs = {}
-
-    def __call__(self, module, module_in, module_out):
-        self.outputs[module] = module_out.cpu()
-
-    def clear(self):
-        self.outputs = {}
 
 
 class ContrastiveLearnerFusion(pl.LightningModule):
@@ -151,11 +142,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         self.sample_j = np.array([])
         self.sample_k = np.array([])
         self.sample_filenames = []
-        print("PENSER À VIRER LE TRUC EN-DESSOUS SI BESOIN")
-        self.save_output = SaveOutput()  # probablement à virer
         self.output_shape = output_shape
-        self.hook_handles = []
-        self.get_layers()
         if self.config.environment == "brainvisa":
             self.visu_anatomist = Visu_Anatomist()
 
@@ -185,7 +172,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         return (inputs, filenames)
     
     def get_full_inputs_from_batch_with_labels(self, batch):
-        print("A-T-ON ENCORE BESOIN DE LA VIEW3 ?")
+        #print("A-T-ON ENCORE BESOIN DE LA VIEW3 ?")
         full_inputs = []
         full_view3 = []
         for (inputs, labels, filenames, view3) in batch:
@@ -397,7 +384,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             batch_loss = self.cross_entropy_loss(sample, z_i, z_j)
         elif self.config.mode == "classifier":
             batch_loss = self.cross_entropy_loss_classification(
-                z_i, z_j, labels, self.class_weights)
+                z_i, z_j, labels)
             batch_label_loss = torch.tensor(0.)
         elif self.config.mode == "regresser":
             batch_loss = self.mse_loss_regression(z_i, z_j, labels)
@@ -426,7 +413,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 self.sim_zii = sim_zii * self.config.temperature
                 self.sim_zjj = sim_zjj * self.config.temperature
             if self.config.environment == 'brainvisa' and self.config.checking:
-                bv_checks()
+                bv_checks(self, filenames)  # untested
         
         # logs - a dictionary
         self.log('train_loss', float(batch_loss))
@@ -478,10 +465,6 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 X_i = self.forward(input_i)
                 # Second views of the whole batch
                 X_j = self.forward(input_j)
-
-                """# Reshape (necessary if num_outputs==1)
-                X_i = X_i.reshape(X_i.shape[0], self.output_shape)
-                X_j = X_j.reshape(X_j.shape[0], self.output_shape)"""
 
                 # First views and second views are put side by side
                 X_reordered = torch.cat([X_i, X_j], dim=-1)
@@ -629,7 +612,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 # First views and second views are put side by side
                 X_reordered = torch.cat([X_i, X_j], dim=-1)
                 X_reordered = X_reordered.view(-1, X_i.shape[-1])
-                X = torch.cat((X, X_reordered.cpu()), dim=0)
+                X = torch.cat((X, X_reordered.cuda()), dim=0)
                 # print(f"filenames = {filenames}")
                 filenames_duplicate = [
                     item for item in filenames
@@ -790,10 +773,10 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         #         self.current_epoch)
 
 
-    def validation_step(self, val_batch):
+    def validation_step(self, val_batch, batch_idx):
         """Validation step"""
         if self.config.with_labels:
-            (inputs, labels, _) = \
+            (inputs, labels, _, _) = \
                 self.get_full_inputs_from_batch_with_labels(val_batch)
         else:
             inputs, _ = self.get_full_inputs_from_batch(val_batch)
@@ -827,8 +810,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             # REQUIRED: It ie required for us to return "loss"
             "val_loss": batch_loss,
             # optional for batch logging purposes
-            "log": logs,
-        }
+            "log": logs}
 
         if self.config.with_labels:
             # add label_loss (a part of the loss) to log

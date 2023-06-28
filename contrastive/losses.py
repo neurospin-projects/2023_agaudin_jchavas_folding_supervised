@@ -188,9 +188,9 @@ class MSELoss_Regression(nn.Module):
         labels = labels.float()
 
         loss_i = self.loss(output_i,
-                           labels[:, 0])
+                           labels)
         loss_j = self.loss(output_j,
-                           labels[:, 0])
+                           labels)
 
         return 100*(loss_i + loss_j)
 

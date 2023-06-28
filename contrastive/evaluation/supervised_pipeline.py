@@ -6,8 +6,8 @@ import omegaconf
 import torch
 
 from contrastive.data.datamodule import DataModule_Evaluation
-from contrastive.models.contrastive_learner_with_labels import \
-    ContrastiveLearner_WithLabels
+from contrastive.models.contrastive_learner_fusion import \
+    ContrastiveLearnerFusion
 from contrastive.utils.config import process_config
 from contrastive.utils.logs import set_root_logger_level, set_file_logger
 
@@ -104,7 +104,7 @@ def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=Tru
     log.info("No trained_model.pt saved. "
              "Create a new instance and load weights.")
 
-    model = ContrastiveLearner_WithLabels(config, sample_data=data_module)
+    model = ContrastiveLearnerFusion(config, sample_data=data_module)
     # fetch and load weights
     paths = model_path+"/logs/*/version_0/checkpoints"+r'/*.ckpt'
     if use_best_model:
@@ -223,7 +223,7 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-26",
-         datasets=["benchmarks/R_asymetry", "benchmarks/L_asymetry"],
+pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-28",
+         datasets=["cingulate_ACCpatterns", "cingulate_ACCpatterns_left"],
          label='PCS_asymetry',
-         short_name='asymetry', overwrite=False, use_best_model=False)
+         short_name='asymetry', overwrite=False, use_best_model=True)

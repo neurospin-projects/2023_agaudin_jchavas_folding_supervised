@@ -42,7 +42,6 @@ import os
 # os.environ['MPLCONFIGDIR'] = os.getcwd()+'/.config_mpl'
 
 import hydra
-import torch
 import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
@@ -50,12 +49,8 @@ from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 
 from contrastive.data.datamodule import DataModule_Learning
-from contrastive.data.datamodule import DataModule_Evaluation
-from contrastive.models.contrastive_learner import ContrastiveLearner
-from contrastive.models.contrastive_learner_with_labels import \
-    ContrastiveLearner_WithLabels
-from contrastive.models.contrastive_learner_visualization import \
-    ContrastiveLearner_Visualization
+from contrastive.models.contrastive_learner_fusion import ContrastiveLearnerFusion
+
 from contrastive.utils.config import create_accessible_config, process_config,\
     get_config_diff
 from contrastive.utils.logs import set_root_logger_level, \
@@ -104,40 +99,20 @@ def train(config):
                     'early_stopping_patience', 'random_state', 'seed',
                     'backbone_name', 'sigma_labels', 'label_names',
                     'proportion_pure_contrastive', 'percentage', 
-                    'projection_head_name', 'sigma_noise']
-    if config.model == 'SimCLR_supervised':
-        keys_to_keep.extend(
-            ['temperature_supervised',
-             'sigma_labels',
-             'pretrained_model_path'])
+                    'projection_head_name', 'sigma_noise', 'pretrained_model_path']
 
     create_accessible_config(keys_to_keep, os.getcwd() + "/.hydra/config.yaml")
 
     # create a csv file where the parameters changing between runs are stored
     get_config_diff(os.getcwd() + '/..', whole_config=False, save=True)
 
-    if config.mode == 'evaluation':
-        data_module = DataModule_Evaluation(config)
-    else:
-        data_module = DataModule_Learning(config)
-
-    if config.mode == 'evaluation':
-        model = ContrastiveLearner_Visualization(config,
-                                                 sample_data=data_module)
-    elif config.model == "SimCLR_supervised":
-        model = ContrastiveLearner_WithLabels(config,
-                                              sample_data=data_module)
-    elif config.model == 'SimCLR':
-        model = ContrastiveLearner(config,
-                                   sample_data=data_module)
-    else:
-        raise ValueError("Wrong combination of 'mode' and 'model'")
+    data_module = DataModule_Learning(config)
+    
+    model = ContrastiveLearnerFusion(config,
+                                     sample_data=data_module)
 
     # load pretrained model's weights if in config
-    if (
-        'pretrained_model_path' in config.keys()
-        and config.pretrained_model_path is not None
-    ):
+    if config.pretrained_model_path is not None:
         log.info(f"Load weigths stored at {config.pretrained_model_path}")
         model.load_pretrained_model(config.pretrained_model_path,
                                     encoder_only=config.load_encoder_only)
@@ -161,10 +136,8 @@ def train(config):
 
     trainer.fit(model, data_module, ckpt_path=config.checkpoint_path)
     log.info("Fitting is done")
-    log.info("Number of hooks: "
-             f"{len(model.save_output.outputs)} ; "
-             f"{len(model.hook_handles)}")
 
+    # Not used and take far too much disk space:
     # save model with structure
     # save_path = './logs/trained_model.pt'
     # torch.save(model, save_path)

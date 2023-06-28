@@ -1,12 +1,11 @@
 defaults:
   - _self_
   - hydra: local
-  - dataset/benchmarks/R_asymetry
-  - dataset/benchmarks/L_asymetry
+  - dataset/cingulate_ACCpatterns
   - label: PCS_asymetry
-  - model: SimCLR_supervised
-  - mode: classifier
-  - augmentations: no_foldlabel
+  - model: SimCLR_fusion
+  - mode: encoder
+  - augmentations: foldlabel
   - backbone: ConvNet
   - platform: cuda_not_brainvisa
   - trainer: default

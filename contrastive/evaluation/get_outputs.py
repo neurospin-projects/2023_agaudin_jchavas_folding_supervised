@@ -12,8 +12,8 @@ import yaml
 from contrastive.utils.config import process_config
 from contrastive.data.datamodule import DataModule_Evaluation
 from contrastive.evaluation.utils_pipelines import *
-from contrastive.models.contrastive_learner_with_labels import \
-    ContrastiveLearner_WithLabels
+from contrastive.models.contrastive_learner_fusion import \
+    ContrastiveLearnerFusion
 
 from contrastive.utils.logs import set_root_logger_level, set_file_logger
 log = set_file_logger(__file__)
@@ -93,7 +93,7 @@ def compute_embeddings(config, model_path, folder_name=None, use_best_model=Fals
     # then load hydra weights.
     print("No trained_model.pt saved. Create a new instance and load weights.")
 
-    model = ContrastiveLearner_WithLabels(config, sample_data=data_module)
+    model = ContrastiveLearnerFusion(config, sample_data=data_module)
     # fetch and load weights
     paths = model_path+"/logs/*/version_0/checkpoints"+r'/*.ckpt'
     if use_best_model:
