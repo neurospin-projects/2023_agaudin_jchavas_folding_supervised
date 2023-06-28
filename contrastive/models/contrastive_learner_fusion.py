@@ -163,7 +163,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
 
     def get_full_inputs_from_batch(self, batch):
         full_inputs = []
-        for (inputs, filenames) in batch:
+        for (inputs, filenames) in batch:  # loop over datasets
             if self.config.backbone_name == 'pointnet':
                 inputs = torch.squeeze(inputs).to(torch.float)
             full_inputs.append(inputs)
@@ -175,7 +175,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         #print("A-T-ON ENCORE BESOIN DE LA VIEW3 ?")
         full_inputs = []
         full_view3 = []
-        for (inputs, labels, filenames, view3) in batch:
+        for (inputs, filenames, labels, view3) in batch: # loop over datasets
             if self.config.backbone_name == 'pointnet':
                 inputs = torch.squeeze(inputs).to(torch.float)
             full_inputs.append(inputs)
@@ -183,7 +183,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         
         inputs = full_inputs
         view3 = full_view3
-        return (inputs, labels, filenames, view3)
+        return (inputs, filenames, labels, view3)
 
 
     def load_pretrained_model(self, pretrained_model_path, encoder_only=False):
@@ -254,7 +254,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         r = self.compute_outputs_skeletons(dataloader)
         X = r[0]  # get inputs
         if self.with_labels:
-            labels = r[1]
+            labels = r[2]
             scatter_matrix_outputs = \
             plot_scatter_matrix_with_labels(X, labels, buffer=True)
         else:
@@ -274,7 +274,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         r = self.compute_representations(dataloader)
         X = r[0]  # get inputs
         if self.with_labels:
-            labels = r[1]
+            labels = r[2]
             scatter_matrix_representations = \
             plot_scatter_matrix_with_labels(X, labels, buffer=True)
         else:
@@ -367,7 +367,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         """Training step.
         """
         if self.config.with_labels:
-            (inputs, labels, filenames, view3) = \
+            inputs, filenames, labels, view3 = \
                 self.get_full_inputs_from_batch_with_labels(train_batch)
         else:
             inputs, filenames = self.get_full_inputs_from_batch(train_batch)
@@ -449,7 +449,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         with torch.no_grad():
             for batch in loader:
                 if self.config.with_labels:
-                    (inputs, labels, filenames, _) = \
+                    inputs, filenames, labels, _ = \
                         self.get_full_inputs_from_batch_with_labels(batch)
                 else:
                     inputs, filenames = self.get_full_inputs_from_batch(batch)
@@ -488,7 +488,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                                         dim=0)
         
         if self.config.with_labels:
-            return X.cpu(), labels_all.cpu(), filenames_list
+            return X.cpu(), filenames_list, labels_all.cpu()
         else:
             return X.cpu(), filenames_list
     
@@ -496,7 +496,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             """Only available in classifier mode.
             Gets the output of the model and convert it to probabilities thanks to softmax."""
             if self.config.mode == 'classifier':
-                X, labels_all, filenames_list = self.compute_output_skeletons(
+                X, filenames_list, labels_all = self.compute_output_skeletons(
                     loader)
                 # compute the mean of the two views' outputs
                 X = (X[::2, ...] + X[1::2, ...]) / 2
@@ -513,7 +513,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
     def compute_output_auc(self, loader):
         """Only available in classifier and regresser modes.
         Computes the auc from the outputs of the model and the associated labels."""
-        X, labels, _ = self.compute_outputs_skeletons(loader)
+        X, _, labels, _ = self.compute_outputs_skeletons(loader)
         # compute the mean of the two views' outputs
         X = (X[::2, ...] + X[1::2, ...]) / 2
         # remove the doubleing of labels
@@ -541,7 +541,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         with torch.no_grad():
             for batch in loader:
                 if self.config.with_labels:
-                    (inputs, _, filenames, _) = self.get_full_inputs_from_batch_with_labels(batch)
+                    (inputs, filenames, _, _) = self.get_full_inputs_from_batch_with_labels(batch)
                 else:
                     (inputs, filenames) = self.get_full_inputs_from_batch(batch)
                 # First views of the whole batch
@@ -575,7 +575,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         with torch.no_grad():
             for batch in loader:
                 if self.config.with_labels:
-                    (inputs, labels, filenames, _) = self.get_full_inputs_from_batch_with_labels(batch)
+                    (inputs, filenames, labels, _) = self.get_full_inputs_from_batch_with_labels(batch)
                 else:
                     inputs, filenames = self.get_full_inputs_from_batch(batch)
                 
@@ -630,7 +630,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                                         dim=0)
         
         if self.config.with_labels:
-            return X.cpu(), labels_all.cpu(), filenames_list
+            return X.cpu(), filenames_list, labels_all.cpu()
         else:
             return X.cpu(), filenames_list
 
@@ -670,7 +670,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 "Argument register must be either 'output' or 'representation'")
 
         if self.config.with_labels:
-            X, labels, _ = func(loader)
+            X, _, labels, _ = func(loader)
         else:
             X, _ = func(loader)
 
@@ -776,7 +776,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
     def validation_step(self, val_batch, batch_idx):
         """Validation step"""
         if self.config.with_labels:
-            (inputs, labels, _, _) = \
+            (inputs, _, labels, _) = \
                 self.get_full_inputs_from_batch_with_labels(val_batch)
         else:
             inputs, _ = self.get_full_inputs_from_batch(val_batch)

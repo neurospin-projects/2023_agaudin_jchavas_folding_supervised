@@ -44,9 +44,9 @@ def embeddings_to_pandas(embeddings, csv_path=None, verbose=False):
     """
     columns_names = ['dim'+str(i+1) for i in range(embeddings[0].shape[1])]
     values = pd.DataFrame(embeddings[0].numpy(), columns=columns_names)
-    labels = embeddings[1]
-    labels = pd.DataFrame(labels, columns=['ID'])
-    df_embeddings = pd.concat([labels, values], axis=1)
+    filenames = embeddings[1]
+    filenames = pd.DataFrame(filenames, columns=['ID'])
+    df_embeddings = pd.concat([filenames, values], axis=1)
 
     # remove one copy each ID
     df_embeddings = \

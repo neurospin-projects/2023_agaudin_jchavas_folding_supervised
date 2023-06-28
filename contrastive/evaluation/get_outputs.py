@@ -46,7 +46,7 @@ def preprocess_config(sub_dir, datasets, label):
     return cfg
 
 
-def save_outputs_as_csv(outputs, labels, filenames, csv_path=None, verbose=False):
+def save_outputs_as_csv(outputs, filenames, labels, csv_path=None, verbose=False):
     columns_names = ['dim'+str(i+1) for i in range(outputs.shape[1])]
     values = pd.DataFrame(outputs.numpy(), columns=columns_names)
     labels = pd.DataFrame(labels, columns=['labels']).astype(int)
@@ -123,11 +123,11 @@ def compute_embeddings(config, model_path, folder_name=None, use_best_model=Fals
     # test_intra
     try:
         test_intra_loader = data_module.test_intra_dataloader()
-        test_intra_out, test_intra_labels, test_intra_filenames = \
+        test_intra_out, test_intra_filenames, test_intra_labels = \
             model.compute_outputs_skeletons(test_intra_loader)
         full_save_path = save_path + '/test_intra_outputs.csv'
-        save_outputs_as_csv(test_intra_out, test_intra_labels, 
-                            test_intra_filenames, full_save_path)
+        save_outputs_as_csv(test_intra_out, test_intra_filenames,
+                            test_intra_labels, full_save_path)
     except:
         log.info("No test intra for this dataset.")
     
@@ -137,9 +137,9 @@ def compute_embeddings(config, model_path, folder_name=None, use_best_model=Fals
                'test': test_loader}
     for subset in loaders.keys():
         loader = loaders[subset]
-        outputs, labels, filenames = model.compute_outputs_skeletons(loader)
+        outputs, filenames, labels = model.compute_outputs_skeletons(loader)
         full_save_path = save_path + f'/{subset}_outputs.csv'
-        save_outputs_as_csv(outputs, labels, filenames, full_save_path)
+        save_outputs_as_csv(outputs, filenames, labels, full_save_path)
 
     # save what are the datasets have been used for the performance computation
     datasets = config.dataset.keys()
