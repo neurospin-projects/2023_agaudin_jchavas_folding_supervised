@@ -86,6 +86,10 @@ class ContrastiveLearner(pl.LightningModule):
     def __init__(self, config, sample_data):
         super(ContrastiveLearner, self).__init__()
 
+        self.automatic_optimization = True
+        self.validation_step_outputs = []
+        self.training_step_outputs = []
+
         n_datasets = len(config.data)
         log.info(f"n_datasets {n_datasets}")
 
@@ -310,10 +314,16 @@ class ContrastiveLearner(pl.LightningModule):
             filter(lambda p: p.requires_grad, self.parameters()),
             lr=self.config.lr,
             weight_decay=self.config.weight_decay)
-        # steps = 140
-        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, steps)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
 
-        return optimizer
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "interval": "epoch"
+            }
+        }
+
 
     def nt_xen_loss(self, z_i, z_j):
         """Loss function for contrastive"""
@@ -523,7 +533,7 @@ class ContrastiveLearner(pl.LightningModule):
         # Returns tsne embeddings
         return X_tsne
 
-    def training_epoch_end(self, outputs):
+    def on_train_epoch_end(self, outputs):
         """Computation done at the end of the epoch"""
 
         if self.config.mode == "encoder":
@@ -592,7 +602,7 @@ class ContrastiveLearner(pl.LightningModule):
 
         return batch_dictionary
 
-    def validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self, outputs):
         """Computation done at the end of each validation epoch"""
 
         # Computes t-SNE

@@ -192,7 +192,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
         self.log('train_label_loss', float(batch_label_loss))
 
         # Only computes graph on first step
-        if self.global_step == 1:
+        if self.global_step == -1:
             self.logger.experiment.add_graph(self, [input_i])
 
         # Records sample for first batch of each epoch
@@ -242,6 +242,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             # optional for batch logging purposes
             "log": logs,
         }
+        self.training_step_outputs.append(batch_loss)
 
         return batch_dictionary
 
@@ -466,7 +467,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             with open(save_path + "best_model_params.json", 'w') as file:
                 json.dump(best_model_params, file)
 
-    def training_epoch_end(self, outputs):
+    def on_train_epoch_end(self):
         """Computation done at the end of the epoch"""
 
         score = 0
@@ -521,18 +522,25 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             self.plot_views()
 
         # calculates average loss
-        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        avg_loss = torch.stack(self.training_step_outputs).mean()
 
         # logging using tensorboard logger
         self.logger.experiment.add_scalar(
             "Loss/Train",
             avg_loss,
             self.current_epoch)
+        # logging using tensorboard logger
+        self.logger.experiment.add_scalar(
+            "Learning rate",
+            self.optimizers().param_groups[0]['lr'],
+            self.current_epoch)
         if score != 0:
             self.logger.experiment.add_scalar(
                 "Score/Train",
                 score,
                 self.current_epoch)
+        self.training_step_outputs.clear()  # free memory
+
 
     def validation_step(self, val_batch, batch_idx):
         """Validation step"""
@@ -574,11 +582,12 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             # optional for batch logging purposes
             "log": logs,
         }
+        self.validation_step_outputs.append(batch_loss)
 
         return batch_dictionary
 
-    def validation_epoch_end(self, outputs):
-        """Computaion done at the end of each validation epoch"""
+    def on_validation_epoch_end(self):
+        """Computation done at the end of each validation epoch"""
 
         score = 0
         # Computes t-SNE
@@ -624,7 +633,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             self.save_best_auc_model(val_auc, save_path='./logs/')
 
         # calculates average loss
-        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
+        avg_loss = torch.stack(self.validation_step_outputs).mean()
 
         # logs losses using tensorboard logger
         self.logger.experiment.add_scalar(
@@ -636,3 +645,4 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 "score/Validation",
                 score,
                 self.current_epoch)
+        self.validation_step_outputs.clear()  # free memory

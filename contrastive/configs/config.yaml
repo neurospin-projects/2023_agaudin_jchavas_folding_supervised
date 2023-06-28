@@ -3,7 +3,7 @@ defaults:
   - hydra: local
   - dataset/cingulate_HCP_stratified_left
   - dataset/cingulate_HCP_stratified_right
-  - label: Flanker_class
+  - label: Flanker_AgeAdj_class
   - model: SimCLR_supervised
   - mode: classifier
   - augmentations: foldlabel
@@ -12,7 +12,7 @@ defaults:
   - trainer: default
   - classifier: svm
   - embeddings: embeddings
-  - projection_head: relu
+  - projection_head: sigmoid
   - override hydra/job_logging: custom
 
 data: ${oc.dict.values:dataset}

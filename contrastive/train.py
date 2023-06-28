@@ -152,11 +152,11 @@ def train(config):
                       patience=config.early_stopping_patience)
 
     trainer = pl.Trainer(
-        gpus=1,
+        devices=1,
         max_epochs=config.max_epochs,
         callbacks=[early_stop_callback],
         logger=tb_logger,
-        flush_logs_every_n_steps=config.nb_steps_per_flush_logs,
+        # flush_logs_every_n_steps=config.nb_steps_per_flush_logs,
         log_every_n_steps=config.log_every_n_steps)
 
     trainer.fit(model, data_module, ckpt_path=config.checkpoint_path)
