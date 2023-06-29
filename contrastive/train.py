@@ -93,13 +93,15 @@ def train(config):
                     'resize', 'patch_size', 'max_angle',
                     'checkerboard_size', 'keep_bottom',
                     'growth_rate', 'block_config', 'num_init_features',
-                    'num_representation_features', 'num_outputs',
+                    'backbone_output_size', 'fusioned_latent_space_size',
+                    'num_outputs',
                     'environment', 'batch_size', 'pin_mem', 'partition',
                     'lr', 'weight_decay', 'max_epochs',
                     'early_stopping_patience', 'random_state', 'seed',
                     'backbone_name', 'sigma_labels', 'label_names',
                     'proportion_pure_contrastive', 'percentage', 
-                    'projection_head_name', 'sigma_noise', 'pretrained_model_path']
+                    'projection_head_name', 'sigma_noise', 'pretrained_model_path'
+                    'converter_activation']
 
     create_accessible_config(keys_to_keep, os.getcwd() + "/.hydra/config.yaml")
 

@@ -2,5 +2,5 @@
 # Characterization of the ConvNet model used
 backbone_name: convnet
 encoder_depth: 3
-num_representation_features: 10
+backbone_output_size: 10
 projection_head_hidden_layers:

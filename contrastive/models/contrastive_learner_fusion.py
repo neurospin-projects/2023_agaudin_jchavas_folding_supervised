@@ -53,7 +53,7 @@ from contrastive.backbones.convnet import ConvNet
 from contrastive.backbones.projection_heads import *
 from contrastive.data.utils import change_list_device
 from contrastive.evaluation.auc_score import regression_roc_auc_score
-from contrastive.models.models_utils import bv_checks
+from contrastive.models.models_utils import *
 from contrastive.losses import *
 from contrastive.utils.plots.visualize_images import plot_bucket, \
     plot_histogram, plot_histogram_weights, plot_scatter_matrix, \
@@ -87,49 +87,42 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                     growth_rate=config.growth_rate,
                     block_config=config.block_config,
                     num_init_features=config.num_init_features,
-                    num_representation_features=config.num_representation_features,
+                    num_representation_features=config.backbone_output_size,
                     drop_rate=config.drop_rate,
                     in_shape=config.data[i].input_size))
         elif config.backbone_name == "convnet":
             for i in range(n_datasets):
                 self.backbones.append(ConvNet(
                     encoder_depth=config.encoder_depth,
-                    num_representation_features=config.num_representation_features,
+                    num_representation_features=config.backbone_output_size,
                     drop_rate=config.drop_rate,
                     in_shape=config.data[i].input_size))
         # elif config.backbone_name == 'pointnet':
         #     self.backbone = PointNetCls(
         #         k=config.num_representation_features,
-        #         num_outputs=config.num_representation_features,
+        #         num_outputs=config.backbone_output_size,
         #         projection_head_hidden_layers=config.projection_head_hidden_layers,
         #         drop_rate=config.drop_rate,
         #         feature_transform=False)
         else:
             raise ValueError(f"No underlying backbone with backbone name {config.backbone_name}")
         
-        num_representation_features_total = config.num_representation_features * n_datasets
+        # rename variables
+        concat_latent_spaces_size = config.backbone_output_size * n_datasets
 
-        # define the shape of the projection head
-        # prioritize the shapes explicitely specified in config
-        if config.proj_layers_shapes is not None:
-            layers_shapes = config.proj_layers_shapes
-        else:
-            # else, construct it in a standardized way
-            if config.mode == 'encoder':
-                output_shape = num_representation_features_total
-            elif config.mode == 'classifier':
-                output_shape = 2
-            elif config.mode == 'regresser':
-                output_shape = 1
-            else:
-                raise ValueError(f"Mode {config.mode} doesn't exist.")
-            layers_shapes = [num_representation_features_total] * (config.length_projection_head - 1) + [output_shape]
+        # build converter (if required) and set the latent space size according to it
+        converter, num_representation_features = build_converter(config, concat_latent_spaces_size)
+        self.converter = converter
 
-        # choose activation
+        # set up the projection head layers shapes
+        layers_shapes = get_projection_head_shape(config, num_representation_features)
+        output_shape = layers_shapes[-1]
+
+        # set projection head activation
         activation = config.projection_head_name
         log.info(f"activation = {activation}")
         self.projection_head = ProjectionHead(
-            num_representation_features=num_representation_features_total,
+            num_representation_features=num_representation_features,
             layers_shapes=layers_shapes,
             activation=activation)
 
@@ -142,6 +135,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         self.sample_j = np.array([])
         self.sample_k = np.array([])
         self.sample_filenames = []
+        self.num_representation_features = num_representation_features
         self.output_shape = output_shape
         if self.config.environment == "brainvisa":
             self.visu_anatomist = Visu_Anatomist()
@@ -157,6 +151,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             embedding = self.backbones[i].forward(x[i])
             embeddings.append(embedding)
         embeddings = torch.cat(embeddings, dim=1)
+        embeddings = self.converter.forward(embeddings)
         out = self.projection_head.forward(embeddings)
         return out
 
@@ -250,43 +245,34 @@ class ContrastiveLearnerFusion(pl.LightningModule):
 
     def plot_scatter_matrices(self, dataloader, key):
         """Plots scatter matrices of output and representations spaces"""
-        # Makes scatter matrix of output space
-        r = self.compute_outputs_skeletons(dataloader)
-        X = r[0]  # get inputs
-        if self.with_labels:
-            labels = r[2]
-            scatter_matrix_outputs = \
-            plot_scatter_matrix_with_labels(X, labels, buffer=True)
-        else:
-            scatter_matrix_outputs = plot_scatter_matrix(X, buffer=True)
         
-        self.logger.experiment.add_image(
-            'scatter_matrix_outputs',
-            scatter_matrix_outputs,
-            self.current_epoch)
+        funcs = {'outputs': self.compute_outputs_skeletons,
+                 'representations': self.compute_outputs_skeletons}
         
-        if self.config.mode == "regresser":
-            score = r2_score(labels, X)
-        else:
-            score = 0
+        for name, func in funcs.items():
+            r = func(dataloader)
+            X = r[0]  # get inputs
 
-        # Makes scatter matrix of representation space
-        r = self.compute_representations(dataloader)
-        X = r[0]  # get inputs
-        if self.with_labels:
-            labels = r[2]
-            scatter_matrix_representations = \
-            plot_scatter_matrix_with_labels(X, labels, buffer=True)
-        else:
-            scatter_matrix_representations = plot_scatter_matrix(X, buffer=True)
-        
-        scatter_matrix_representations = plot_scatter_matrix(
-            X, buffer=True)
-        self.logger.experiment.add_image(
-            'scatter_matrix_representations',
-            scatter_matrix_representations,
-            self.current_epoch)
-        
+            if self.with_labels:
+                labels = r[2]
+                scatter_matrix_with_labels = \
+                    plot_scatter_matrix_with_labels(X, labels, buffer=True)
+                self.logger.experiment.add_image(
+                    f'scatter_matrix_{name}_with_labels_' + key,
+                    scatter_matrix_with_labels,
+                    self.current_epoch)
+            else:
+                scatter_matrix = plot_scatter_matrix(X, buffer=True)
+                self.logger.experiment.add_image(
+                    f'scatter_matrix_{name}',
+                    scatter_matrix,
+                    self.current_epoch)
+            
+            if (self.config.mode == "regresser") and (name =='output'):
+                score = r2_score(labels, X)
+            else:
+                score = 0
+
         return score
 
 
@@ -493,22 +479,22 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             return X.cpu(), filenames_list
     
     def compute_output_probabilities(self, loader):
-            """Only available in classifier mode.
-            Gets the output of the model and convert it to probabilities thanks to softmax."""
-            if self.config.mode == 'classifier':
-                X, filenames_list, labels_all = self.compute_output_skeletons(
-                    loader)
-                # compute the mean of the two views' outputs
-                X = (X[::2, ...] + X[1::2, ...]) / 2
-                # remove the doubleing of labels
-                labels_all = labels_all[::2]
-                filenames_list = filenames_list[::2]
-                X = nn.functional.softmax(X, dim=1)
-                return X, labels_all, filenames_list
-            else:
-                raise ValueError(
-                    "The config.mode is not 'classifier'. "
-                    "You shouldn't compute probabilities with another mode.")
+        """Only available in classifier mode.
+        Gets the output of the model and convert it to probabilities thanks to softmax."""
+        if self.config.mode == 'classifier':
+            X, filenames_list, labels_all = self.compute_output_skeletons(
+                loader)
+            # compute the mean of the two views' outputs
+            X = (X[::2, ...] + X[1::2, ...]) / 2
+            # remove the doubleing of labels
+            labels_all = labels_all[::2]
+            filenames_list = filenames_list[::2]
+            X = nn.functional.softmax(X, dim=1)
+            return X, labels_all, filenames_list
+        else:
+            raise ValueError(
+                "The config.mode is not 'classifier'. "
+                "You shouldn't compute probabilities with another mode.")
 
     def compute_output_auc(self, loader):
         """Only available in classifier and regresser modes.
@@ -566,7 +552,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
 
         # Initialization
         X = torch.zeros(
-            [0, self.config.num_representation_features * self.n_datasets]).cuda()
+            [0, self.num_representation_features]).cuda()
         labels_all = torch.zeros(
             [0, len(self.config.label_names)]).cuda()
         filenames_list = []
@@ -601,6 +587,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                     embedding = model.backbones[k].forward(input_i[k])
                     X_i.append(embedding)
                 X_i = torch.cat(X_i, dim=1)
+                X_i = self.converter.forward(X_i)
 
                 # Second views of the whole batch
                 X_j = []
@@ -608,6 +595,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                     embedding = model.backbones[k].forward(input_j[k])
                     X_j.append(embedding)
                 X_j = torch.cat(X_j, dim=1)
+                X_j = self.converter.forward(X_j)
 
                 # First views and second views are put side by side
                 X_reordered = torch.cat([X_i, X_j], dim=-1)
