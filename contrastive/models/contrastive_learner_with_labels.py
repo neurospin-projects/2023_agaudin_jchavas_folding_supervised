@@ -364,7 +364,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
         return X, filenames_list
 
-    def compute_representations(self, loader, reg):
+    def compute_representations(self, loader):
         """Computes representations for each crop.
 
         Representation are before the projection head"""
@@ -383,12 +383,18 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
                 # for the first views of the whole batch
                 inputs = change_list_device(inputs, 'cuda')
                 model = self.cuda()
-                model.forward(inputs[:, 0, :])
+                input_i = [inputs[i][:, 0, ...] for i in range(self.n_datasets)]
+                input_j = [inputs[i][:, 1, ...] for i in range(self.n_datasets)]
+                if self.config.backbone_name == 'pointnet':
+                    input_i = transform(input_i.cpu()).cuda().to(torch.float)
+                    input_j = transform(input_j.cpu()).cuda().to(torch.float)
+
+                model.forward(input_i)
                 X_i = first(self.save_output.outputs.values())
 
                 # We then compute the embeddings for the second views
                 # of the whole batch
-                model.forward(inputs[:, 1, :])
+                model.forward(input_j)
                 X_j = first(self.save_output.outputs.values())
 
                 # We now concatenate the embeddings
@@ -445,7 +451,7 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
     def plotting_matrices_now(self):
         if self.config.nb_epochs_per_matrix_plot <= 0:
             return False
-        elif (self.current_epoch % self.config.nb_epochs_per_matrix_plot == 0)\
+        elif ((self.current_epoch % self.config.nb_epochs_per_matrix_plot) == 0)\
                 or (self.current_epoch >= self.config.max_epochs):
             return True
         else:
@@ -520,6 +526,11 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
             self.custom_histogram_adder()
             # Plots views
             self.plot_views()
+            # Plots scatter matrices
+            score = self.plot_scatter_matrices_with_labels(
+                self.sample_data.train_dataloader(),
+                "train",
+                self.config.mode)
 
         # calculates average loss
         avg_loss = torch.stack(self.training_step_outputs).mean()
@@ -631,6 +642,13 @@ class ContrastiveLearner_WithLabels(ContrastiveLearner):
 
             # save the model that has the best val auc during train
             self.save_best_auc_model(val_auc, save_path='./logs/')
+
+            if self.plotting_matrices_now():
+                # Plots scatter matrices
+                score = self.plot_scatter_matrices_with_labels(
+                    self.sample_data.val_dataloader(),
+                    "val",
+                    self.config.mode)
 
         # calculates average loss
         avg_loss = torch.stack(self.validation_step_outputs).mean()

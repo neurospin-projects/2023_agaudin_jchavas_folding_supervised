@@ -167,7 +167,7 @@ class CrossEntropyLoss_Classification(nn.Module):
         loss_j = self.loss(output_j,
                            labels[:, 0])
 
-        return (loss_i + loss_j)
+        return 100.*(loss_i + loss_j)
 
     def __str__(self):
         return f"{type(self).__name__}"
