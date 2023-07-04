@@ -137,6 +137,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         self.sample_filenames = []
         self.num_representation_features = num_representation_features
         self.output_shape = output_shape
+        self.lr = self.config.lr
         if self.config.environment == "brainvisa":
             self.visu_anatomist = Visu_Anatomist()
 
@@ -310,7 +311,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         """Adam optimizer"""
         optimizer = torch.optim.Adam(
             filter(lambda p: p.requires_grad, self.parameters()),
-            lr=self.config.lr,
+            lr=self.lr,
             weight_decay=self.config.weight_decay)
         # steps = 140
         # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, steps)
@@ -499,7 +500,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
     def compute_output_auc(self, loader):
         """Only available in classifier and regresser modes.
         Computes the auc from the outputs of the model and the associated labels."""
-        X, _, labels, _ = self.compute_outputs_skeletons(loader)
+        X, _, labels = self.compute_outputs_skeletons(loader)
         # compute the mean of the two views' outputs
         X = (X[::2, ...] + X[1::2, ...]) / 2
         # remove the doubleing of labels
@@ -658,7 +659,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 "Argument register must be either 'output' or 'representation'")
 
         if self.config.with_labels:
-            X, _, labels, _ = func(loader)
+            X, _, labels = func(loader)
         else:
             X, _ = func(loader)
 
@@ -739,6 +740,12 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 "AUC/Train",
                 train_auc,
                 self.current_epoch)
+            # save train_auc to use it during validation end step
+            auc_dict = {'train_auc': train_auc}
+            save_path = './' + self.logger.experiment.log_dir + '/train_auc.json'
+            with open(save_path, 'w') as file:
+                json.dump(auc_dict, file)
+
 
         if self.plotting_matrices_now():
             # logs histograms
@@ -792,6 +799,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             batch_loss, sim_zij, sim_zii, sim_zjj = self.nt_xen_loss(z_i, z_j)
         
         self.log('val_loss', float(batch_loss))
+        self.log('diff_auc', 0)  # line to be able to use early stopping
         # logs- a dictionary
         logs = {"val_loss": float(batch_loss)}
         batch_dictionary = {
@@ -846,6 +854,13 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 "AUC/Val",
                 val_auc,
                 self.current_epoch)
+            # compute overfitting early stopping relevant value
+            if self.current_epoch > 0:
+                # load train_auc
+                save_path = './' + self.logger.experiment.log_dir + '/train_auc.json'
+                with open(save_path, 'r') as file:
+                    train_auc = json.load(file)['train_auc']
+                self.log('diff_auc', train_auc - val_auc)
 
             # save the model that has the best val auc during train
             self.save_best_auc_model(val_auc, save_path='./logs/')

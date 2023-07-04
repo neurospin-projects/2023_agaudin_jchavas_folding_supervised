@@ -5,7 +5,7 @@ defaults:
   - dataset/cingulate_schiz_left
   - label: diagnosis
   - model: SimCLR_fusion
-  - mode: encoder
+  - mode: classifier
   - augmentations: foldlabel
   - backbone: ConvNet
   - platform: cuda_not_brainvisa

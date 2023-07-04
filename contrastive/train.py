@@ -100,7 +100,7 @@ def train(config):
                     'early_stopping_patience', 'random_state', 'seed',
                     'backbone_name', 'sigma_labels', 'label_names',
                     'proportion_pure_contrastive', 'percentage', 
-                    'projection_head_name', 'sigma_noise', 'pretrained_model_path'
+                    'projection_head_name', 'sigma_noise', 'pretrained_model_path',
                     'converter_activation']
 
     create_accessible_config(keys_to_keep, os.getcwd() + "/.hydra/config.yaml")
@@ -127,15 +127,30 @@ def train(config):
     early_stop_callback = \
         EarlyStopping(monitor="val_loss",
                       patience=config.early_stopping_patience)
+    
+    early_stop_overfitting = \
+        EarlyStopping(monitor="diff_auc",
+                      divergence_threshold=0.4,
+                      patience=config.max_epochs)
+
+    callbacks = [early_stop_callback]
+    if config.mode in ['classifier', 'regresser']:
+        callbacks.append(early_stop_overfitting)
 
     trainer = pl.Trainer(
         gpus=1,
         max_epochs=config.max_epochs,
-        callbacks=[early_stop_callback],
+        callbacks=callbacks,
         logger=tb_logger,
         flush_logs_every_n_steps=config.nb_steps_per_flush_logs,
-        log_every_n_steps=config.log_every_n_steps)
+        log_every_n_steps=config.log_every_n_steps,
+        auto_lr_find=True)
+    
+    # # find the best lr
+    # log.info("Find the best learning rate...")
+    # trainer.tune(model, data_module.train_dataloader(), data_module.val_dataloader())
 
+    # start training
     trainer.fit(model, data_module, ckpt_path=config.checkpoint_path)
     log.info("Fitting is done")
 
