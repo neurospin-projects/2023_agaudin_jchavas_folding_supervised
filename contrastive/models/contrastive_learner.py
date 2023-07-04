@@ -314,11 +314,10 @@ class ContrastiveLearner(pl.LightningModule):
             filter(lambda p: p.requires_grad, self.parameters()),
             lr=self.config.lr,
             weight_decay=self.config.weight_decay)
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.8)
-        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        #     optimizer=optimizer,
-        #     T_max=100,
-        #     eta_min=0.0001)
+        scheduler = torch.optim.lr_scheduler.StepLR(
+            optimizer,
+            step_size=self.config.step_size,
+            gamma=self.config.gamma)
 
         return {
             "optimizer": optimizer,
