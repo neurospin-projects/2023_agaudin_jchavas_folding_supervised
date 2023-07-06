@@ -1,3 +1,4 @@
 # @package _global_
 test: False
 mode: classifier
+with_labels: True

@@ -30,8 +30,8 @@ import glob
 from contrastive.utils.config import process_config
 from contrastive.data.datamodule import DataModule_Evaluation
 from contrastive.evaluation.utils_pipelines import save_used_datasets
-from contrastive.models.contrastive_learner_visualization import \
-    ContrastiveLearner_Visualization
+from contrastive.models.contrastive_learner_fusion import \
+    ContrastiveLearnerFusion
 
 
 def embeddings_to_pandas(embeddings, csv_path=None, verbose=False):
@@ -44,9 +44,9 @@ def embeddings_to_pandas(embeddings, csv_path=None, verbose=False):
     """
     columns_names = ['dim'+str(i+1) for i in range(embeddings[0].shape[1])]
     values = pd.DataFrame(embeddings[0].numpy(), columns=columns_names)
-    labels = embeddings[1]
-    labels = pd.DataFrame(labels, columns=['ID'])
-    df_embeddings = pd.concat([labels, values], axis=1)
+    filenames = embeddings[1]
+    filenames = pd.DataFrame(filenames, columns=['ID'])
+    df_embeddings = pd.concat([filenames, values], axis=1)
 
     # remove one copy each ID
     df_embeddings = \
@@ -92,7 +92,7 @@ def compute_embeddings(config):
     # then load hydra weights.
     print("No trained_model.pt saved. Create a new instance and load weights.")
 
-    model = ContrastiveLearner_Visualization(config, sample_data=data_module)
+    model = ContrastiveLearnerFusion(config, sample_data=data_module)
     # fetch and load weights
     paths = config.model_path+"/logs/*/version_0/checkpoints"+r'/*.ckpt'
     if 'use_best_model' in config.keys():

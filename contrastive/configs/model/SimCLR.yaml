@@ -1,9 +1,0 @@
-# @package _global_
-model: SimCLR
-with_labels: False
-temperature_initial: 0.1
-temperature: 0.1
-sigma: 5
-drop_rate: 0.05
-pretrained_model_path: #/path/to/FILE.ckpt
-load_encoder_only: True
