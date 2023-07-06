@@ -130,7 +130,7 @@ def train(config):
     
     early_stop_overfitting = \
         EarlyStopping(monitor="diff_auc",
-                      divergence_threshold=0.4,
+                      divergence_threshold=config.diff_auc_threshold,
                       patience=config.max_epochs)
 
     callbacks = [early_stop_callback]
@@ -148,6 +148,7 @@ def train(config):
     
     # # find the best lr
     # log.info("Find the best learning rate...")
+    # data_module.setup()
     # trainer.tune(model, data_module.train_dataloader(), data_module.val_dataloader())
 
     # start training
