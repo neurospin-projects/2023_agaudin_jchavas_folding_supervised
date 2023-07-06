@@ -37,6 +37,7 @@ Some helper functions are taken from:
 https://learnopencv.com/tensorboard-with-pytorch-lightning
 
 """
+import os
 import json
 import numpy as np
 import torch
@@ -500,6 +501,9 @@ class ContrastiveLearnerFusion(pl.LightningModule):
     def compute_output_auc(self, loader):
         """Only available in classifier and regresser modes.
         Computes the auc from the outputs of the model and the associated labels."""
+        # we don't apply transforms for the AUC computation
+        loader.dataset.transform = False
+
         X, _, labels = self.compute_outputs_skeletons(loader)
         # compute the mean of the two views' outputs
         X = (X[::2, ...] + X[1::2, ...]) / 2
@@ -510,6 +514,9 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         else:
             X = nn.functional.softmax(X, dim=1)
             auc = roc_auc_score(labels, X[:, 1])
+        
+        # put augmentations back to normal
+        loader.dataset.transform = self.config.apply_augmentations
 
         return auc
 
@@ -799,7 +806,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             batch_loss, sim_zij, sim_zii, sim_zjj = self.nt_xen_loss(z_i, z_j)
         
         self.log('val_loss', float(batch_loss))
-        self.log('diff_auc', 0)  # line to be able to use early stopping
+        self.log('diff_auc', float(0))  # line to be able to use early stopping
         # logs- a dictionary
         logs = {"val_loss": float(batch_loss)}
         batch_dictionary = {
@@ -860,7 +867,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 save_path = './' + self.logger.experiment.log_dir + '/train_auc.json'
                 with open(save_path, 'r') as file:
                     train_auc = json.load(file)['train_auc']
-                self.log('diff_auc', train_auc - val_auc)
+                self.log('diff_auc', float(train_auc - val_auc))
 
             # save the model that has the best val auc during train
             self.save_best_auc_model(val_auc, save_path='./logs/')

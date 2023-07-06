@@ -1,9 +1,9 @@
 defaults:
   - _self_
   - hydra: local
-  - dataset/cingulate_schiz
-  - dataset/cingulate_schiz_left
-  - label: diagnosis
+  - dataset/cingulate_ACCpatterns
+  - dataset/left_cingulate_ACCpatterns
+  - label: PCS_asymetry
   - model: SimCLR_fusion
   - mode: classifier
   - augmentations: foldlabel
