@@ -45,6 +45,8 @@ import hydra
 import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+import wandb
+import omegaconf
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 
@@ -137,11 +139,21 @@ def train(config):
     if config.mode in ['classifier', 'regresser']:
         callbacks.append(early_stop_overfitting)
 
+    # choose the logger
+    loggers = [tb_logger]
+    if config.wandb.grid_search:
+        # add Wandb logger
+        wandb.config = omegaconf.OmegaConf.to_container(
+            config, resolve=True, throw_on_missing=True)
+        wandb.init(entity=config.wandb.entity, project=config.wandb.project)
+        wandb_logger = pl.loggers.WandbLogger(project=config.wandb.project)
+        loggers.append(wandb_logger)
+
     trainer = pl.Trainer(
         gpus=1,
         max_epochs=config.max_epochs,
         callbacks=callbacks,
-        logger=tb_logger,
+        logger=loggers,
         flush_logs_every_n_steps=config.nb_steps_per_flush_logs,
         log_every_n_steps=config.log_every_n_steps,
         auto_lr_find=True)

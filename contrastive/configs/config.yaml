@@ -1,18 +1,19 @@
 defaults:
   - _self_
-  - hydra: local
-  - dataset/cingulate_ACCpatterns
-  - dataset/left_cingulate_ACCpatterns
-  - label: PCS_asymetry
-  - model: SimCLR_fusion
-  - mode: classifier
   - augmentations: foldlabel
   - backbone: ConvNet
-  - platform: cuda_not_brainvisa
-  - trainer: default
   - classifier: svm
+  - dataset/cingulate_ACCpatterns
+  - dataset/left_cingulate_ACCpatterns
   - embeddings: embeddings
+  - hydra: local
+  - label: PCS_asymetry
+  - mode: classifier
+  - model: SimCLR_fusion
+  - platform: cuda_not_brainvisa
   - projection_head: linear
+  - trainer: default
+  - wandb/sweep
   - override hydra/job_logging: custom
 
 data: ${oc.dict.values:dataset}
