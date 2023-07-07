@@ -154,3 +154,6 @@ dmypy.json
 
 # kraken managing
 sh_kraken
+
+# privacy
+contrastive/configs/wandb/sweep.yaml
