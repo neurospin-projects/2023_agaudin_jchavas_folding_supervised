@@ -1,0 +1,24 @@
+program: train.py
+method: bayes
+metric:
+  goal: minimize
+  name: gs_criterion
+parameters:
+  lr:
+    min: 0.0001
+    max: 0.01
+  drop_rate:
+    min: 0.
+    max: 0.2
+  sigma_noise:
+    min: 0.
+    max: 0.5
+  max_angle:
+    min: 0
+    max: 6
+
+command:
+  - ${env}
+  - python3
+  - ${program}
+  - ${args_no_hyphens}

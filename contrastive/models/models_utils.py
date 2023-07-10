@@ -83,3 +83,10 @@ def get_projection_head_shape(config, num_representation_features):
         layers_shapes = [num_representation_features] * (config.length_projection_head - 1) + [output_shape]
     
     return layers_shapes
+
+
+def compute_grid_search_criterion(train_auc, val_auc, lambda_gs_crit=2):
+    diff_auc = np.abs(train_auc - val_auc)
+    val_quality = 1 - val_auc
+
+    return diff_auc + lambda_gs_crit * val_quality
