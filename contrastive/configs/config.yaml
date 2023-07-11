@@ -1,12 +1,11 @@
 defaults:
   - _self_
   - hydra: local
-  - dataset/cingulate_ACCpatterns
-  - dataset/left_cingulate_ACCpatterns
+  - dataset/STs_dHCP_374_subjects.yaml
   - label: PCS_asymetry
   - model: SimCLR_fusion
   - mode: classifier
-  - augmentations: foldlabel
+  - augmentations: no_augmentation
   - backbone: ConvNet
   - platform: cuda_not_brainvisa
   - trainer: default

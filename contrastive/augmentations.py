@@ -284,12 +284,17 @@ class RemoveRandomBranchTensor(object):
         # log.debug(f"arr_skel.shape = {arr_skel.shape}")
         # log.debug(f"arr_foldlabel.shape = {arr_foldlabel.shape}")
         assert (arr_skel.shape == arr_foldlabel.shape)
-        assert (self.percentage >= 0)
 
-        if self.variable_percentage:
-            percentage = np.random.uniform(0, self.percentage)
+        # percentage can be a tuple or an int
+        if type(self.percentage) != int:
+            assert ((int(self.percentage[0]) >= 0) & (int(self.percentage[1]) >= 0))
+            percentage = np.random.uniform(int(self.percentage[0]), int(self.percentage[1]))
         else:
-            percentage = self.percentage
+            assert (self.percentage >= 0)
+            if self.variable_percentage:
+                percentage = np.random.uniform(0, self.percentage)
+            else:
+                percentage = self.percentage
         log.debug("expected percentage "
                   f"(RemoveRandomBranchTensor) = {percentage}")
 

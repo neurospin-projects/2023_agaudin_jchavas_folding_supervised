@@ -203,6 +203,22 @@ class ContrastiveLearnerFusion(pl.LightningModule):
 
         self.load_state_dict(model_dict)
 
+
+        # freeze all layers except last
+        #for name, para in self.named_parameters():
+        #    if ("2a" not in name) & ("projection_head" not in name):
+        #        para.requires_grad = False
+        #    print("-"*20)
+        #    print(f"name: {name}")
+        #    print("values")
+        #    print(para)
+
+        # freeze whole encoder
+        if encoder_only:
+            for name, para in self.named_parameters():
+                if "encoder" in name:
+                    para.requires_grad = False
+
         not_loaded_layers = [
             key for key in model_dict.keys() if key not in loaded_layers]
         # print(f"Loaded layers = {loaded_layers}")

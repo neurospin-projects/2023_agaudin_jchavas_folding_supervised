@@ -122,7 +122,7 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
                         yaml.dump(omegaconf.OmegaConf.to_yaml(cfg), file)
 
                     # apply the functions
-                    compute_embeddings(cfg)
+                    #compute_embeddings(cfg)
                     # reload config for train_classifiers to work properly
                     cfg = omegaconf.OmegaConf.load(
                         sub_dir+'/.hydra/config_classifiers.yaml')
@@ -135,7 +135,7 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
                         cfg = omegaconf.OmegaConf.load(
                             sub_dir+'/.hydra/config_classifiers.yaml')
                         cfg.use_best_model = True
-                        compute_embeddings(cfg)
+                        #compute_embeddings(cfg)
                         # reload config for train_classifiers to work properly
                         cfg = omegaconf.OmegaConf.load(
                             sub_dir+'/.hydra/config_classifiers.yaml')
@@ -160,7 +160,8 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-29",
-datasets=["cingulate_schiz", "cingulate_schiz_left"], short_name='cing_schiz',
-label='diagnosis',
-classifier_name='svm', overwrite=False, use_best_model=True, verbose=False)
+#STs_HCP_full_top-separated
+#STs_dHCP_374_subjects
+embeddings_pipeline("/neurospin/dico/jlaval/Runs/01_deep_supervised/Program/Output/morpho/",
+datasets=['STs_dHCP_374_subjects'], short_name='STs_dHCP_374_subjects',
+classifier_name='svm', overwrite=True, use_best_model=False, verbose=False)

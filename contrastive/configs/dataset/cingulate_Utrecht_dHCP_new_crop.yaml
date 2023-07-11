@@ -1,0 +1,20 @@
+# @package _global_
+dataset_name: cingulate_Utrecht_dHCP_new_crop
+pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/utrecht_dHCP/crops/2mm/CINGULATE_40wks/mask/Rskeleton.pkl
+# Beware: subjects all are only the test subjects ? (SVM)
+numpy_all: /neurospin/dico/data/deep_folding/current/datasets/utrecht_dHCP/crops/2mm/CINGULATE_40wks/mask/Rskeleton.npy
+# Beware: subjects all are only the test subjects ? (SVM)
+subjects_all: /neurospin/dico/data/deep_folding/current/datasets/utrecht_dHCP/crops/2mm/CINGULATE_40wks/mask/Rskeleton_subject.csv
+crop_dir: /neurospin/dico/data/deep_folding/current/datasets/utrecht_dHCP/crops/2mm/CINGULATE_40wks/mask/Rcrops
+foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/utrecht_dHCP/crops/2mm/CINGULATE_40wks/mask/Rlabels
+foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/utrecht_dHCP/crops/2mm/CINGULATE_40wks/mask/Rlabel.npy
+subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/utrecht_dHCP/crops/2mm/CINGULATE_40wks/mask/Rlabel_subject.csv
+crop_file_suffix: _cropped_skeleton.nii.gz
+pickle_benchmark: 
+# Train_val complementary to test file (SVM)
+# Here train_val contains all subjects as this dataset is not used for testing
+train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/utrecht_dHCP/crops/2mm/CINGULATE_40wks/mask/Rskeleton_subject_train_val.csv
+subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/utrecht_dHCP/crops/2mm/CINGULATE_40wks/mask/preterm_labels.csv
+subject_column_name: 'Subject'
+label_names: ["preterm"]
+n_max: 1080

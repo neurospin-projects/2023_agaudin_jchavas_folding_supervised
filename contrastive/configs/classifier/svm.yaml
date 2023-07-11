@@ -1,12 +1,12 @@
 # @package _global_
 # define path and parameters needed for the classifier on the latent space
 classifier_name: svm
-training_embeddings: /neurospin/dico/data/deep_folding/papers/ipmi2023/models/beta-VAE/n_10/#5/cingulate_ACCpatterns_1_embeddings/full_embeddings.csv
+training_embeddings: /neurospin/dico/jlaval/Runs/01_deep_supervised/Program/Output/PCA/Preterm_Preterm_test/pca_embeddings_10.csv
 test_embeddings: 
 embeddings_of_interest:
 results_save_path:
 labels_of_interest:
-class_max_epochs: 5000
-n_repeat: 250
+class_max_epochs: -1
+n_repeat: 5
 classifier_seed: 24
 classifier_test_size: 0.2
