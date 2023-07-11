@@ -5,9 +5,11 @@ training_embeddings: /neurospin/dico/jlaval/Runs/01_deep_supervised/Program/Outp
 test_embeddings: 
 embeddings_of_interest:
 results_save_path:
-training_labels: /neurospin/dico/data/deep_folding/current/datasets/utrecht_dHCP/crops/2mm/CINGULATE_40wks/mask/preterm_labels_test.csv
+training_labels: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/preterm_labels.csv
+#training_labels: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/hcp/participants.csv
+#training_labels: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/subjects_labels.csv
 labels_of_interest:
-class_max_epochs: 5000
-n_repeat: 250
+class_max_epochs: -1
+n_repeat: 5
 classifier_seed: 24
 classifier_test_size: 0.2

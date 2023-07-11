@@ -1,0 +1,16 @@
+# @package dataset.STs_UkBioBank
+dataset_name: STs_UkBioBank
+pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/S.T.s.baby/mask/Rskeleton.pkl
+numpy_all: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/S.T.s.baby/mask/Rskeleton.npy
+subjects_all: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/S.T.s.baby/mask/Rskeleton_subject.csv
+crop_dir: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/S.T.s.baby/mask/Rcrops
+foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/S.T.s.baby/mask/Rlabels
+foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/S.T.s.baby/mask/Rlabel.npy
+subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/crops/2mm/S.T.s.baby/mask/Rlabel_subject.csv
+crop_file_suffix: _cropped_skeleton.nii.gz
+pickle_benchmark: 
+train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/UkBioBank/subjects_full.csv
+subject_labels_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/UkBioBank/participants.csv
+subject_column_name: 'Subject'
+label_names: ["Gender"]
+input_size: (1, 22, 49, 46)
