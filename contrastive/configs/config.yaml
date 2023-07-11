@@ -1,10 +1,10 @@
 defaults:
   - _self_
   - hydra: local
-  - dataset/S.T.s_dHCP_374_subjects
+  - dataset/STs_dHCP_374_subjects.yaml
   - model: SimCLR_supervised
-  - mode: encoder
-  - augmentations: foldlabel
+  - mode: regresser
+  - augmentations: no_augmentation
   - backbone: ConvNet
   - platform: cuda_not_brainvisa
   - trainer: default
