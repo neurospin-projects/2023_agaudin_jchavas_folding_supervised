@@ -6,7 +6,7 @@ from contrastive.utils.models_database import *
 
 # construct the database
 
-folders = ["/neurospin/dico/agaudin/Runs/09_new_repo/Output/converter_test/"]
+folders = ["/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-07-11/grid_search_ACC_asymetry/"]
 bdd = []
 visited = []
 
@@ -23,14 +23,14 @@ for col in bdd.columns:
     print(col, bdd[col][0])
 
 # remove useless columns
-bdd = post_process_bdd_models(bdd, hard_remove=["partition"], git_branch=False)
+bdd = post_process_bdd_models(bdd, hard_remove=[], git_branch=False)
 # the hard remove are the ones containing [] char in their fields.
 # They are (for now) patch_size, partition, numpy_all
 
 
 # save the database
-name = "schiz_strat_bis"
-save_path = "/neurospin/dico/agaudin/Runs/09_new_repo/Output/converter_test/"
+name = "ACC_asymetry"
+save_path = "/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-07-11/grid_search_ACC_asymetry/"
 bdd.to_csv(save_path+f"bdd_{name}.csv", index=True)
 
 

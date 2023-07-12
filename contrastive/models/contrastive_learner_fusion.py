@@ -896,6 +896,9 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                         lambda_gs_crit=self.config.wandb.lambda_gs_crit)
                     self.loggers[1].log_metrics({'gs_criterion': gs_crit},
                                                 step=self.current_epoch)
+                    self.loggers[0].experiment.add_scalar('gs_criterion',
+                                                          gs_crit,
+                                                          self.current_epoch)
                 
 
             # save the model that has the best val auc during train

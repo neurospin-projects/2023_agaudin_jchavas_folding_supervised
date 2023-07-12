@@ -3,11 +3,11 @@ defaults:
   - augmentations: foldlabel
   - backbone: ConvNet
   - classifier: svm
-  - dataset/cingulate_ACCpatterns
-  - dataset/left_cingulate_ACCpatterns
+  - dataset/cingulate_schiz_strat_bis
+  - dataset/cingulate_schiz_left_strat_bis
   - embeddings: embeddings
   - hydra: local
-  - label: PCS_asymetry
+  - label: diagnosis
   - mode: classifier
   - model: SimCLR_fusion
   - platform: cuda_not_brainvisa
