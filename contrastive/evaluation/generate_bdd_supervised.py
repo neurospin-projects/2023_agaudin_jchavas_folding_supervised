@@ -6,7 +6,7 @@ from contrastive.utils.models_database import *
 
 # construct the database
 
-folders = ["/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-07-11/grid_search_ACC_asymetry/"]
+folders = ["/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/gs_cing_schiz/"]
 bdd = []
 visited = []
 
@@ -29,8 +29,8 @@ bdd = post_process_bdd_models(bdd, hard_remove=[], git_branch=False)
 
 
 # save the database
-name = "ACC_asymetry"
-save_path = "/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-07-11/grid_search_ACC_asymetry/"
+name = "cing_schiz"
+save_path = "/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/gs_cing_schiz/"
 bdd.to_csv(save_path+f"bdd_{name}.csv", index=True)
 
 
