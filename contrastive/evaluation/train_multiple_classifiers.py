@@ -9,7 +9,7 @@ import os
 
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import auc, roc_curve, roc_auc_score, accuracy_score
-from sklearn.model_selection import cross_val_predict, train_test_split
+from sklearn.model_selection import cross_val_predict, train_test_split, permutation_test_score, StratifiedKFold
 
 from pqdm.processes import pqdm
 from joblib import cpu_count
@@ -158,7 +158,8 @@ def get_average_model(labels_df):
 
 
 def post_processing_results(labels, embeddings, Curves, aucs, accuracies,
-                            values, columns_names, mode, results_save_path):
+                            values, columns_names, mode, results_save_path,
+                            pvalues_auc=None, perm_scores_mean=None, perm_scores_std=None):
     """Get the mean and the median AUC and accuracy, plot the ROC curves and 
     the generated files."""
 
@@ -215,6 +216,12 @@ def post_processing_results(labels, embeddings, Curves, aucs, accuracies,
     # DEBUG embeddings.to_csv(results_save_path+f"/effective_embeddings.csv",
     #                         index=True)
 
+    # add permutation auc / pvalue in values if True in config
+    if pvalues_auc!=None:
+        # for now added only in cross_val mode
+        if mode in pvalues_auc.keys():
+            values[f'{mode}_permutations'] = \
+                [np.mean(pvalues_auc[mode]), np.mean(perm_scores_mean[mode]), np.mean(perm_scores_std[mode])]
 
 def train_nn_classifiers(config):
     """Sets up the save paths, loads the embeddings and then loops 
@@ -381,9 +388,14 @@ def train_one_svm_classifier(config, inputs, i=0):
     # SVC predict_proba
     model = SVC(C=1, kernel='linear', probability=True, class_weight='balanced',
                 max_iter=config.class_max_epochs, random_state=i)
-    labels_proba = cross_val_predict(model, X, Y, cv=5, method='predict_proba')
+    cv = StratifiedKFold(5)
+    labels_proba = cross_val_predict(model, X, Y, cv=cv, method='predict_proba')
     curves, roc_auc, accuracy = compute_indicators(Y, labels_proba)
     outputs['proba_of_1'] = labels_proba[:, 1]
+
+    if config.permutations:
+        _, perm_score, pvalue = permutation_test_score(model, X, Y, scoring='roc_auc', cv=cv, n_permutations=1000)
+        perm_score_mean, perm_score_std = np.mean(perm_score), np.std(perm_score)
 
     # SVR
     # model = LinearSVR(max_iter=config.class_max_epochs,
@@ -397,6 +409,10 @@ def train_one_svm_classifier(config, inputs, i=0):
     outputs['curves'] = curves
     outputs['roc_auc'] = roc_auc
     outputs['accuracy'] = accuracy
+    if config.permutations:
+        outputs['pvalue_auc'] = pvalue
+        outputs['perm_score_mean'] = perm_score_mean
+        outputs['perm_score_std'] = perm_score_std
 
     if test_embs_path:
         labels_pred_test = model.predict(X_test)
@@ -466,6 +482,10 @@ def train_svm_classifiers(config):
     Curves = {'cross_val': []}
     aucs = {'cross_val': []}
     accuracies = {'cross_val': []}
+    if config.permutations:
+        pvalues_auc = {'cross_val': []}
+        perm_scores_mean = {'cross_val': []}
+        perm_scores_std = {'cross_val': []}
     proba_matrix = np.zeros((labels.shape[0], config.n_repeat))
 
     if test_embs_path:
@@ -510,10 +530,18 @@ def train_svm_classifiers(config):
         curves = o['curves']
         roc_auc = o['roc_auc']
         accuracy = o['accuracy']
+        if config.permutations:
+            pvalue_auc = o['pvalue_auc']
+            perm_score_mean = o['perm_score_mean']
+            perm_score_std = o['perm_score_std']
         proba_matrix[:, i] = probas_pred
         Curves['cross_val'].append(curves)
         aucs['cross_val'].append(roc_auc)
         accuracies['cross_val'].append(accuracy)
+        if config.permutations:
+            pvalues_auc['cross_val'].append(pvalue_auc)
+            perm_scores_mean['cross_val'].append(perm_score_mean)
+            perm_scores_std['cross_val'].append(perm_score_std)
 
         if test_embs_path:
             curves = o['curves_test']
@@ -532,9 +560,12 @@ def train_svm_classifiers(config):
     # post processing (mainly plotting graphs)
     values = {}
     mode = 'cross_val'
+    if not config.permutations:
+        pvalues_auc, perm_scores_mean, perm_scores_std = None, None, None
     post_processing_results(labels, embeddings, Curves, aucs,
                             accuracies, values, columns_names,
-                            mode, results_save_path)
+                            mode, results_save_path, pvalues_auc,
+                            perm_scores_mean, perm_scores_std)
     print(f"results_save_path = {results_save_path}")
     with open(results_save_path+"/values.json", 'w+') as file:
         json.dump(values, file)
@@ -543,8 +574,8 @@ def train_svm_classifiers(config):
         values = {}
         mode = 'test'
         post_processing_results(test_labels, test_embeddings, Curves, aucs,
-                                accuracies, values, columns_names, mode,
-                                results_save_path)
+                                accuracies, values, columns_names,
+                                mode, results_save_path)
 
         with open(results_save_path+"/values_test.json", 'w+') as file:
             json.dump(values, file)

@@ -59,7 +59,7 @@ def preprocess_config(sub_dir, datasets, label, folder_name, classifier_name='sv
 # creates embeddings and train classifiers for all models contained in folder
 @ignore_warnings(category=ConvergenceWarning)
 def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_name='svm',
-                        overwrite=False, use_best_model=False, verbose=False):
+                        overwrite=False, use_best_model=False, permutations=True, verbose=False):
     """Pipeline to generate automatically the embeddings and compute the 
     associated aucs for all the models contained in a given directory.
 
@@ -112,6 +112,7 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
                     # what is needed for classifiers
                     cfg = preprocess_config(sub_dir, datasets, label, folder_name,
                                             classifier_name=classifier_name)
+                    cfg.permutations = permutations
                     if verbose:
                         print("CONFIG FILE", type(cfg))
                         print(json.dumps(omegaconf.OmegaConf.to_container(
@@ -155,6 +156,7 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
                                     classifier_name=classifier_name,
                                     overwrite=overwrite,
                                     use_best_model=use_best_model,
+                                    permutations=permutations,
                                     verbose=verbose)
         else:
             print(f"{sub_dir} is a file. Continue.")
@@ -163,5 +165,5 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
 #STs_HCP_full_top-separated
 #STs_dHCP_374_subjects
 embeddings_pipeline("/neurospin/dico/jlaval/Runs/01_deep_supervised/Program/Output/morpho/",
-datasets=['STs_dHCP_374_subjects'], short_name='STs_dHCP_374_subjects',
-classifier_name='svm', overwrite=True, use_best_model=False, verbose=False)
+datasets=['STs_dHCP_374_subjects'], label='Preterm_28', short_name='STs_dHCP_374_subjects',
+classifier_name='svm', overwrite=True, use_best_model=False, permutations=True, verbose=False)
