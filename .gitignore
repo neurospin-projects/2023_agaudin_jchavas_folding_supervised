@@ -133,6 +133,7 @@ contrastive/notebooks/*.bck
 contrastive/notebooks/*.bck.minf
 contrastive/multirun
 contrastive/checkpoints
+contrastive/wandb
 
 # generated src folders
 src
