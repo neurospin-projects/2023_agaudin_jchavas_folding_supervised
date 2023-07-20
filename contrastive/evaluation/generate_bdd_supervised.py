@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 from datetime import datetime
 
@@ -6,8 +7,9 @@ from contrastive.utils.models_database import *
 
 # construct the database
 
-folders = ["/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step1/4relu-relu/",
-           "/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step1/5None-sigmoid"]
+folders = ["/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2/STs_both/",
+           "/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2/STs_R/",
+           "/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2/STs_L/"]
 bdd = []
 visited = []
 
@@ -30,13 +32,13 @@ bdd = post_process_bdd_models(bdd, hard_remove=[], git_branch=False)
 
 
 # save the database
-name = "activations"
-save_path = "/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/"
-bdd.to_csv(save_path+f"bdd_{name}.csv", index=True)
+name = "STs"
+save_path = "/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2"
+bdd.to_csv(os.path.join(save_path, f"bdd_{name}.csv"), index=True)
 
 
 # write the little readme
-with open(save_path+f"README_{name}.txt", 'w') as file:
+with open(os.path.join(save_path, f"README_{name}.txt"), 'w') as file:
     file.write("Contient les paramètres de tous les modèles d'intérêt "
                "(dossiers précisés en-dessous). "
                "La base est faite en sorte que seuls les paramètres "
