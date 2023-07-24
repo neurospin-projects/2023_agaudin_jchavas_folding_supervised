@@ -42,6 +42,7 @@ import os
 # os.environ['MPLCONFIGDIR'] = os.getcwd()+'/.config_mpl'
 
 import hydra
+import numpy.random as rd
 import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
@@ -69,6 +70,12 @@ We use the following definitions:
 - output, the space after the projection head.
   The elements are called output vectors
 """
+
+
+def get_train_seed():
+    """Get a random seed for training to avoid collisions when using wandb."""
+    train_seed = rd.randint(256)
+    return train_seed
 
 
 @hydra.main(config_name='config', version_base="1.1", config_path="configs")
@@ -180,4 +187,5 @@ def train(config):
 
 
 if __name__ == "__main__":
+    omegaconf.OmegaConf.register_new_resolver("get_train_seed", get_train_seed)
     train()
