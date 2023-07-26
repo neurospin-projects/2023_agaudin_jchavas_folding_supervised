@@ -16,7 +16,7 @@ setup(
 		              'orca',
                       'matplotlib',
                       'torch',
-                      'tqdm==4.51.0',
+                      'tqdm',
                       'pqdm',
                       'torchvision',
                       'torch-summary',

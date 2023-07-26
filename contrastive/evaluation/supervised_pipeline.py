@@ -223,7 +223,7 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2/STs_both",
+pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2/S.T.s./STs_both_2",
          datasets=["STs_schiz_R_strat_bis", "STs_schiz_L_strat_bis"],
          label='diagnosis',
          short_name='schiz_diag', overwrite=False, use_best_model=True)

@@ -3,7 +3,8 @@ defaults:
   - augmentations: foldlabel
   - backbone: ConvNet
   - classifier: svm
-  - dataset/Sor_schiz_R_strat_bis
+  - dataset/pericalcarine_schiz_R_strat_bis
+  - dataset/pericalcarine_schiz_L_strat_bis
   - embeddings: embeddings
   - hydra: local
   - label: diagnosis

@@ -166,7 +166,8 @@ def train(config):
         logger=loggers,
         #flush_logs_every_n_steps=config.nb_steps_per_flush_logs,
         log_every_n_steps=config.log_every_n_steps,
-        auto_lr_find=True)
+        #auto_lr_find=True
+        )
 
     # # find the best lr
     # log.info("Find the best learning rate...")
