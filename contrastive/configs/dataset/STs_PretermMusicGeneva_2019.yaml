@@ -1,0 +1,14 @@
+# @package dataset.STs_PretermMusicGeneva_2019
+dataset_name: STs_PretermMusicGeneva_2019
+numpy_all: /neurospin/dico/data/deep_folding/current/datasets/PretermMusicGeneva_2019/crops/2mm/S.T.s.baby/mask/Rskeleton.npy
+subjects_all: /neurospin/dico/data/deep_folding/current/datasets/PretermMusicGeneva_2019/crops/2mm/S.T.s.baby/mask/Rskeleton_subject.csv
+crop_dir: /neurospin/dico/data/deep_folding/current/datasets/PretermMusicGeneva_2019/crops/2mm/S.T.s.baby/mask/Rcrops
+foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/PretermMusicGeneva_2019/crops/2mm/S.T.s.baby/mask/Rlabels
+foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/PretermMusicGeneva_2019/crops/2mm/S.T.s.baby/mask/Rlabel.npy
+subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/PretermMusicGeneva_2019/crops/2mm/S.T.s.baby/mask/Rlabel_subject.csv
+crop_file_suffix: _cropped_skeleton.nii.gz
+pickle_benchmark:
+train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/PretermMusicGeneva_2019/crops/2mm/S.T.s.baby/mask/train_val_music_subject.csv
+subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/PretermMusicGeneva_2019/crops/2mm/S.T.s.baby/mask/music_labels.csv
+subject_column_name: 'Subject'
+input_size: (1, 22, 49, 46)
