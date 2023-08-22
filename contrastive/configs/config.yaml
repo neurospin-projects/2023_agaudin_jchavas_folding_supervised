@@ -3,11 +3,11 @@ defaults:
   - augmentations: foldlabel
   - backbone: ConvNet
   - classifier: svm
-  - dataset/pericalcarine_schiz_R_strat_bis
-  - dataset/pericalcarine_schiz_L_strat_bis
+  - dataset/cingulate_HCP_stratified_left
+  - dataset/cingulate_HCP_stratified_right
   - embeddings: embeddings
   - hydra: local
-  - label: diagnosis
+  - label: Flanker_AgeAdj_class
   - mode: classifier
   - model: SimCLR_fusion
   - platform: cuda_not_brainvisa
