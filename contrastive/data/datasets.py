@@ -232,12 +232,13 @@ class ContrastiveDatasetFusion():
 
         # Computes the outputs as tuples
         concatenated_tuple = ()
+        # loop over input datasets
         for reg in range(len(filenames)):
             if self.config.mode == "decoder":
                 view3 = self.transform3(samples[reg])
                 views = torch.stack((view1, view2, view3), dim=0)
                 if self.config.with_labels:
-                    tuple_with_path = ((views, labels, filenames[reg]),)
+                    tuple_with_path = ((views, filenames[reg], labels),)
                 else:
                     tuple_with_path = ((views, filenames[reg]),)
             else:
@@ -245,7 +246,7 @@ class ContrastiveDatasetFusion():
                 if self.config.with_labels:
                     view3 = self.transform3[reg](samples[reg])
                     tuple_with_path = (
-                        (views, labels[reg], filenames[reg], view3),)
+                        (views, filenames[reg], labels[reg], view3),)
                 else:
                     tuple_with_path = ((views, filenames[reg]),)
             concatenated_tuple += tuple_with_path

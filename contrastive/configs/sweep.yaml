@@ -1,0 +1,26 @@
+program: train.py
+project: 2023_agaudin_jchavas_folding_supervised-contrastive
+method: bayes
+metric:
+  goal: minimize
+  name: gs_criterion
+parameters:
+  lr:
+    distribution: log_uniform_values
+    min: 0.0001
+    max: 0.1
+  drop_rate:
+    min: 0.
+    max: 0.2
+  sigma_noise:
+    min: 0.
+    max: 0.5
+  max_angle:
+    min: 0
+    max: 6
+
+command:
+  - ${env}
+  - python3
+  - ${program}
+  - ${args_no_hyphens}

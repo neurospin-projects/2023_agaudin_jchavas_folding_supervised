@@ -13,7 +13,8 @@ from sklearn.exceptions import ConvergenceWarning
 
 # Auxilary function used to process the config linked to the model.
 # For instance, change the embeddings save path to being next to the model.
-def preprocess_config(sub_dir, datasets, label, folder_name, classifier_name='svm', verbose=False):
+def preprocess_config(sub_dir, datasets, label, folder_name, classifier_name='svm', test_only=False,
+                       verbose=False):
     """Loads the associated config of the given model and changes what has to be done,
     mainly the datasets, the classifier type and a few other keywords.
     
@@ -24,6 +25,8 @@ def preprocess_config(sub_dir, datasets, label, folder_name, classifier_name='sv
         - folder_name: str. Name of the directory where to store both embeddings and aucs.
         - classifier_name: str. Should correspond to a classifier yaml file's name 
         (currently either 'svm' or 'neural_network').
+        - test_only: bool. If True, doesn't compute on the full dataset, but only on the
+        test part.
         - verbose: bool. Verbose.
         
     Output:
@@ -48,8 +51,12 @@ def preprocess_config(sub_dir, datasets, label, folder_name, classifier_name='sv
     cfg.model_path = sub_dir
     cfg.embeddings_save_path = \
         sub_dir + f"/{folder_name}_embeddings"
-    cfg.training_embeddings = \
-        sub_dir + f"/{folder_name}_embeddings/full_embeddings.csv"
+    if test_only:
+        cfg.training_embeddings = \
+            sub_dir + f"/{folder_name}_embeddings/test_embeddings.csv"
+    else:
+        cfg.training_embeddings = \
+            sub_dir + f"/{folder_name}_embeddings/full_embeddings.csv"
     cfg.apply_transformations = False
 
     return cfg
@@ -59,7 +66,7 @@ def preprocess_config(sub_dir, datasets, label, folder_name, classifier_name='sv
 # creates embeddings and train classifiers for all models contained in folder
 @ignore_warnings(category=ConvergenceWarning)
 def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_name='svm',
-                        overwrite=False, use_best_model=False, verbose=False):
+                        overwrite=False, use_best_model=False, test_only=False, verbose=False):
     """Pipeline to generate automatically the embeddings and compute the 
     associated aucs for all the models contained in a given directory.
 
@@ -75,6 +82,8 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
         - overwrite: bool. Redo the process on models where embeddings already exist.
         - use_best_model: bool. Use the best model saved during to generate embeddings. 
         The 'normal' model is always used, the best is only added.
+        - test_only: bool. If True, doesn't compute on the full dataset, but only on the
+        test part.
         - verbose: bool. Verbose.
     """
 
@@ -111,7 +120,8 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
                     # get the config and correct it to suit
                     # what is needed for classifiers
                     cfg = preprocess_config(sub_dir, datasets, label, folder_name,
-                                            classifier_name=classifier_name)
+                                            classifier_name=classifier_name, 
+                                            test_only=test_only)
                     if verbose:
                         print("CONFIG FILE", type(cfg))
                         print(json.dumps(omegaconf.OmegaConf.to_container(
@@ -140,8 +150,12 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
                         cfg = omegaconf.OmegaConf.load(
                             sub_dir+'/.hydra/config_classifiers.yaml')
                         cfg.use_best_model = True
-                        cfg.training_embeddings = cfg.embeddings_save_path + \
-                            '_best_model/full_embeddings.csv'
+                        if test_only:
+                            cfg.training_embeddings = cfg.embeddings_save_path + \
+                            '_best_model/test_embeddings.csv'
+                        else:
+                            cfg.training_embeddings = cfg.embeddings_save_path + \
+                                '_best_model/full_embeddings.csv'
                         cfg.embeddings_save_path = \
                             cfg.embeddings_save_path + '_best_model'
                         train_classifiers(cfg)
@@ -155,12 +169,13 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
                                     classifier_name=classifier_name,
                                     overwrite=overwrite,
                                     use_best_model=use_best_model,
+                                    test_only=test_only,
                                     verbose=verbose)
         else:
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/volatile/jc225751/Runs/61_classifier_regresser/Program/Output/2023-06-26/SimCLR",
-datasets=['cingulate_ACCpatterns'], short_name='cing_ACC_right',
-label='Right_PCS',
-classifier_name='svm', overwrite=True, use_best_model=True, verbose=False)
+embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-29",
+datasets=["cingulate_schiz", "cingulate_schiz_left"], short_name='cing_schiz',
+label='diagnosis', classifier_name='svm', overwrite=False, use_best_model=True,
+test_only=False, verbose=False)

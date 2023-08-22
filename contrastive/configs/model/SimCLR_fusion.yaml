@@ -1,12 +1,12 @@
 # @package _global_
-model: SimCLR_supervised
-with_labels: True
+model: SimCLR_fusion
 temperature_initial: 0.1
 temperature: 0.1
 temperature_supervised: 0.3
 sigma_labels: 2.0
 sigma: 5
-drop_rate: 0.2
-proportion_pure_contrastive: 1.0  # only used in the encoder case
+drop_rate: 0.05
 pretrained_model_path: #/path/to/FILE.ckpt
 load_encoder_only: True
+fusioned_latent_space_size: 10
+converter_activation: relu
