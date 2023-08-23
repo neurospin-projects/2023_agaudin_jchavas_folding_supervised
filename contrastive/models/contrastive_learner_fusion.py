@@ -317,12 +317,20 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         """Adam optimizer"""
         optimizer = torch.optim.Adam(
             filter(lambda p: p.requires_grad, self.parameters()),
-            lr=self.lr,
+            lr=self.config.lr,
             weight_decay=self.config.weight_decay)
-        # steps = 140
-        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, steps)
+        scheduler = torch.optim.lr_scheduler.StepLR(
+            optimizer,
+            step_size=self.config.step_size,
+            gamma=self.config.gamma)
 
-        return optimizer
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "interval": "epoch"
+            }
+        }
 
 
     def nt_xen_loss(self, z_i, z_j):
@@ -419,6 +427,8 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             "loss": batch_loss,
             # optional for batch logging purposes
             "log": logs}
+
+        batch_dictionary['learning_rate'] = self.optimizers().param_groups[0]['lr'],
 
         if self.config.with_labels:
             # add label_loss (a part of the loss) to log
@@ -754,14 +764,17 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         if self.config.mode in ['classifier', 'regresser']:
             train_auc = self.compute_output_auc(
                 self.sample_data.train_dataloader())
+            
             # log train auc for tensorboard
             self.loggers[0].experiment.add_scalar(
                 "AUC/Train",
                 train_auc,
                 self.current_epoch)
+            
             # log train auc for wandb (if used)
             if self.config.wandb.grid_search:
                 self.loggers[1].log_metrics({'AUC/Train': train_auc}, step=self.current_epoch)
+
             # save train_auc to use it during validation end step
             auc_dict = {'train_auc': train_auc}
             save_path = './' + self.loggers[0].experiment.log_dir + '/train_auc.json'
@@ -783,10 +796,16 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             "Loss/Train",
             avg_loss,
             self.current_epoch)
+
+        self.loggers[0].experiment.add_scalar(
+            "Learning rate",
+            self.optimizers().param_groups[0]['lr'],
+            self.current_epoch)
+
         # logging using wandb logger (if used)
         if self.config.wandb.grid_search:
             self.loggers[1].log_metrics({'Loss/Train': avg_loss}, 
-                                    step=self.current_epoch)
+                                        step=self.current_epoch)
         # if score != 0:
         #     self.loggers[0].experiment.add_scalar(
         #         "Score/Train",
@@ -908,8 +927,11 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                     self.loggers[0].experiment.add_scalar('gs_criterion',
                                                           gs_crit,
                                                           self.current_epoch)
+            # logs AUC using tensorboard logger
+            self.loggers[0].experiment.add_scalar('AUC/val',
+                                                  val_auc,
+                                                  self.current_epoch)
                 
-
             # save the model that has the best val auc during train
             self.save_best_auc_model(val_auc, save_path='./logs/')
 
