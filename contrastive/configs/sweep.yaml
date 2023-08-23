@@ -10,8 +10,8 @@ parameters:
     min: 0.0001
     max: 0.1
   drop_rate:
-    min: 0.
-    max: 0.2
+    min: 0.05
+    max: 0.3
   # sigma_noise:
   #   min: 0.
   #   max: 0.5

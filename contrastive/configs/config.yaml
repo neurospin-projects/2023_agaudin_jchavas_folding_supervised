@@ -11,9 +11,9 @@ defaults:
   - mode: classifier
   - model: SimCLR_fusion
   - platform: cuda_not_brainvisa
-  - projection_head: relu
+  - projection_head: sigmoid
   - trainer: default
-  - wandb/identity
+  - wandb: sweep
   - override hydra/job_logging: custom
 
 data: ${oc.dict.values:dataset}

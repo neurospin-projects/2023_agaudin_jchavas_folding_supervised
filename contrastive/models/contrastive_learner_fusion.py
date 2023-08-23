@@ -148,6 +148,10 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         else:
             self.class_weights = None
 
+        # Keeps track of losses
+        self.training_step_outputs = []
+        self.validation_step_outputs = []
+
     def forward(self, x):
         embeddings = []
         for i in range(self.n_datasets):
@@ -407,6 +411,8 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         # logs - a dictionary
         #self.log('Loss/Train', float(batch_loss), on_epoch=True)
         logs = {"train_loss": float(batch_loss)}
+
+        self.training_step_outputs.append(batch_loss)
 
         batch_dictionary = {
             # REQUIRED: It is required for us to return "loss"
@@ -706,7 +712,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             self.loggers[1].log_metrics({'AUC/Val_best': max(current_auc, best_auc)},
                                         step=self.current_epoch)
 
-    def training_epoch_end(self, outputs):
+    def on_train_epoch_end(self):
         """Computation done at the end of the epoch"""
 
         # score = 0
@@ -770,7 +776,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             self.plot_views()
 
         # calculates average loss
-        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        avg_loss = torch.stack([x for x in self.training_step_outputs]).mean()
 
         # logging using tensorboard logger
         self.loggers[0].experiment.add_scalar(
@@ -786,6 +792,8 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         #         "Score/Train",
         #         score,
         #         self.current_epoch)
+
+        self.training_step_outputs.clear()  # free memory
 
 
     def validation_step(self, val_batch, batch_idx):
@@ -828,6 +836,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             "val_loss": batch_loss,
             # optional for batch logging purposes
             "log": logs}
+        self.validation_step_outputs.append(batch_loss)
 
         if self.config.with_labels:
             # add label_loss (a part of the loss) to log
@@ -838,7 +847,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         return batch_dictionary
 
 
-    def validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self):
         """Computation done at the end of each validation epoch"""
 
         # score = 0
@@ -905,7 +914,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             self.save_best_auc_model(val_auc, save_path='./logs/')
 
         # calculates average loss
-        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
+        avg_loss = torch.stack([x for x in self.validation_step_outputs]).mean()
 
         # logs losses using tensorboard logger
         self.loggers[0].experiment.add_scalar(
@@ -943,3 +952,5 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                     'epoch': self.current_epoch, 'best_loss': avg_loss}
                 with open(save_path+"best_model_params.json", 'w') as file:
                     json.dump(best_model_params, file)
+
+        self.validation_step_outputs.clear()  # free memory
