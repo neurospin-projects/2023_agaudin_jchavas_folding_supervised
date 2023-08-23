@@ -700,7 +700,6 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         else:
             return X_tsne
 
-
     def save_best_auc_model(self, current_val_auc, current_train_auc, save_path='./logs/'):
         """Saves best parameters if best val auc"""
         if self.current_epoch == 0:
@@ -730,6 +729,47 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                                         step=self.current_epoch)
             self.loggers[1].log_metrics({'AUC/Train_best': best_train_auc},
                                         step=self.current_epoch)
+        return best_val_auc, best_train_auc
+    
+    def save_best_criterion_model(self, current_val_auc, current_train_auc, save_path='./logs/'):
+        """Saves best parameters if best criterion"""
+        if self.current_epoch == 0:
+            best_val_auc = 0
+            best_train_auc = 0
+            best_criterion = 0
+        elif self.current_epoch > 0:
+            with open(save_path + "best_model_params.json", 'r') as file:
+                best_model_params = json.load(file)
+                best_val_auc = best_model_params['best_val_auc']
+                best_train_auc = best_model_params['best_train_auc']
+                best_criterion = best_model_params['best_criterion']
+
+        current_criterion = compute_grid_search_criterion(
+                                current_train_auc,
+                                current_val_auc,
+                                lambda_gs_crit=self.config.wandb.lambda_gs_crit)
+
+        if ((current_criterion < best_criterion) or (best_criterion == 0)):
+            torch.save({'state_dict': self.state_dict()},
+                       save_path + 'best_model_weights.pt')
+            best_model_params = {
+                'epoch': self.current_epoch,
+                'best_val_auc': current_val_auc,
+                'best_train_auc': current_train_auc,
+                'best_criterion': current_criterion}
+            with open(save_path + "best_model_params.json", 'w') as file:
+                json.dump(best_model_params, file)
+            best_val_auc = current_val_auc
+            best_train_auc = current_train_auc
+            best_criterion = current_criterion
+        
+        # log the best AUC for wandb (if used)
+        if self.config.wandb.grid_search:
+            self.loggers[1].log_metrics({'AUC/Val_best': best_val_auc},
+                                        step=self.current_epoch)
+            self.loggers[1].log_metrics({'AUC/Train_best': best_train_auc},
+                                        step=self.current_epoch)
+            
         return best_val_auc, best_train_auc
 
     def on_train_epoch_end(self):
@@ -950,7 +990,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                                                   self.current_epoch)
                 
             # save the model that has the best val auc during train
-            best_val_auc, best_train_auc = self.save_best_auc_model(val_auc, train_auc, save_path='./logs/')
+            best_val_auc, best_train_auc = self.save_best_criterion_model(val_auc, train_auc, save_path='./logs/')
 
             # log best grid search criterion for wandb (if used)
             if self.config.wandb.grid_search:
