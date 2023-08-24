@@ -685,26 +685,36 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             return X_tsne
 
 
-    def save_best_auc_model(self, current_auc, save_path='./logs/'):
+    def save_best_auc_model(self, current_val_auc, current_train_auc, save_path='./logs/'):
+        """Saves aucs and model weights if best val auc"""
         if self.current_epoch == 0:
-            best_auc = 0
+            best_val_auc = 0
+            best_train_auc = 0
         elif self.current_epoch > 0:
             with open(save_path + "best_model_params.json", 'r') as file:
                 best_model_params = json.load(file)
-                best_auc = best_model_params['best_auc']
+                best_val_auc = best_model_params['best_val_auc']
+                best_train_auc = best_model_params['best_train_auc']
 
-        if current_auc > best_auc:
+        if current_val_auc > best_val_auc:
             torch.save({'state_dict': self.state_dict()},
                        save_path + 'best_model_weights.pt')
             best_model_params = {
-                'epoch': self.current_epoch, 'best_auc': current_auc}
+                'epoch': self.current_epoch,
+                'best_val_auc': current_val_auc,
+                'best_train_auc': current_train_auc}
             with open(save_path + "best_model_params.json", 'w') as file:
                 json.dump(best_model_params, file)
+            best_val_auc = current_val_auc
+            best_train_auc = current_train_auc
         
         # log the best AUC for wandb (if used)
         if self.config.wandb.grid_search:
-            self.loggers[1].log_metrics({'AUC/Val_best': max(current_auc, best_auc)},
+            self.loggers[1].log_metrics({'AUC/Val_best': best_val_auc},
                                         step=self.current_epoch)
+            self.loggers[1].log_metrics({'AUC/Train_best': best_train_auc},
+                                        step=self.current_epoch)
+        return best_val_auc, best_train_auc
 
     def training_epoch_end(self, outputs):
         """Computation done at the end of the epoch"""
@@ -884,6 +894,8 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 with open(save_path, 'r') as file:
                     train_auc = json.load(file)['train_auc']
                 self.log('diff_auc', float(train_auc - val_auc), on_epoch=True)
+            else:
+                train_auc = 0.5
             
             # log val auc and grid search criterion for wandb (if used)
             if self.config.wandb.grid_search:
@@ -902,7 +914,20 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 
 
             # save the model that has the best val auc during train
-            self.save_best_auc_model(val_auc, save_path='./logs/')
+            best_val_auc, best_train_auc = self.save_best_auc_model(val_auc, train_auc, save_path='./logs/')
+
+            # log best grid search criterion for wandb (if used)
+            if self.config.wandb.grid_search:
+                if self.current_epoch > 0:
+                    gs_crit_best = compute_grid_search_criterion(
+                        best_train_auc,
+                        best_val_auc,
+                        lambda_gs_crit=self.config.wandb.lambda_gs_crit)
+                    self.loggers[1].log_metrics({'gs_criterion_best': gs_crit_best},
+                                                step=self.current_epoch)
+                    self.loggers[0].experiment.add_scalar('gs_criterion_best',
+                                                          gs_crit_best,
+                                                          self.current_epoch)
 
         # calculates average loss
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
@@ -915,7 +940,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         # use wandb logger (if present)
         if self.config.wandb.grid_search:
             self.loggers[1].log_metrics({'Loss/Val': avg_loss},
-                                       step=self.current_epoch)
+                                        step=self.current_epoch)
         # if score != 0:
         #     self.loggers[0].experiment.add_scalar(
         #         "score/Validation",
