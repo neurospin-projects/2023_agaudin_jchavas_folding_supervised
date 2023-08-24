@@ -8,12 +8,12 @@ parameters:
   lr:
     distribution: log_uniform_values
     min: 0.0001
-    max: 0.01
+    max: 0.0002
   drop_rate:
-    min: 0.05
-    max: 0.3
+    min: 0.25
+    max: 0.35
   gamma:
-    min: 0.7
+    min: 0.9
     max: 1.0
   # sigma_noise:
   #   min: 0.
