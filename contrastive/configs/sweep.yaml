@@ -6,7 +6,7 @@ metric:
   name: gs_criterion_best
 parameters:
   lr:
-    distribution: log_uniform_values
+    # distribution: log_uniform_values
     min: 0.0001
     max: 0.0002
   drop_rate:
