@@ -223,7 +223,7 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2/S.T.s./STs_both_2",
-         datasets=["STs_schiz_R_strat_bis", "STs_schiz_L_strat_bis"],
-         label='diagnosis',
-         short_name='schiz_diag', overwrite=False, use_best_model=True)
+pipeline("/volatile2/jc225751/Runs/61_classifier_regresser/Program/Output/2023-08-24_NOT_shuffled",
+         datasets=["cingulate_HCP_stratified_left", "cingulate_HCP_stratified_right"],
+         label='Flanker_AgeAdj_class',
+         short_name='flanker_class', overwrite=False, use_best_model=True)

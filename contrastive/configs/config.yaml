@@ -3,8 +3,8 @@ defaults:
   - augmentations: foldlabel
   - backbone: ConvNet
   - classifier: svm
-  - dataset/cingulate_HCP_stratified_left
-  - dataset/cingulate_HCP_stratified_right
+  - dataset/cingulate_HCP_stratified_Flanker_shuffled_left
+  - dataset/cingulate_HCP_stratified_Flanker_shuffled_right
   - embeddings: embeddings
   - hydra: local
   - label: Flanker_AgeAdj_class
