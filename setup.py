@@ -25,7 +25,7 @@ setup(
                       'hydra-joblib-launcher',
                       'dataclasses',
                       'OmegaConf',
-                      'scikit-learn==0.24.2',
+                      'scikit-learn',
                       'scikit-image',
                       'pytorch-lightning>=1.8.0',
                       'lightly',
