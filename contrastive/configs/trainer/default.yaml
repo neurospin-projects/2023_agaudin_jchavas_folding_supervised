@@ -9,9 +9,9 @@ nb_epochs_per_tSNE: -1
 nb_epochs_per_matrix_plot: 10
 nb_steps_per_flush_logs: 1
 log_every_n_steps: 2
-early_stopping_patience: 15
+early_stopping_patience: 25
 diff_auc_threshold: 0.3  # early stopping too
-diff_auc_patience: 2
+diff_auc_patience: 25
 start_epoch: 0
 checkpoint_path:
 analysis_path: 
