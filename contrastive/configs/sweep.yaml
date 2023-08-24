@@ -10,8 +10,8 @@ parameters:
     min: 0.0001
     max: 0.0002
   drop_rate:
-    min: 0.25
-    max: 0.35
+    min: 0.24
+    max: 0.28
   gamma:
     min: 0.9
     max: 1.0
