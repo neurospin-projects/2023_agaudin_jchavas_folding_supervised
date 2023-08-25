@@ -3,7 +3,7 @@ project: 2023_agaudin_jchavas_folding_supervised-contrastive
 method: bayes
 metric:
   goal: minimize
-  name: gs_criterion
+  name: gs_criterion_best
 parameters:
   lr:
     distribution: log_uniform_values
