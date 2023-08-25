@@ -7,7 +7,7 @@ from contrastive.utils.models_database import *
 
 # construct the database
 
-folders = ["/volatile2/jc225751/Runs/61_classifier_regresser/Program/Output/2023-08-24/"]
+folders = ["/volatile2/jc225751/Runs/61_classifier_regresser/Program/Output/2023-08-24_NOT_shuffled/"]
 bdd = []
 visited = []
 
