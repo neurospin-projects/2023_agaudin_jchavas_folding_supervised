@@ -9,9 +9,9 @@ foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separa
 subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/CINGULATE/mask/Llabel_subject.csv
 crop_file_suffix: _cropped_skeleton.nii.gz
 pickle_benchmark: 
-train_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/train_subjects.csv
-val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/val_subjects.csv
-test_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/test_subjects.csv
+train_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/extreme_flanker_train_subjects.csv
+val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/extreme_flanker_val_subjects.csv
+test_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/extreme_flanker_test_subjects.csv
 # subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/hcp/participants_age_continuous.csv
 subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/participants.csv
 subject_column_name: 'Subject'
