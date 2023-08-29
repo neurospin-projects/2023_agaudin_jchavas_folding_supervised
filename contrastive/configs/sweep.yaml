@@ -3,12 +3,12 @@ project: flanker-test
 method: bayes
 metric:
   goal: minimize
-  name: gs_criterion_best
+  name: gs_criterion
 parameters:
   lr:
     distribution: log_uniform_values
     min: 0.0001
-    max: 0.01
+    max: 0.002
   drop_rate:
     min: 0.05
     max: 0.3
