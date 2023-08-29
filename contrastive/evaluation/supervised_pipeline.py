@@ -223,8 +223,8 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/volatile2/jc225751/Runs/61_classifier_regresser/Program/Output/2023-08-25_NOT_shuffled_large_range",
-         datasets=["cingulate_HCP_stratified_Flanker_shuffled_left",
-                   "cingulate_HCP_stratified_Flanker_shuffled_right"],
+pipeline("/volatile2/jc225751/Runs/61_classifier_regresser/Program/Output/2023-08-28_extreme_flanker",
+         datasets=["cingulate_HCP_stratified_extreme_Flanker_left",
+                   "cingulate_HCP_stratified_extreme_Flanker_right"],
          label='Flanker_AgeAdj_class',
          short_name='flanker_class', overwrite=False, use_best_model=True)

@@ -7,7 +7,7 @@ from contrastive.utils.models_database import *
 
 # construct the database
 
-folders = ["/volatile2/jc225751/Runs/61_classifier_regresser/Program/Output/2023-08-25_NOT_shuffled_large_range/"]
+folders = ["/volatile2/jc225751/Runs/61_classifier_regresser/Program/Output/2023-08-28_extreme_flanker/"]
 bdd = []
 visited = []
 
@@ -30,7 +30,7 @@ bdd = post_process_bdd_models(bdd, hard_remove=[], git_branch=False)
 
 
 # save the database
-name = "cingulate_flanker_2023-08-25_NOT_shuffled_large_range"
+name = "2023-08-28_extreme_flanker"
 save_path = "/volatile2/jc225751/Runs/61_classifier_regresser/Program/Output/summary"
 bdd.to_csv(os.path.join(save_path, f"bdd_{name}.csv"), index=True)
 
