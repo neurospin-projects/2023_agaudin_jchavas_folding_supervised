@@ -1,9 +1,6 @@
 # @package _global_
 dataset_name: S.T.s_dHCP_374_subjects
-pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/Rskeleton.pkl
-# Beware: subjects all are only the test subjects ? (SVM)
 numpy_all: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/Rskeleton.npy
-# Beware: subjects all are only the test subjects ? (SVM)
 subjects_all: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/Rskeleton_subject.csv
 crop_dir: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/Rcrops
 foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/Rlabels
@@ -11,11 +8,8 @@ foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subje
 subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/Rlabel_subject.csv
 crop_file_suffix: _cropped_skeleton.nii.gz
 pickle_benchmark: 
-# Train_val complementary to test file (SVM)
-# Here train_val contains all subjects as this dataset is not used for testing
 train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/train_val_subject.csv
 subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/preterm_labels.csv
 subject_column_name: 'Subject'
-label_names: ["Preterm"]
 input_size: (1, 22, 49, 46)
 n_max: 1080

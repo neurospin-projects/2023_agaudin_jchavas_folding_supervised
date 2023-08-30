@@ -123,7 +123,7 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
                         yaml.dump(omegaconf.OmegaConf.to_yaml(cfg), file)
 
                     # apply the functions
-                    #compute_embeddings(cfg)
+                    compute_embeddings(cfg)
                     # reload config for train_classifiers to work properly
                     cfg = omegaconf.OmegaConf.load(
                         sub_dir+'/.hydra/config_classifiers.yaml')
@@ -136,7 +136,7 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
                         cfg = omegaconf.OmegaConf.load(
                             sub_dir+'/.hydra/config_classifiers.yaml')
                         cfg.use_best_model = True
-                        #compute_embeddings(cfg)
+                        compute_embeddings(cfg)
                         # reload config for train_classifiers to work properly
                         cfg = omegaconf.OmegaConf.load(
                             sub_dir+'/.hydra/config_classifiers.yaml')
@@ -162,8 +162,10 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
             print(f"{sub_dir} is a file. Continue.")
 
 
-#STs_HCP_full_top-separated
-#STs_dHCP_374_subjects
-embeddings_pipeline("/neurospin/dico/jlaval/Runs/01_deep_supervised/Program/Output/morpho/",
-datasets=['STs_dHCP_374_subjects'], label='Preterm_28', short_name='STs_dHCP_374_subjects',
-classifier_name='svm', overwrite=True, use_best_model=False, permutations=True, verbose=False)
+# STs_HCP_full_top-separated
+# STs_dHCP_374_subjects
+# STs_utrecht_dhcp_morpho
+# STs_utrecht_40wks
+embeddings_pipeline("/neurospin/dico/jlaval/Runs/01_deep_supervised/Program/Output/2023-06-15/",
+datasets=['STs_dHCP_374_subjects'], label='gravityCenter_x', short_name='STs_dHCP_374_subjects',
+classifier_name='svm', overwrite=True, use_best_model=False, permutations=False, verbose=False)

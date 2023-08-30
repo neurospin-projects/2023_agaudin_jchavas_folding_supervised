@@ -2,7 +2,7 @@ defaults:
   - _self_
   - hydra: local
   - dataset/STs_dHCP_374_subjects.yaml
-  - label: PCS_asymetry
+  - label: Preterm_28
   - model: SimCLR_fusion
   - mode: classifier
   - augmentations: no_augmentation

@@ -1,6 +1,5 @@
 # @package dataset.STs_dHCP_374_subjects
 dataset_name: STs_dHCP_374_subjects
-pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/Rskeleton.pkl
 numpy_all: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/Rskeleton.npy
 subjects_all: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/Rskeleton_subject.csv
 crop_dir: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/Rcrops
@@ -8,10 +7,9 @@ foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subje
 foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/Rlabel.npy
 subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/Rlabel_subject.csv
 crop_file_suffix: _cropped_skeleton.nii.gz
-pickle_benchmark: 
-train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/train_val_subject.csv
-subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/preterm_labels.csv
+pickle_benchmark:
+train_csv_file: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/test_50_subject.csv
+val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/train_50_subject.csv
+subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/dHCP_374_subjects/crops/2mm/S.T.s.baby/mask/preterm_labels_28_37.csv
 subject_column_name: 'Subject'
-label_names: ["Preterm_28"]
 input_size: (1, 22, 49, 46)
-n_max: 1080

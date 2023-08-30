@@ -7,6 +7,6 @@ embeddings_of_interest:
 results_save_path:
 labels_of_interest:
 class_max_epochs: -1
-n_repeat: 5
+n_repeat: 1
 classifier_seed: 24
 classifier_test_size: 0.2
