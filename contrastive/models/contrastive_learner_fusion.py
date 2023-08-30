@@ -38,6 +38,7 @@ https://learnopencv.com/tensorboard-with-pytorch-lightning
 
 """
 import os
+import wandb
 import json
 import numpy as np
 import torch
@@ -214,7 +215,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         """
         # iterating through all parameters
         for name, params in self.named_parameters():
-            self.logger.experiment.add_histogram(
+            self.loggers[0].experiment.add_histogram(
                 name,
                 params,
                 self.current_epoch)
@@ -225,23 +226,23 @@ class ContrastiveLearnerFusion(pl.LightningModule):
 
         # Computes histogram of sim_zii
         histogram_sim_zii = plot_histogram(self.sim_zii, buffer=True)
-        self.logger.experiment.add_image(
+        self.loggers[0].experiment.add_image(
             'histo_sim_zii', histogram_sim_zii, self.current_epoch)
 
         # Computes histogram of sim_zjj
         histogram_sim_zjj = plot_histogram(self.sim_zjj, buffer=True)
-        self.logger.experiment.add_image(
+        self.loggers[0].experiment.add_image(
             'histo_sim_zjj', histogram_sim_zjj, self.current_epoch)
 
         # Computes histogram of sim_zij
         histogram_sim_zij = plot_histogram(self.sim_zij, buffer=True)
-        self.logger.experiment.add_image(
+        self.loggers[0].experiment.add_image(
             'histo_sim_zij', histogram_sim_zij, self.current_epoch)
 
         # Computes histogram of weights
         histogram_weights = plot_histogram_weights(self.weights,
                                                    buffer=True)
-        self.logger.experiment.add_image(
+        self.loggers[0].experiment.add_image(
             'histo_weights', histogram_weights, self.current_epoch)
 
 
@@ -259,13 +260,13 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 labels = r[2]
                 scatter_matrix_with_labels = \
                     plot_scatter_matrix_with_labels(X, labels, buffer=True)
-                self.logger.experiment.add_image(
+                self.loggers[0].experiment.add_image(
                     f'scatter_matrix_{name}_with_labels_' + key,
                     scatter_matrix_with_labels,
                     self.current_epoch)
             else:
                 scatter_matrix = plot_scatter_matrix(X, buffer=True)
-                self.logger.experiment.add_image(
+                self.loggers[0].experiment.add_image(
                     f'scatter_matrix_{name}',
                     scatter_matrix,
                     self.current_epoch)
@@ -281,30 +282,30 @@ class ContrastiveLearnerFusion(pl.LightningModule):
     def plot_views(self):
         """Plots different 3D views"""
         image_input_i = plot_bucket(self.sample_i, buffer=True)
-        self.logger.experiment.add_image(
+        self.loggers[0].experiment.add_image(
             'input_i', image_input_i, self.current_epoch)
         image_input_j = plot_bucket(self.sample_j, buffer=True)
-        self.logger.experiment.add_image(
+        self.loggers[0].experiment.add_image(
             'input_j', image_input_j, self.current_epoch)
 
         # Plots view using anatomist
         if self.config.environment == "brainvisa":
             image_input_i = self.visu_anatomist.plot_bucket(
                 self.sample_i, buffer=True)
-            self.logger.experiment.add_image(
+            self.loggers[0].experiment.add_image(
                 'input_ana_i: ',
                 image_input_i, self.current_epoch)
-            # self.logger.experiment.add_text(
+            # self.loggers[0].experiment.add_text(
             #     'filename: ',self.sample_filenames[0], self.current_epoch)
             image_input_j = self.visu_anatomist.plot_bucket(
                 self.sample_j, buffer=True)
-            self.logger.experiment.add_image(
+            self.loggers[0].experiment.add_image(
                 'input_ana_j: ',
                 image_input_j, self.current_epoch)
             if len(self.sample_k) != 0:
                 image_input_k = self.visu_anatomist.plot_bucket(
                     self.sample_k, buffer=True)
-                self.logger.experiment.add_image(
+                self.loggers[0].experiment.add_image(
                     'input_ana_k: ',
                     image_input_k, self.current_epoch)
 
@@ -384,9 +385,9 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         else:
             batch_loss, sim_zij, sim_zii, sim_zjj = self.nt_xen_loss(z_i, z_j)
 
-        # Only computes graph on first step
-        if self.global_step == 1:
-            self.logger.experiment.add_graph(self, [input_i])
+        # # Only computes graph on first step
+        # if self.global_step == 1:
+        #     self.loggers[0].experiment.add_graph(self, [input_i])
 
         # Records sample for first batch of each epoch
         if batch_idx == 0:
@@ -404,7 +405,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 bv_checks(self, filenames)  # untested
         
         # logs - a dictionary
-        self.log('train_loss', float(batch_loss))
+        #self.log('Loss/Train', float(batch_loss), on_epoch=True)
         logs = {"train_loss": float(batch_loss)}
 
         batch_dictionary = {
@@ -684,22 +685,36 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             return X_tsne
 
 
-    def save_best_auc_model(self, current_auc, save_path='./logs/'):
+    def save_best_auc_model(self, current_val_auc, current_train_auc, save_path='./logs/'):
+        """Saves aucs and model weights if best val auc"""
         if self.current_epoch == 0:
-            best_auc = 0
+            best_val_auc = 0
+            best_train_auc = 0
         elif self.current_epoch > 0:
             with open(save_path + "best_model_params.json", 'r') as file:
                 best_model_params = json.load(file)
-                best_auc = best_model_params['best_auc']
+                best_val_auc = best_model_params['best_val_auc']
+                best_train_auc = best_model_params['best_train_auc']
 
-        if current_auc > best_auc:
+        if current_val_auc > best_val_auc:
             torch.save({'state_dict': self.state_dict()},
                        save_path + 'best_model_weights.pt')
             best_model_params = {
-                'epoch': self.current_epoch, 'best_auc': current_auc}
+                'epoch': self.current_epoch,
+                'best_val_auc': current_val_auc,
+                'best_train_auc': current_train_auc}
             with open(save_path + "best_model_params.json", 'w') as file:
                 json.dump(best_model_params, file)
-
+            best_val_auc = current_val_auc
+            best_train_auc = current_train_auc
+        
+        # log the best AUC for wandb (if used)
+        if self.config.wandb.grid_search:
+            self.loggers[1].log_metrics({'AUC/Val_best': best_val_auc},
+                                        step=self.current_epoch)
+            self.loggers[1].log_metrics({'AUC/Train_best': best_train_auc},
+                                        step=self.current_epoch)
+        return best_val_auc, best_train_auc
 
     def training_epoch_end(self, outputs):
         """Computation done at the end of the epoch"""
@@ -712,12 +727,12 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 X_tsne = self.compute_tsne(
                     self.sample_data.train_dataloader(), "output")
                 image_TSNE = plot_tsne(X_tsne, buffer=True)
-                self.logger.experiment.add_image(
+                self.loggers[0].experiment.add_image(
                     'TSNE output image', image_TSNE, self.current_epoch)
                 X_tsne = self.compute_tsne(
                     self.sample_data.train_dataloader(), "representation")
                 image_TSNE = plot_tsne(X_tsne, buffer=True)
-                self.logger.experiment.add_image(
+                self.loggers[0].experiment.add_image(
                     'TSNE representation image',
                     image_TSNE, self.current_epoch)
             
@@ -730,26 +745,30 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 # Plots scatter matrices
                 self.plot_scatter_matrices()
 
-                # # Plots scatter matrices with label values
-                # score = self.plot_scatter_matrices_with_labels(
-                #     self.sample_data.train_dataloader(),
-                #     "train",
-                #     self.config.mode)
-                # # Computes histogram of sim_zij
-                # histogram_sim_zij = plot_histogram(self.sim_zij, buffer=True)
-                # self.logger.experiment.add_image(
-                #     'histo_sim_zij', histogram_sim_zij, self.current_epoch)
+                # Plots scatter matrices with label values
+                score = self.plot_scatter_matrices_with_labels(
+                    self.sample_data.train_dataloader(),
+                    "train",
+                    self.config.mode)
+                # Computes histogram of sim_zij
+                histogram_sim_zij = plot_histogram(self.sim_zij, buffer=True)
+                self.loggers[0].experiment.add_image(
+                    'histo_sim_zij', histogram_sim_zij, self.current_epoch)
 
         if self.config.mode in ['classifier', 'regresser']:
             train_auc = self.compute_output_auc(
                 self.sample_data.train_dataloader())
-            self.logger.experiment.add_scalar(
+            # log train auc for tensorboard
+            self.loggers[0].experiment.add_scalar(
                 "AUC/Train",
                 train_auc,
                 self.current_epoch)
+            # log train auc for wandb (if used)
+            if self.config.wandb.grid_search:
+                self.loggers[1].log_metrics({'AUC/Train': train_auc}, step=self.current_epoch)
             # save train_auc to use it during validation end step
             auc_dict = {'train_auc': train_auc}
-            save_path = './' + self.logger.experiment.log_dir + '/train_auc.json'
+            save_path = './' + self.loggers[0].experiment.log_dir + '/train_auc.json'
             with open(save_path, 'w') as file:
                 json.dump(auc_dict, file)
 
@@ -764,12 +783,16 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
 
         # logging using tensorboard logger
-        self.logger.experiment.add_scalar(
+        self.loggers[0].experiment.add_scalar(
             "Loss/Train",
             avg_loss,
             self.current_epoch)
+        # logging using wandb logger (if used)
+        if self.config.wandb.grid_search:
+            self.loggers[1].log_metrics({'Loss/Train': avg_loss}, 
+                                    step=self.current_epoch)
         # if score != 0:
-        #     self.logger.experiment.add_scalar(
+        #     self.loggers[0].experiment.add_scalar(
         #         "Score/Train",
         #         score,
         #         self.current_epoch)
@@ -805,8 +828,9 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         else:
             batch_loss, sim_zij, sim_zii, sim_zjj = self.nt_xen_loss(z_i, z_j)
         
-        self.log('val_loss', float(batch_loss))
-        self.log('diff_auc', float(0))  # line to be able to use early stopping
+        # values useful for early stoppings
+        self.log('val_loss', float(batch_loss), on_epoch=True)
+        self.log('diff_auc', float(0))
         # logs- a dictionary
         logs = {"val_loss": float(batch_loss)}
         batch_dictionary = {
@@ -835,13 +859,13 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 X_tsne = self.compute_tsne(
                     self.sample_data.val_dataloader(), "output")
                 image_TSNE = plot_tsne(X_tsne, buffer=True)
-                self.logger.experiment.add_image(
+                self.loggers[0].experiment.add_image(
                     'TSNE output validation image', image_TSNE, self.current_epoch)
                 X_tsne = self.compute_tsne(
                     self.sample_data.val_dataloader(),
                     "representation")
                 image_TSNE = plot_tsne(X_tsne, buffer=True)
-                self.logger.experiment.add_image(
+                self.loggers[0].experiment.add_image(
                     'TSNE representation validation image',
                     image_TSNE,
                     self.current_epoch)
@@ -857,31 +881,68 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         if self.config.mode in ['classifier', 'regresser']:
             val_auc = self.compute_output_auc(
                 self.sample_data.val_dataloader())
-            self.logger.experiment.add_scalar(
+            # log val auc for tensorboard
+            self.loggers[0].experiment.add_scalar(
                 "AUC/Val",
                 val_auc,
                 self.current_epoch)
+
             # compute overfitting early stopping relevant value
             if self.current_epoch > 0:
                 # load train_auc
-                save_path = './' + self.logger.experiment.log_dir + '/train_auc.json'
+                save_path = './' + self.loggers[0].experiment.log_dir + '/train_auc.json'
                 with open(save_path, 'r') as file:
                     train_auc = json.load(file)['train_auc']
-                self.log('diff_auc', float(train_auc - val_auc))
+                self.log('diff_auc', float(train_auc - val_auc), on_epoch=True)
+            else:
+                train_auc = 0.5
+            
+            # log val auc and grid search criterion for wandb (if used)
+            if self.config.wandb.grid_search:
+                self.loggers[1].log_metrics({'AUC/Val': val_auc},
+                                        step=self.current_epoch)
+                if self.current_epoch > 0:
+                    gs_crit = compute_grid_search_criterion(
+                        train_auc,
+                        val_auc,
+                        lambda_gs_crit=self.config.wandb.lambda_gs_crit)
+                    self.loggers[1].log_metrics({'gs_criterion': gs_crit},
+                                                step=self.current_epoch)
+                    self.loggers[0].experiment.add_scalar('gs_criterion',
+                                                          gs_crit,
+                                                          self.current_epoch)
+                
 
             # save the model that has the best val auc during train
-            self.save_best_auc_model(val_auc, save_path='./logs/')
+            best_val_auc, best_train_auc = self.save_best_auc_model(val_auc, train_auc, save_path='./logs/')
+
+            # log best grid search criterion for wandb (if used)
+            if self.config.wandb.grid_search:
+                if self.current_epoch > 0:
+                    gs_crit_best = compute_grid_search_criterion(
+                        best_train_auc,
+                        best_val_auc,
+                        lambda_gs_crit=self.config.wandb.lambda_gs_crit)
+                    self.loggers[1].log_metrics({'gs_criterion_best': gs_crit_best},
+                                                step=self.current_epoch)
+                    self.loggers[0].experiment.add_scalar('gs_criterion_best',
+                                                          gs_crit_best,
+                                                          self.current_epoch)
 
         # calculates average loss
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
 
         # logs losses using tensorboard logger
-        self.logger.experiment.add_scalar(
-            "Loss/Validation",
+        self.loggers[0].experiment.add_scalar(
+            "Loss/Val",
             avg_loss,
             self.current_epoch)
+        # use wandb logger (if present)
+        if self.config.wandb.grid_search:
+            self.loggers[1].log_metrics({'Loss/Val': avg_loss},
+                                        step=self.current_epoch)
         # if score != 0:
-        #     self.logger.experiment.add_scalar(
+        #     self.loggers[0].experiment.add_scalar(
         #         "score/Validation",
         #         score,
         #         self.current_epoch)

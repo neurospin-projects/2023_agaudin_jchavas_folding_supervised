@@ -3,7 +3,7 @@ hydra:
   job:
     chdir: True
   run:
-    dir: ../../Output/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: ../../Output/${now:%Y-%m-%d}/${now:%H-%M-%S}_${get_train_seed:}
   sweep:
     dir: ../../Output/${now:%Y-%m-%d}
     subdir: ${now:%H-%M-%S}_${hydra.job.num}

@@ -122,6 +122,7 @@ venv_*
 
 # run folders
 runs
+wandb
 contrastive/runs
 contrastive/outputs
 contrastive/evaluation/runs
@@ -133,6 +134,7 @@ contrastive/notebooks/*.bck
 contrastive/notebooks/*.bck.minf
 contrastive/multirun
 contrastive/checkpoints
+contrastive/wandb
 
 # generated src folders
 src
@@ -154,3 +156,6 @@ dmypy.json
 
 # kraken managing
 sh_kraken
+
+# privacy
+contrastive/configs/wandb/sweep.yaml

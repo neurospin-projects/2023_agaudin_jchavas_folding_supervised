@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 from datetime import datetime
 
@@ -6,7 +7,8 @@ from contrastive.utils.models_database import *
 
 # construct the database
 
-folders = ["/neurospin/dico/agaudin/Runs/09_new_repo/Output/converter_test/"]
+folders = ["/neurospin/dico/agaudin/Runs/09_new_repo/Output/init_test"]
+           #"/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2/S.T.s./STs_both_2/"]
 bdd = []
 visited = []
 
@@ -23,19 +25,19 @@ for col in bdd.columns:
     print(col, bdd[col][0])
 
 # remove useless columns
-bdd = post_process_bdd_models(bdd, hard_remove=["partition"], git_branch=False)
+bdd = post_process_bdd_models(bdd, hard_remove=[], git_branch=False)
 # the hard remove are the ones containing [] char in their fields.
 # They are (for now) patch_size, partition, numpy_all
 
 
 # save the database
-name = "schiz_strat_bis"
-save_path = "/neurospin/dico/agaudin/Runs/09_new_repo/Output/converter_test/"
-bdd.to_csv(save_path+f"bdd_{name}.csv", index=True)
+name = "init_diff"
+save_path = "/neurospin/dico/agaudin/Runs/09_new_repo/Output/init_test"
+bdd.to_csv(os.path.join(save_path, f"bdd_{name}.csv"), index=True)
 
 
 # write the little readme
-with open(save_path+f"README_{name}.txt", 'w') as file:
+with open(os.path.join(save_path, f"README_{name}.txt"), 'w') as file:
     file.write("Contient les paramètres de tous les modèles d'intérêt "
                "(dossiers précisés en-dessous). "
                "La base est faite en sorte que seuls les paramètres "

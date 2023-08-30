@@ -42,9 +42,12 @@ import os
 # os.environ['MPLCONFIGDIR'] = os.getcwd()+'/.config_mpl'
 
 import hydra
+import numpy.random as rd
 import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+import wandb
+import omegaconf
 from torch.utils.tensorboard import SummaryWriter
 from torchsummary import summary
 
@@ -67,6 +70,12 @@ We use the following definitions:
 - output, the space after the projection head.
   The elements are called output vectors
 """
+
+
+def get_train_seed():
+    """Get a random seed for training to avoid collisions when using wandb."""
+    train_seed = rd.randint(256)
+    return train_seed
 
 
 @hydra.main(config_name='config', version_base="1.1", config_path="configs")
@@ -137,15 +146,29 @@ def train(config):
     if config.mode in ['classifier', 'regresser']:
         callbacks.append(early_stop_overfitting)
 
+    # choose the logger
+    loggers = [tb_logger]
+    if config.wandb.grid_search:
+        # add Wandb logger
+        wandb.config = omegaconf.OmegaConf.to_container(
+            config, resolve=True, throw_on_missing=True)
+        wandb.init(entity=config.wandb.entity, project=config.wandb.project,
+                   dir=os.getcwd())
+        wandb_logger = pl.loggers.WandbLogger(project=config.wandb.project,
+                                              save_dir=os.getcwd())
+        loggers.append(wandb_logger)
+
     trainer = pl.Trainer(
-        gpus=1,
+        accelerator='gpu',
+        devices=1,
         max_epochs=config.max_epochs,
         callbacks=callbacks,
-        logger=tb_logger,
-        flush_logs_every_n_steps=config.nb_steps_per_flush_logs,
+        logger=loggers,
+        #flush_logs_every_n_steps=config.nb_steps_per_flush_logs,
         log_every_n_steps=config.log_every_n_steps,
-        auto_lr_find=True)
-    
+        #auto_lr_find=True
+        )
+
     # # find the best lr
     # log.info("Find the best learning rate...")
     # data_module.setup()
@@ -165,4 +188,5 @@ def train(config):
 
 
 if __name__ == "__main__":
+    omegaconf.OmegaConf.register_new_resolver("get_train_seed", get_train_seed)
     train()

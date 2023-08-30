@@ -16,7 +16,7 @@ setup(
 		              'orca',
                       'matplotlib',
                       'torch',
-                      'tqdm==4.51.0',
+                      'tqdm',
                       'pqdm',
                       'torchvision',
                       'torch-summary',
@@ -25,9 +25,9 @@ setup(
                       'hydra-joblib-launcher',
                       'dataclasses',
                       'OmegaConf',
-                      'scikit-learn==0.24.2',
+                      'scikit-learn',
                       'scikit-image',
-                      'pytorch-lightning',
+                      'pytorch-lightning>=1.8.0',
                       'lightly',
                       'plotly',
                       'toolz',
@@ -38,7 +38,8 @@ setup(
                       'statsmodels',
                       'umap-learn',
                       'plotly',
-                      'pqdm'
+                      'pqdm',
+                      'wandb'
                       ],
     extras_require={"anatomist": ['deep_folding @ \
                         git+https://git@github.com/neurospin/deep_folding',
