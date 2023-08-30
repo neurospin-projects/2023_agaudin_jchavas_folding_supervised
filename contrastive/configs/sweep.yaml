@@ -15,9 +15,9 @@ parameters:
   gamma:
     min: 0.7
     max: 1.0
-  # sigma_noise:
-  #   min: 0.
-  #   max: 0.5
+  sigma_noise:
+    min: 0.
+    max: 0.5
   # max_angle:
   #   min: 0
   #   max: 6
