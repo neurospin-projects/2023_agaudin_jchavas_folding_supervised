@@ -105,7 +105,7 @@ def train(config):
                     'backbone_output_size', 'fusioned_latent_space_size',
                     'num_outputs',
                     'environment', 'batch_size', 'pin_mem', 'partition',
-                    'lr', 'weight_decay', 'max_epochs',
+                    'lr', 'gamma', 'weight_decay', 'max_epochs',
                     'early_stopping_patience', 'random_state', 'seed',
                     'backbone_name', 'sigma_labels', 'label_names',
                     'proportion_pure_contrastive', 'percentage', 
