@@ -1,4 +1,6 @@
-- overlap_subjects_dHCP.ipynb: notebook global avec notamment toutes les UMAPs, la variabilité, Utrecht et Geneva
+- overlap_subjects_dHCP.ipynb: notebook global avec notamment toutes les UMAPs, la variabilité, Utrecht et Geneva (+ manhattan plot ?)
 - plot_grad_cam.ipynb: plots of GradCAM with interpolation
 - pcpm.ipynb: graphs from pcpm library
-- 
+- morphometry_statistics: put morpho to the right format before for embeddings_pipeline.ipynb
+- pyanatomist and pyanatomist_sts for automatic loading on Anatomist
+- plot_AUC_input_size: AUC plot functions used in overlap_subjects_dHCP.ipynb for report plot format ?
