@@ -159,7 +159,8 @@ def get_average_model(labels_df):
 
 def post_processing_results(labels, embeddings, Curves, aucs, accuracies,
                             values, columns_names, mode, results_save_path,
-                            pvalues_auc=None, perm_scores_mean=None, perm_scores_std=None):
+                            pvalues_auc=None, perm_scores_mean=None,
+                            perm_scores_std=None, perm_scores_95=None):
     """Get the mean and the median AUC and accuracy, plot the ROC curves and 
     the generated files."""
 
@@ -221,7 +222,7 @@ def post_processing_results(labels, embeddings, Curves, aucs, accuracies,
         # for now added only in cross_val mode
         if mode in pvalues_auc.keys():
             values[f'{mode}_permutations'] = \
-                [np.mean(pvalues_auc[mode]), np.mean(perm_scores_mean[mode]), np.mean(perm_scores_std[mode])]
+                [np.mean(pvalues_auc[mode]), np.mean(perm_scores_mean[mode]), np.mean(perm_scores_std[mode]), np.mean(perm_scores_95[mode])]
 
 def train_nn_classifiers(config):
     """Sets up the save paths, loads the embeddings and then loops 
@@ -386,7 +387,7 @@ def train_one_svm_classifier(config, inputs, i=0):
     outputs = {}
 
     # SVC predict_proba
-    model = SVC(C=1, kernel='linear', probability=True, class_weight='balanced',
+    model = SVC(C=0.01, kernel='linear', probability=True, class_weight='balanced',
                 max_iter=config.class_max_epochs, random_state=i)
     cv = StratifiedKFold(5)
     labels_proba = cross_val_predict(model, X, Y, cv=cv, method='predict_proba')
@@ -394,15 +395,15 @@ def train_one_svm_classifier(config, inputs, i=0):
     outputs['proba_of_1'] = labels_proba[:, 1]
 
     if config.permutations:
-        _, perm_score, pvalue = permutation_test_score(model, X, Y, scoring='roc_auc', cv=cv, n_permutations=1000)
-        perm_score_mean, perm_score_std = np.mean(perm_score), np.std(perm_score)
+        _, perm_score, pvalue = permutation_test_score(model, X, Y, scoring='roc_auc', cv=cv, n_permutations=200, random_state=i)
+        perm_score_mean, perm_score_std, perm_score_95 = np.mean(perm_score), np.std(perm_score), np.quantile(perm_score, 0.95)
 
     # SVR
-    # model = LinearSVR(max_iter=config.class_max_epochs,
-    #                   random_state=i) # set the params here
-    # labels_pred = cross_val_predict(model, X, Y, cv=5)
-    # curves, roc_auc, accuracy = compute_indicators(Y, labels_pred)
-    # outputs['labels_pred'] = labels_pred
+    #model = LinearSVR(C=0.01, max_iter=1000, random_state=i)
+    #labels_pred = cross_val_predict(model, X, Y, cv=5)
+    #curves, roc_auc, accuracy = compute_indicators(Y, labels_pred)
+    # WRONG LABELING HERE, MODIFY CODE TO CHANGE THIS MISLEADING NAME
+    #outputs['proba_of_1'] = labels_pred
 
     # Stores in outputs dict
 
@@ -413,6 +414,7 @@ def train_one_svm_classifier(config, inputs, i=0):
         outputs['pvalue_auc'] = pvalue
         outputs['perm_score_mean'] = perm_score_mean
         outputs['perm_score_std'] = perm_score_std
+        outputs['perm_score_95'] = perm_score_95
 
     if test_embs_path:
         labels_pred_test = model.predict(X_test)
@@ -486,6 +488,7 @@ def train_svm_classifiers(config):
         pvalues_auc = {'cross_val': []}
         perm_scores_mean = {'cross_val': []}
         perm_scores_std = {'cross_val': []}
+        perm_scores_95 = {'cross_val': []}
     proba_matrix = np.zeros((labels.shape[0], config.n_repeat))
 
     if test_embs_path:
@@ -534,6 +537,7 @@ def train_svm_classifiers(config):
             pvalue_auc = o['pvalue_auc']
             perm_score_mean = o['perm_score_mean']
             perm_score_std = o['perm_score_std']
+            perm_score_95 = o['perm_score_95']
         proba_matrix[:, i] = probas_pred
         Curves['cross_val'].append(curves)
         aucs['cross_val'].append(roc_auc)
@@ -542,6 +546,7 @@ def train_svm_classifiers(config):
             pvalues_auc['cross_val'].append(pvalue_auc)
             perm_scores_mean['cross_val'].append(perm_score_mean)
             perm_scores_std['cross_val'].append(perm_score_std)
+            perm_scores_95['cross_val'].append(perm_score_95)
 
         if test_embs_path:
             curves = o['curves_test']
@@ -561,11 +566,11 @@ def train_svm_classifiers(config):
     values = {}
     mode = 'cross_val'
     if not config.permutations:
-        pvalues_auc, perm_scores_mean, perm_scores_std = None, None, None
+        pvalues_auc, perm_scores_mean, perm_scores_std, perm_scores_95 = None, None, None, None
     post_processing_results(labels, embeddings, Curves, aucs,
                             accuracies, values, columns_names,
                             mode, results_save_path, pvalues_auc,
-                            perm_scores_mean, perm_scores_std)
+                            perm_scores_mean, perm_scores_std, perm_scores_95)
     print(f"results_save_path = {results_save_path}")
     with open(results_save_path+"/values.json", 'w+') as file:
         json.dump(values, file)

@@ -520,21 +520,25 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         # we don't apply transforms for the AUC computation
         loader.dataset.transform = False
 
-        X, _, labels = self.compute_outputs_skeletons(loader)
+        X, filenames_list, labels = self.compute_outputs_skeletons(loader)
         # compute the mean of the two views' outputs
         X = (X[::2, ...] + X[1::2, ...]) / 2
         # remove the doubleing of labels
         labels = labels[::2]
+        # and filenames
+        filenames_list = filenames_list[::2]
         if self.config.mode == "regresser":
-            auc = regression_roc_auc_score(labels, X[:, 0])
+            X = X[:, 0]
+            auc = regression_roc_auc_score(labels, X)
         else:
             X = nn.functional.softmax(X, dim=1)
-            auc = roc_auc_score(labels, X[:, 1])
+            X = X[:, 1]
+            auc = roc_auc_score(labels, X)
         
         # put augmentations back to normal
         loader.dataset.transform = self.config.apply_augmentations
 
-        return auc
+        return auc, filenames_list, labels.numpy()[:, 0], X.numpy()
 
 
     def compute_decoder_outputs_skeletons(self, loader):
@@ -757,7 +761,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 #     'histo_sim_zij', histogram_sim_zij, self.current_epoch)
 
         if self.config.mode in ['classifier', 'regresser']:
-            train_auc = self.compute_output_auc(
+            train_auc,_,_,_ = self.compute_output_auc(
                 self.sample_data.train_dataloader())
             self.logger.experiment.add_scalar(
                 "AUC/Train",
@@ -871,7 +875,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         
         # compute val auc
         if self.config.mode in ['classifier', 'regresser']:
-            val_auc = self.compute_output_auc(
+            val_auc,_,_,_ = self.compute_output_auc(
                 self.sample_data.val_dataloader())
             self.logger.experiment.add_scalar(
                 "AUC/Val",
