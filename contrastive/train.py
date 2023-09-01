@@ -135,12 +135,12 @@ def train(config):
 
     early_stop_callback = \
         EarlyStopping(monitor="val_loss",
-                      patience=config.early_stopping_patience)
+                      patience=config.max_epochs)
     
     early_stop_overfitting = \
         EarlyStopping(monitor="diff_auc",
                       divergence_threshold=config.diff_auc_threshold,
-                      patience=config.diff_auc_patience)
+                      patience=config.max_epochs)
 
     callbacks = [early_stop_callback]
     if config.mode in ['classifier', 'regresser']:
