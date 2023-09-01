@@ -1,0 +1,4 @@
+- overlap_subjects_dHCP.ipynb: notebook global avec notamment toutes les UMAPs, la variabilité, Utrecht et Geneva
+- plot_grad_cam.ipynb: plots of GradCAM with interpolation
+- pcpm.ipynb: graphs from pcpm library
+- 
