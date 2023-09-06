@@ -4,8 +4,10 @@ import yaml
 import json
 import omegaconf
 import torch
+import pickle
 
 from contrastive.data.datamodule import DataModule_Evaluation
+from contrastive.evaluation.grad_cam import compute_all_grad_cams
 from contrastive.models.contrastive_learner_fusion import \
     ContrastiveLearnerFusion
 from contrastive.utils.config import process_config
@@ -119,22 +121,27 @@ def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=Tru
 
     # get the data and compute auc
         # train and val auc
-    train_loader = data_module.train_dataloader()
-    val_loader = data_module.val_dataloader()
-    test_loader = data_module.test_dataloader()
+    loaders_dict = {}
+    loaders_dict['train'] = data_module.train_dataloader()
+    loaders_dict['val'] = data_module.val_dataloader()
+    loaders_dict['test'] = data_module.test_dataloader()
 
     # test_intra
     try:
         test_intra_loader = data_module.test_intra_dataloader()
-        test_intra_auc = model.compute_output_auc(test_intra_loader)
-        log.info(f"test_intra_auc = {test_intra_auc}")
+        loaders_dict['test_intra'] = test_intra_loader
     except:
         log.info("No test intra for this dataset.")
 
-    # train-val-test aucs
-    train_auc = model.compute_output_auc(train_loader)
-    val_auc = model.compute_output_auc(val_loader)
-    test_auc = model.compute_output_auc(test_loader)
+    # compute aucs
+    aucs_dict = {}
+    for subset_name, loader in loaders_dict.items():
+        aucs_dict[subset_name] = model.compute_output_auc(loader)
+    log.info(aucs_dict)
+
+    # compute grad cam if only one encoder (doesn't work otherwise)
+    if len(config.data) == 1:
+        attributions_dict = compute_all_grad_cams(loaders_dict, model, with_labels=config.with_labels)
 
     # create a save path is necessary
     save_path = model_path+f"/{folder_name}_supervised_results"
@@ -142,21 +149,18 @@ def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=Tru
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
-    # save the results
-    results_dico = {'train_auc': train_auc,
-                    'val_auc': val_auc,
-                    'test_auc': test_auc}
-    log.info(f"aucs = {results_dico}")
-    # if test_intra has been computed
-    if 'test_intra_auc' in locals():
-        results_dico['test_intra_auc'] = test_intra_auc
-
+    # save the aucs
     if use_best_model:
         json_path = save_path+'/aucs_best_model.json'
     else:
         json_path = save_path+'/aucs.json'
     with open(json_path, 'w') as file:
-        json.dump(results_dico, file)
+        json.dump(aucs_dict, file)
+
+    # save grad cam if computed
+    if len(config.data) == 1:
+        with open(save_path+'/attributions.pkl', 'wb') as f:
+            pickle.dump(attributions_dict, f)
 
     # save what are the datasets have been used for the performance computation
     datasets = config.dataset.keys()
@@ -223,7 +227,7 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/init_test",
-         datasets=["pericalcarine_schiz_R_strat_bis", "pericalcarine_schiz_L_strat_bis"],
+pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2/STs_branches",
+         datasets=["STs_branches_schiz_R_strat_bis", "STs_branches_schiz_L_strat_bis"],
          label='diagnosis',
          short_name='schiz_diag', overwrite=False, use_best_model=True)

@@ -75,7 +75,7 @@ def save_outputs_as_csv(outputs, filenames, labels, csv_path=None, verbose=False
         return df_outputs
 
 
-def compute_embeddings(config, model_path, folder_name=None, use_best_model=False):
+def compute_outputs(config, model_path, folder_name=None, use_best_model=False):
     """Compute the embeddings (= output of the backbone(s)) for a given model. 
     It relies on the hydra config framework, especially the backbone, datasets 
     and model parts.
@@ -116,27 +116,21 @@ def compute_embeddings(config, model_path, folder_name=None, use_best_model=Fals
 
     # get the data and compute auc
         # train and val auc
-    train_loader = data_module.train_dataloader()
-    val_loader = data_module.val_dataloader()
-    test_loader = data_module.test_dataloader()
+    loaders_dict = {}
+    loaders_dict['train'] = data_module.train_dataloader()
+    loaders_dict['val'] = data_module.val_dataloader()
+    loaders_dict['test'] = data_module.test_dataloader()
 
     # test_intra
     try:
         test_intra_loader = data_module.test_intra_dataloader()
-        test_intra_out, test_intra_filenames, test_intra_labels = \
-            model.compute_outputs_skeletons(test_intra_loader)
-        full_save_path = save_path + '/test_intra_outputs.csv'
-        save_outputs_as_csv(test_intra_out, test_intra_filenames,
-                            test_intra_labels, full_save_path)
+        loaders_dict['test_intra'] = test_intra_loader
     except:
         log.info("No test intra for this dataset.")
-    
-    # train-val-test outputs
-    loaders = {'train': train_loader,
-               'val': val_loader,
-               'test': test_loader}
-    for subset in loaders.keys():
-        loader = loaders[subset]
+
+    # compute outputs
+    for subset in loaders_dict.keys():
+        loader = loaders_dict[subset]
         outputs, filenames, labels = model.compute_outputs_skeletons(loader)
         full_save_path = save_path + f'/{subset}_outputs.csv'
         save_outputs_as_csv(outputs, filenames, labels, full_save_path)
@@ -167,13 +161,13 @@ def get_outputs(model_path, datasets, label, short_name, use_best_model):
         yaml.dump(omegaconf.OmegaConf.to_yaml(cfg), file)
 
     folder_name = get_save_folder_name(datasets, short_name)
-    compute_embeddings(cfg, os.path.abspath(model_path),
-                       folder_name=folder_name,
-                       use_best_model=use_best_model)
+    compute_outputs(cfg, os.path.abspath(model_path),
+                    folder_name=folder_name,
+                    use_best_model=use_best_model)
 
 
-get_outputs(model_path='/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-20/15-42-18_0',
-            datasets=["cingulate_schiz_strat_bis"],
-            label='diagnosis',
-            short_name='cing_schiz_strat_bis',
+get_outputs(model_path='/neurospin/dico/agaudin/Runs/09_new_repo/Output/grad_cam/16-13-24_111',
+            datasets=["cingulate_ACCpatterns", "cingulate_ACCpatterns_left"],
+            label='Right_PCS',
+            short_name='ACC',
             use_best_model=True)
