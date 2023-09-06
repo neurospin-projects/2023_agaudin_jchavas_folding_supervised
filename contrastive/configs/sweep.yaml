@@ -7,17 +7,17 @@ metric:
 parameters:
   lr:
     distribution: log_uniform_values
-    min: 0.001
-    max: 1
+    min: 0.0005
+    max: 0.05
   drop_rate:
     min: 0.
-    max: 0.5
+    max: 0.20
   sigma_noise:
     min: 0.
     max: 0.5
   max_angle:
     min: 0
-    max: 10
+    max: 4
 
 command:
   - ${env}
