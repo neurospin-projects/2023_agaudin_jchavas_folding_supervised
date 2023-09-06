@@ -136,7 +136,7 @@ def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=Tru
     # compute aucs
     aucs_dict = {}
     for subset_name, loader in loaders_dict.items():
-        aucs_dict[subset_name] = model.compute_output_auc(loader)
+        aucs_dict[subset_name+"_auc"] = model.compute_output_auc(loader)
     log.info(aucs_dict)
 
     # compute grad cam if only one encoder (doesn't work otherwise)
