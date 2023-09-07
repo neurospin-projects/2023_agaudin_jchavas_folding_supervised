@@ -71,8 +71,8 @@ def save_outputs_as_csv(outputs, filenames, labels, csv_path=None, verbose=False
 
     if csv_path:
         df_outputs.to_csv(csv_path)
-    else:
-        return df_outputs
+
+    return df_outputs
 
 
 def compute_outputs(config, model_path, folder_name=None, use_best_model=False):
@@ -128,12 +128,16 @@ def compute_outputs(config, model_path, folder_name=None, use_best_model=False):
     except:
         log.info("No test intra for this dataset.")
 
-    # compute outputs
+    # compute and save outputs
+    full_csv = pd.DataFrame([])
     for subset in loaders_dict.keys():
         loader = loaders_dict[subset]
         outputs, filenames, labels = model.compute_outputs_skeletons(loader)
         full_save_path = save_path + f'/{subset}_outputs.csv'
-        save_outputs_as_csv(outputs, filenames, labels, full_save_path)
+        subset_csv = save_outputs_as_csv(outputs, filenames, labels, full_save_path)
+        full_csv = pd.concat([full_csv, subset_csv], axis=0)
+    full_csv.to_csv(save_path + '/full_outputs.csv')
+    log.info("Outputs saved")
 
     # save what are the datasets have been used for the performance computation
     datasets = config.dataset.keys()
@@ -163,11 +167,16 @@ def get_outputs(model_path, datasets, label, short_name, use_best_model):
     folder_name = get_save_folder_name(datasets, short_name)
     compute_outputs(cfg, os.path.abspath(model_path),
                     folder_name=folder_name,
-                    use_best_model=use_best_model)
+                    use_best_model=False)
+    if use_best_model:  # do both
+        cfg = preprocess_config(model_path, datasets, label)
+        compute_outputs(cfg, os.path.abspath(model_path),
+                        folder_name='best_model_'+folder_name,
+                        use_best_model=True)
 
 
 get_outputs(model_path='/neurospin/dico/agaudin/Runs/09_new_repo/Output/grad_cam/16-13-24_111',
-            datasets=["cingulate_ACCpatterns", "cingulate_ACCpatterns_left"],
+            datasets=["cingulate_ACCpatterns"],
             label='Right_PCS',
             short_name='ACC',
             use_best_model=True)
