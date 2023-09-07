@@ -110,7 +110,7 @@ def train(config):
                     'backbone_name', 'sigma_labels', 'label_names',
                     'proportion_pure_contrastive', 'percentage', 
                     'projection_head_name', 'sigma_noise', 'pretrained_model_path',
-                    'converter_activation']
+                    'freeze_encoders', 'converter_activation']
 
     create_accessible_config(keys_to_keep, os.getcwd() + "/.hydra/config.yaml")
 

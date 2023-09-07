@@ -109,6 +109,13 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         else:
             raise ValueError(f"No underlying backbone with backbone name {config.backbone_name}")
         
+        # freeze the backbone weights if required
+        if config.freeze_encoders:
+            for backbone in self.backbones:
+                backbone.freeze()
+            log.info("The model's encoders weights are frozen. Set 'freeze_encoders' \
+in the config to False to unfreeze them.")
+
         # rename variables
         concat_latent_spaces_size = config.backbone_output_size * n_datasets
 

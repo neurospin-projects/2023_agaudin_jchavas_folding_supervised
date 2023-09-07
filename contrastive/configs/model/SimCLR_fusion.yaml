@@ -6,7 +6,8 @@ temperature_supervised: 0.3
 sigma_labels: 2.0
 sigma: 5
 drop_rate: 0.05
-pretrained_model_path: #/path/to/FILE.ckpt
+pretrained_model_path: /neurospin/dico/agaudin/Runs/09_new_repo/Output/supervised/pretrained_UKB/UKB_pretrained_weights.ckpt
 load_encoder_only: True
-fusioned_latent_space_size: 10
+freeze_encoders: True
+fusioned_latent_space_size: -1
 converter_activation: relu
