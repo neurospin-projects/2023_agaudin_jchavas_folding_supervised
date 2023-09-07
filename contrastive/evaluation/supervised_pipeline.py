@@ -159,7 +159,11 @@ def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=Tru
 
     # save grad cam if computed
     if len(config.data) == 1:
-        with open(save_path+'/attributions.pkl', 'wb') as f:
+        if use_best_model:
+            filename = '/attributions_best_model.pkl'
+        else:
+            filename = '/attributions.pkl'
+        with open(save_path+filename, 'wb') as f:
             pickle.dump(attributions_dict, f)
 
     # save what are the datasets have been used for the performance computation
@@ -227,7 +231,7 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2/STs_branches",
-         datasets=["STs_branches_schiz_R_strat_bis", "STs_branches_schiz_L_strat_bis"],
-         label='diagnosis',
-         short_name='schiz_diag', overwrite=False, use_best_model=True)
+pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/grad_cam/do",
+         datasets=["cingulate_ACCpatterns"],
+         label='Right_PCS',
+         short_name='ACC', overwrite=False, use_best_model=True)
