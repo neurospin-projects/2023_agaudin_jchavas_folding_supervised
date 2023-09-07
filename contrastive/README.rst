@@ -107,16 +107,26 @@ The python files involved are:
 * ``evaluation/pca_embeddings.py``
 * ``evaluation/train_multiple_classifiers.py``
 * ``evaluation/embeddings_pipeline.py``
+* ``evaluation/supervised_pipeline.py``
+* ``evaluation/utils_pipeline.py``
 
 More information about these programs and the related yaml files is available in the 
-**evaluation/README_classifier.rst**.
+``evaluation/README_classifier.rst``.
 
-**/!\\** To use most of these programs, you have to set up the **config_no_save.yaml** file instead of config.yaml.
+**/!\\** To use most of these programs, you have to set up the ``config_no_save.yaml`` file instead of config.yaml.
 (The reason is to avoid to save countless small networks, that can then be confused with the SimCLR.)
 
 **/!\\** To use these programs, you have to have the same network as the one used during training. It means that you 
 have to choose the right backbone in ``config_no_save.yaml``, the same output and latent space sizes in the corresponding 
-yaml file, and that you need to have the same network structure, i.e. be on the right branch at a compatible commit.
+yaml file, and that you need to have the same network structure, i.e. be on the right branch at a compatible commit. [CHECK THAT]
+
+Once this is setup, you then need to go in the ``embeddings_pipeline.py`` (for pure contrastive SimCLR) or in the ``supervised_pipeline.py`` (for supervised models) file, and set the parameters at the bottom of the file to the right value. Then, run the corresponding command line :
+
+.. code-block:: shell
+
+    python3 evaluation/embeddings_pipeline.py
+    python3 evaluation/supervised_pipeline.py
+
 
 
 Tutorial: generate a csv database of the models
@@ -126,14 +136,15 @@ As a lot of models are trained, methods to create a database where their address
 
 The files involved in this process are:
 
-* **utils/models_database.py** contains all the functions needed to preprocess the models, create the database and postprocess it.
-* **evaluation/SimCLR_performance_criteria.py** compute the exclusion criteria based on the trivial minimum (all embeddings are collinear) for all the targeted models (same loop set up as ``embeddings_pipeline``).
-* **evaluation/generate_bdd.py** actually loop on the targeted folders and create a database containing all the encountered models.
+* ``utils/models_database.py`` contains all the functions needed to preprocess the models, create the database and postprocess it.
+* ``evaluation/SimCLR_performance_criteria.py`` compute the exclusion criteria based on the trivial minimum (all embeddings are collinear) for all the targeted models (same loop set up as ``embeddings_pipeline``). This file is currently as useful as it used to, as this issue is not relevant anymore with current models and parameters. [CHECK THAT]
+* ``evaluation/generate_bdd.py`` actually loops on the targeted folders and creates a database containing all the encountered models.
+* ``evaluation/generate_bdd_supervised.py`` does the same thing as generate_bdd.py but on supervised models. (Note that the exact wording for save paths makes the supervised models not compatible with generate_bdd.py).
 
 
-The produced database contains the path to the model, its loss values at the end of the training, its svm' accuracy and auc, and 
+The produced database contains the path to the model, its loss values at the end of the training, its svm' accuracy and auc (or the models' ones for supervised models), and 
 some parameters contained in its ``partial_config.yaml``. The config parameters contained in the database are the ones that changed at
 least once between models.
 
 You can notice that there is no way right now to add new models to the database. The only way to add new ones is to generate entirely
-a new database, which is still not too long since there are not too much models yet.
+a new database, which is still not too long (a few minutes max) since there are not too much models yet.
