@@ -244,10 +244,10 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             'histo_sim_zij', histogram_sim_zij, self.current_epoch)
 
         # Computes histogram of weights
-        histogram_weights = plot_histogram_weights(self.weights,
-                                                   buffer=True)
-        self.loggers[0].experiment.add_image(
-            'histo_weights', histogram_weights, self.current_epoch)
+        # histogram_weights = plot_histogram_weights(self.weights,
+        #                                            buffer=True)
+        # self.loggers[0].experiment.add_image(
+        #     'histo_weights', histogram_weights, self.current_epoch)
 
 
     def plot_scatter_matrices(self, dataloader, key):
@@ -799,7 +799,10 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                     self.plot_histograms()
 
                 # Plots scatter matrices
-                self.plot_scatter_matrices()
+                self.plot_scatter_matrices(
+                     self.sample_data.train_dataloader(),
+                     "train",
+                )
 
                 # Plots scatter matrices with label values
                 score = self.plot_scatter_matrices_with_labels(
