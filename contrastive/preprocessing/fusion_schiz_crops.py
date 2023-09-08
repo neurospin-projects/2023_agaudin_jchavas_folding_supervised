@@ -1,4 +1,4 @@
-"""Same as fusion_schiz_bases.ipynb (i.e. fusion of bsnip1, candi, cnp and schizconnect),
+"""Same as the end of fusion_schiz_bases.ipynb (i.e. fusion of bsnip1, candi, cnp and schizconnect),
 but only deal with the crops."""
 
 import os
