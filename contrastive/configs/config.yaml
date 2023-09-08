@@ -3,15 +3,15 @@ defaults:
   - augmentations: foldlabel
   - backbone: ConvNet
   - classifier: svm
-  - dataset/cingulate_HCP_stratified_extreme_Flanker_shuffled_left
-  - dataset/cingulate_HCP_stratified_extreme_Flanker_shuffled_right
+  - dataset/cingulate_HCP_stratified_left
+  - dataset/cingulate_HCP_stratified_right
   - embeddings: embeddings
   - hydra: local
   - label: Flanker_AgeAdj_class
-  - mode: classifier
+  - mode: encoder
   - model: SimCLR_fusion
   - platform: cuda_not_brainvisa
-  - projection_head: sigmoid
+  - projection_head: linear
   - trainer: default
   - wandb: sweep
   - override hydra/job_logging: custom
