@@ -804,11 +804,11 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                      "train",
                 )
 
-                # Plots scatter matrices with label values
-                score = self.plot_scatter_matrices_with_labels(
-                    self.sample_data.train_dataloader(),
-                    "train",
-                    self.config.mode)
+                # # Plots scatter matrices with label values
+                # score = self.plot_scatter_matrices_with_labels(
+                #     self.sample_data.train_dataloader(),
+                #     "train",
+                #     self.config.mode)
                 # Computes histogram of sim_zij
                 histogram_sim_zij = plot_histogram(self.sim_zij, buffer=True)
                 self.loggers[0].experiment.add_image(
