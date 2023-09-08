@@ -7,11 +7,11 @@ from contrastive.utils.models_database import *
 
 # construct the database
 
-folders = ["/volatile2/jc225751/Runs/61_classifier_regresser/Program/Output/2023-09-04_no_earlystopping_shuffled/"]
+folders = ["/volatile2/jc225751/Runs/61_classifier_regresser/Program/Output/2023-09-01_no_earlystopping/"]
 bdd = []
 visited = []
 
-generate_bdd_models(folders, bdd, visited, supervised=True, verbose=False)
+generate_bdd_models(folders, bdd, visited, dataset="flanker_class_shuffled", supervised=True, verbose=False)
 
 bdd = pd.DataFrame(bdd)
 print("Number of models:", bdd.shape[0])
@@ -30,7 +30,7 @@ bdd = post_process_bdd_models(bdd, hard_remove=[], git_branch=False)
 
 
 # save the database
-name = "2023-09-04_no_earlystopping_shuffled"
+name = "2023-09-01_no_earlystopping_shuffled"
 save_path = "/volatile2/jc225751/Runs/61_classifier_regresser/Program/Output/summary"
 bdd.to_csv(os.path.join(save_path, f"bdd_{name}.csv"), index=True)
 

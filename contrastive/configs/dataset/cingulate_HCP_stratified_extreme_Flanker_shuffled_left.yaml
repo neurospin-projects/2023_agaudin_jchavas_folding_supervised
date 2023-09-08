@@ -1,5 +1,5 @@
 # @package dataset.cingulate_HCP_stratified_extreme_Flanker_shuffled_left
-dataset_name: cingulate_HCP_stratified_extreme_Flanker_left
+dataset_name: cingulate_HCP_stratified_extreme_Flanker_shuffled_left
 pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/CINGULATE/mask/Lskeleton.pkl
 numpy_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/CINGULATE/mask/Lskeleton.npy
 subjects_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/CINGULATE/mask/Lskeleton_subject.csv
