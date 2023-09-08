@@ -6,7 +6,7 @@ temperature_supervised: 0.3
 sigma_labels: 2.0
 sigma: 5
 drop_rate: 0.2
-pretrained_model_path: /volatile2/jc225751/Runs/61_classifier_regresser/Program/Output/2023-09-08_pretrained_HCP/2023-09-08_pretrained_HCP/10-26-00_19/logs/lightning_logs/version_0/checkpoints/epoch=250-step=12299.ckpt #/path/to/FILE.ckpt
+pretrained_model_path: /volatile2/jc225751/Runs/61_classifier_regresser/Program/Output/2023-09-08_pretrained_HCP/10-26-00_19/logs/lightning_logs/version_0/checkpoints/epoch=250-step=12299.ckpt #/path/to/FILE.ckpt
 load_encoder_only: True
 fusioned_latent_space_size: 10
 converter_activation: relu
