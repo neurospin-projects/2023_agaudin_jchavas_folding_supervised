@@ -7,10 +7,10 @@ metric:
 parameters:
   lr:
     # distribution: log_uniform_values
-    min: 0.00035
-    max: 0.001
+    min: 0.0001
+    max: 0.01
   drop_rate:
-    min: 0.15
+    min: 0.05
     max: 0.35
   gamma:
     min: 0.7
