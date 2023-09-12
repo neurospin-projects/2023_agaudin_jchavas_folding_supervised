@@ -1,6 +1,6 @@
 program: train.py
 project: flanker-test
-method: bayes
+method: random
 metric:
   goal: minimize
   name: gs_criterion

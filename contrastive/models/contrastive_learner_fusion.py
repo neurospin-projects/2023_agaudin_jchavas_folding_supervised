@@ -733,11 +733,11 @@ class ContrastiveLearnerFusion(pl.LightningModule):
     
     def save_best_criterion_model(self, current_val_auc, current_train_auc, save_path='./logs/'):
         """Saves best parameters if best criterion"""
-        if self.current_epoch == 0:
+        if self.current_epoch <= 5: # takes best model only after epoch 5
             best_val_auc = 0
             best_train_auc = 0
             best_criterion = 0
-        elif self.current_epoch > 0:
+        elif self.current_epoch > 5:
             with open(save_path + "best_model_params.json", 'r') as file:
                 best_model_params = json.load(file)
                 best_val_auc = best_model_params['best_val_auc']
