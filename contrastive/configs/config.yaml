@@ -13,7 +13,7 @@ defaults:
   - platform: cuda_not_brainvisa
   - projection_head: linear
   - trainer: SimCLR
-  - wandb: sweep
+  - wandb: not_used
   - override hydra/job_logging: custom
 
 data: ${oc.dict.values:dataset}
