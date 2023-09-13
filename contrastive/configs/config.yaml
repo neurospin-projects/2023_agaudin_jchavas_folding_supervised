@@ -8,7 +8,7 @@ defaults:
   - embeddings: embeddings
   - hydra: local
   - label: Flanker_AgeAdj_class
-  - mode: classifier
+  - mode: encoder
   - model: SimCLR_fusion
   - platform: cuda_not_brainvisa
   - projection_head: linear
