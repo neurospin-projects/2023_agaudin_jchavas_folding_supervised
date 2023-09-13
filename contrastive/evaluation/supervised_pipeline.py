@@ -5,6 +5,7 @@ import json
 import omegaconf
 import torch
 import pickle
+import pandas as pd
 
 from contrastive.data.datamodule import DataModule_Evaluation
 from contrastive.evaluation.grad_cam import compute_all_grad_cams
@@ -13,8 +14,7 @@ from contrastive.models.contrastive_learner_fusion import \
 from contrastive.utils.config import process_config
 from contrastive.utils.logs import set_root_logger_level, set_file_logger
 
-from utils_pipelines import get_save_folder_name, change_config_datasets, \
-    change_config_label, save_used_datasets, save_used_label
+from utils_pipelines import *
 
 log = set_file_logger(__file__)
 
@@ -85,7 +85,8 @@ def preprocess_config(sub_dir, datasets, label):
     return cfg
 
 
-def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=True):
+def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=True,
+                        save_outputs=False):
     """Actually computes the test, train and val (and test_intra if existing) auc 
     of a target model."""
 
@@ -141,7 +142,8 @@ def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=Tru
 
     # compute grad cam if only one encoder (doesn't work otherwise)
     if len(config.data) == 1:
-        attributions_dict = compute_all_grad_cams(loaders_dict, model, with_labels=config.with_labels)
+        attributions_dict = compute_all_grad_cams(loaders_dict, model,
+                                                  with_labels=config.with_labels)
 
     # create a save path is necessary
     save_path = model_path+f"/{folder_name}_supervised_results"
@@ -166,13 +168,36 @@ def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=Tru
         with open(save_path+filename, 'wb') as f:
             pickle.dump(attributions_dict, f)
 
+    # compute and save outputs if required
+    if save_outputs:
+        # set the save path
+        if use_best_model:
+            outputs_save_path = os.path.join(save_path, 'best_model_outputs')
+        else:
+            outputs_save_path = os.path.join(save_path, 'outputs')
+        if not os.path.exists(outputs_save_path):
+            log.info("Creating the save path for the outputs...")
+            os.makedirs(outputs_save_path)
+        
+        full_csv = pd.DataFrame([])
+        # compute the ouptu for each subset
+        for subset in loaders_dict.keys():
+            loader = loaders_dict[subset]
+            outputs, filenames, labels = model.compute_outputs_skeletons(loader)
+            full_save_path = outputs_save_path + f'/{subset}_outputs.csv'
+            subset_csv = save_outputs_as_csv(outputs, filenames, labels, full_save_path)
+            full_csv = pd.concat([full_csv, subset_csv], axis=0)
+        full_csv.to_csv(outputs_save_path + '/full_outputs.csv')
+        log.info("Outputs saved")
+
     # save what are the datasets have been used for the performance computation
     datasets = config.dataset.keys()
     save_used_datasets(save_path, datasets)
     save_used_label(save_path, config)
 
 
-def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_best_model=True):
+def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_best_model=True,
+             save_outputs=False):
     """Pipeline to generate automatically the output aucs for supervised classifiers only.
 
     Arguments:
@@ -186,6 +211,8 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
         - overwrite: bool. Redo the process on models where embeddings already exist.
         - use_best_model: bool. Use the best model saved during to generate embeddings. 
         The 'normal' model is always used, the best is only added.
+        - save_outputs: bool. Save the outputs (i.e. after the projection head) in the
+        save folder.
     """
     # walks recursively through the subfolders
     for name in os.listdir(dir_path):
@@ -216,22 +243,25 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
 
                     folder_name = get_save_folder_name(datasets, short_name)
                     supervised_auc_eval(cfg, os.path.abspath(sub_dir),
-                                         folder_name=folder_name, use_best_model=False)
+                                         folder_name=folder_name, use_best_model=False,
+                                         save_outputs=save_outputs)
                     if use_best_model:  # do both
                         log.info("Repeat with the best model")
                         cfg = preprocess_config(sub_dir, datasets, label)
                         supervised_auc_eval(cfg, os.path.abspath(sub_dir),
-                                         folder_name=folder_name, use_best_model=True)
+                                         folder_name=folder_name, use_best_model=True,
+                                         save_outputs=save_outputs)
 
             else:
                 print(f"{sub_dir} not associated to a model. Continue")
                 pipeline(sub_dir, datasets, label, short_name=short_name,
-                         overwrite=overwrite, use_best_model=use_best_model)
+                         overwrite=overwrite, use_best_model=use_best_model,
+                         save_outputs=save_outputs)
         else:
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/grad_cam/do",
-         datasets=["cingulate_ACCpatterns"],
-         label='Right_PCS',
-         short_name='ACC', overwrite=False, use_best_model=True)
+pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-09-13",
+         datasets=["cing_ACCpatterns_recrop"], label='Right_PCS',
+         short_name='ACC', overwrite=False, use_best_model=True,
+         save_outputs=False)

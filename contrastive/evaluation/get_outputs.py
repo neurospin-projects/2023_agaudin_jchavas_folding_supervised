@@ -46,35 +46,6 @@ def preprocess_config(sub_dir, datasets, label):
     return cfg
 
 
-def save_outputs_as_csv(outputs, filenames, labels, csv_path=None, verbose=False):
-    columns_names = ['dim'+str(i+1) for i in range(outputs.shape[1])]
-    values = pd.DataFrame(outputs.numpy(), columns=columns_names)
-    labels = pd.DataFrame(labels, columns=['labels']).astype(int)
-    filenames = pd.DataFrame(filenames, columns=['ID'])
-    df_outputs = pd.concat([labels, values, filenames], axis=1)
-    
-    # remove one copy each ID
-    df_outputs = df_outputs.groupby('ID').mean()
-    df_outputs.labels = df_outputs.labels.astype(int)
-
-    if verbose:
-        print("outputs:", df_outputs.iloc[:10, :])
-        print("nb of elements:", df_outputs.shape[0])
-
-    # Solves the case in which index type is tensor
-    if len(df_outputs.index) > 0:  # avoid cases where empty df
-        if type(df_outputs.index[0]) != str:
-            index = [idx.item() for idx in df_outputs.index]
-            index_name = df_outputs.index.name
-            df_outputs.index = index
-            df_outputs.index.names = [index_name]
-
-    if csv_path:
-        df_outputs.to_csv(csv_path)
-
-    return df_outputs
-
-
 def compute_outputs(config, model_path, folder_name=None, use_best_model=False):
     """Compute the embeddings (= output of the backbone(s)) for a given model. 
     It relies on the hydra config framework, especially the backbone, datasets 
@@ -175,8 +146,8 @@ def get_outputs(model_path, datasets, label, short_name, use_best_model):
                         use_best_model=True)
 
 
-get_outputs(model_path='/neurospin/dico/agaudin/Runs/09_new_repo/Output/grad_cam/16-13-24_111',
-            datasets=["cingulate_ACCpatterns"],
+get_outputs(model_path='/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-09-08/no_cal_pretrained',
+            datasets=["cing_ACCpatterns_recrop"],
             label='Right_PCS',
             short_name='ACC',
             use_best_model=True)
