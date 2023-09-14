@@ -1,5 +1,5 @@
-# @package dataset.S.C.-S.Pe.C._HCP_stratified_extreme_Flanker_left
-dataset_name: S.C.-S.Pe.C._HCP_stratified_extreme_Flanker_left
+# @package dataset.central_precentral_HCP_stratified_extreme_Flanker_left
+dataset_name: central_precentral_HCP_stratified_extreme_Flanker_left
 pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/S.C.-S.Pe.C./mask/Lskeleton.pkl
 numpy_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/S.C.-S.Pe.C./mask/Lskeleton.npy
 subjects_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/S.C.-S.Pe.C./mask/Lskeleton_subject.csv
