@@ -1,5 +1,5 @@
 program: train.py
-project: flanker-test
+project: inhibitory
 method: random
 metric:
   goal: minimize
@@ -8,13 +8,17 @@ parameters:
   lr:
     distribution: log_uniform_values
     min: 0.0001
-    max: 0.001
+    max: 0.01
   drop_rate:
     min: 0.05
     max: 0.3
   gamma:
     min: 0.7
     max: 1.0
+  +dataset:
+    value: [central_postcentral_HCP_stratified_extreme_Flanker_left, central_postcentral_HCP_stratified_extreme_Flanker_right]
+  suffix_dir:
+    value: _central_postcentral
   # sigma_noise:
   #   min: 0.
   #   max: 0.5
