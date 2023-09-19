@@ -16,9 +16,9 @@ parameters:
     min: 0.7
     max: 1.0
   +dataset:
-    value: [FCMpost_HCP_stratified_extreme_Flanker_left, FCMpost_HCP_stratified_extreme_Flanker_right]
+    value: [SFmedian_HCP_stratified_extreme_Flanker_left, SFmedian_HCP_stratified_extreme_Flanker_right]
   suffix_dir:
-    value: _FCMpost
+    value: _SFmedian
   # sigma_noise:
   #   min: 0.
   #   max: 0.5
