@@ -51,7 +51,7 @@ save_path = "/neurospin/dico/data/deep_folding/current/datasets/schiz/"
 
 schiz_subjects = pd.read_csv(save_path + 'used_schiz_subjects.csv')
 
-regions = ['S.T.s.branches.']
+regions = ['S.C.-sylv.']
 sides = ['R', 'L']
 data_types = ['skeleton', 'label']
 
@@ -121,9 +121,17 @@ for region_name in regions:
             schiz_npy = np.concatenate([bsnip_npy, candi_npy, cnp_npy, schizconnect_npy], axis=0)
             print(schiz_npy.shape)
 
-            schiz_csv = pd.concat([bsnip_csv, candi_csv, cnp_csv, schizconnect_csv], axis=0)
-            schiz_csv = schiz_csv['Subject']
+            schiz_csv = pd.concat([bsnip_csv, candi_csv, cnp_csv, schizconnect_csv], axis=0, ignore_index=True)
             print(schiz_csv.shape)
+            
+            # sort the subjects by name
+            print("Before sorting")
+            print(schiz_csv[:5])
+            schiz_csv = schiz_csv.sort_values(by='Subject')
+            print("After sorting")
+            print(schiz_csv[:5])
+            # sort the numpy for it to correspond to the csv
+            schiz_npy = schiz_npy[list(schiz_csv.index)]
 
             ## save
             # create the folders if they don't exist already
@@ -132,6 +140,7 @@ for region_name in regions:
 
             # save the numpy and csv
             np.save(save_path_numpy + f'{side}{data_type}.npy', schiz_npy)
+            schiz_csv = schiz_csv['Subject']
             schiz_csv.to_csv(save_path_numpy + f'{side}{data_type}_subject.csv', index=False)
 
             # create a folder (empty)

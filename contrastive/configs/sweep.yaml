@@ -1,14 +1,15 @@
 program: train.py
-project: 2023_agaudin_jchavas_folding_supervised-contrastive
-method: bayes
+entity: aymeric-gaudin
+project: 2023_brain_regions_grid_searches
+method: random
 metric:
   goal: minimize
   name: gs_criterion_best
 parameters:
   lr:
     distribution: log_uniform_values
-    min: 0.0005
-    max: 0.05
+    min: 0.0001
+    max: 0.1
   drop_rate:
     min: 0.
     max: 0.20
@@ -17,7 +18,7 @@ parameters:
     max: 0.5
   max_angle:
     min: 0
-    max: 4
+    max: 6
 
 command:
   - ${env}
