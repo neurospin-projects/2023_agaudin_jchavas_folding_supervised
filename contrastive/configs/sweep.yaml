@@ -1,4 +1,5 @@
 program: train.py
+entity: joel-chavas
 project: inhibitory
 method: random
 metric:

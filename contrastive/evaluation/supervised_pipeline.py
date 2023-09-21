@@ -199,8 +199,8 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
                     # and correct it to suit what is needed for classifiers
                     cfg = preprocess_config(sub_dir, datasets, label)
                     log.debug(f"CONFIG FILE {type(cfg)}")
-                    log.debug(json.dumps(omegaconf.OmegaConf.to_container(
-                        cfg, resolve=True), indent=4, sort_keys=True))
+                    # log.debug(json.dumps(omegaconf.OmegaConf.to_container(
+                    #     cfg, resolve=True), indent=4, sort_keys=True))
                     # save the modified config next to the real one
                     with open(sub_dir+'/.hydra/config_evaluation.yaml', 'w') \
                             as file:
@@ -223,8 +223,8 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/volatile2/jc225751/Runs/61_classifier_regresser/Program/Output/2023-09-18_central_precentral_short_range",
-         datasets=["central_precentral_HCP_stratified_extreme_Flanker_left",
-                   "central_precentral_HCP_stratified_extreme_Flanker_right"],
+pipeline("/neurospin/dico/jchavas/Runs/61_classifier_regresser/Output/flanker/2023-09-19_SFmedian",
+         datasets=["SFmedian_HCP_stratified_extreme_Flanker_left",
+                   "SFmedian_HCP_stratified_extreme_Flanker_right"],
          label='Flanker_AgeAdj_class',
          short_name='flanker_class', overwrite=False, use_best_model=True)
