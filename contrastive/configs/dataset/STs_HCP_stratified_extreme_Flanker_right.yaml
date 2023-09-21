@@ -1,12 +1,12 @@
 # @package dataset.STs_HCP_stratified_extreme_Flanker_right
 dataset_name: STs_HCP_stratified_extreme_Flanker_right
-pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/S.T.s./mask/Rskeleton.pkl
-numpy_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/S.T.s./mask/Rskeleton.npy
-subjects_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/S.T.s./mask/Rskeleton_subject.csv
-crop_dir: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/S.T.s./mask/Rcrops
-foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/S.T.s./mask/Rlabels
-foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/S.T.s./mask/Rlabel.npy
-subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/S.T.s./mask/Rlabel_subject.csv
+pickle_normal: /home_local/jc225751/Runs/61_classifier_reg/Input/crops/S.T.s./mask/Rskeleton.pkl
+numpy_all: /home_local/jc225751/Runs/61_classifier_reg/Input/crops/S.T.s./mask/Rskeleton.npy
+subjects_all: /home_local/jc225751/Runs/61_classifier_reg/Input/crops/S.T.s./mask/Rskeleton_subject.csv
+crop_dir: /home_local/jc225751/Runs/61_classifier_reg/Input/crops/S.T.s./mask/Rcrops
+foldlabel_dir: /home_local/jc225751/Runs/61_classifier_reg/Input/crops/S.T.s./mask/Rlabels
+foldlabel_all: /home_local/jc225751/Runs/61_classifier_reg/Input/crops/S.T.s./mask/Rlabel.npy
+subjects_foldlabel_all: /home_local/jc225751/Runs/61_classifier_reg/Input/crops/S.T.s./mask/Rlabel_subject.csv
 crop_file_suffix: _cropped_skeleton.nii.gz
 pickle_benchmark: 
 train_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/extreme_flanker_train_subjects.csv
