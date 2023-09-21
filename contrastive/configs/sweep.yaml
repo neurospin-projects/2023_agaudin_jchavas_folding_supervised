@@ -17,7 +17,7 @@ parameters:
     min: 0.7
     max: 1.0
   +dataset:
-    value: [pericalcarine_HCP_stratified_extreme_Flanker_left, pericalcarine_HCP_stratified_extreme_Flanker_right]
+    value: [OCCIPITAL_HCP_stratified_extreme_Flanker_left, OCCIPITAL_HCP_stratified_extreme_Flanker_right]
   output_dir:
     value: /volatile2/jc225751/Runs/61_classifier_regresser/Program/Output
   suffix_dir:

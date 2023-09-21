@@ -1,12 +1,12 @@
 # @package dataset.OCCIPITAL_HCP_stratified_extreme_Flanker_right
 dataset_name: OCCIPITAL_HCP_stratified_extreme_Flanker_right
-pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp-/Rtop-separated/crops/2mm/OCCIPITAL/mask/Rskeleton.pkl
-numpy_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/OCCIPITAL/mask/Rskeleton.npy
-subjects_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/OCCIPITAL/mask/Rskeleton_subject.csv
-crop_dir: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/OCCIPITAL/mask/Rcrops
-foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/OCCIPITAL/mask/Rlabels
-foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/OCCIPITAL/mask/Rlabel.npy
-subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/OCCIPITAL/mask/Rlabel_subject.csv
+pickle_normal: /volatile2/jc225751/Runs/61_classifier_regresser/Input/crops/OCCIPITAL/mask/Rskeleton.pkl
+numpy_all: /volatile2/jc225751/Runs/61_classifier_regresser/Input/crops/OCCIPITAL/mask/Rskeleton.npy
+subjects_all: /volatile2/jc225751/Runs/61_classifier_regresser/Input/crops/OCCIPITAL/mask/Rskeleton_subject.csv
+crop_dir: /volatile2/jc225751/Runs/61_classifier_regresser/Input/crops/OCCIPITAL/mask/Rcrops
+foldlabel_dir: /volatile2/jc225751/Runs/61_classifier_regresser/Input/crops/OCCIPITAL/mask/Rlabels
+foldlabel_all: /volatile2/jc225751/Runs/61_classifier_regresser/Input/crops/OCCIPITAL/mask/Rlabel.npy
+subjects_foldlabel_all: /volatile2/jc225751/Runs/61_classifier_regresser/Input/crops/OCCIPITAL/mask/Rlabel_subject.csv
 crop_file_suffix: _cropped_skeleton.nii.gz
 pickle_benchmark: 
 train_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/extreme_flanker_train_subjects.csv
