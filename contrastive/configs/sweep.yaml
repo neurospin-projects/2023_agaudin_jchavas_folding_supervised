@@ -18,6 +18,8 @@ parameters:
     max: 1.0
   +dataset:
     value: [pericalcarine_HCP_stratified_extreme_Flanker_left, pericalcarine_HCP_stratified_extreme_Flanker_right]
+  output_dir:
+    value: /volatile2/jc225751/Runs/61_classifier_regresser/Program/Output
   suffix_dir:
     value: _pericalcarine
   # sigma_noise:
