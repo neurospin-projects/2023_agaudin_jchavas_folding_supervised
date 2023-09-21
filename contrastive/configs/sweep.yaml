@@ -17,11 +17,11 @@ parameters:
     min: 0.7
     max: 1.0
   +dataset:
-    value: [SOr_HCP_stratified_extreme_Flanker_left, SOr_HCP_stratified_extreme_Flanker_right]
+    value: [SFintermediate_HCP_stratified_extreme_Flanker_left, SFintermediate_HCP_stratified_extreme_Flanker_right]
   output_dir:
-    value: /volatile2/jc225751/Runs/61_classifier_regresser/Program/Output
+    value: /home_local/jc225751/Runs/61_classifier_regresser/Program/Output
   suffix_dir:
-    value: _SOr
+    value: _SFintermediate
   # sigma_noise:
   #   min: 0.
   #   max: 0.5
