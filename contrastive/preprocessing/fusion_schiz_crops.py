@@ -51,7 +51,11 @@ save_path = "/neurospin/dico/data/deep_folding/current/datasets/schiz/"
 
 schiz_subjects = pd.read_csv(save_path + 'used_schiz_subjects.csv')
 
-regions = ['S.C.-sylv.']
+regions = ['F.Coll.-S.Rh.', 'F.P.O.-S.Cu.-Sc.Cal.', 'fronto-parietal_medial_face.',
+           'Lobule_parietal_sup.', 'OCCIPITAL',
+           'S.F.int.-S.R.', 'S.F.marginal-S.F.inf.ant.', 'S.or.-S.Olf.',
+           'S.s.P.-S.Pa.int.', 'S.T.i.-S.O.T.lat.', 'S.T.i.-S.T.s.-S.T.pol.',
+           'S.T.s.br.']
 sides = ['R', 'L']
 data_types = ['skeleton', 'label']
 

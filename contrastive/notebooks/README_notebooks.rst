@@ -59,7 +59,7 @@ the most or least folded subsets of a dataset).
 
 fusion_schiz_bases
 ------------------
-**//!\ It has been moved to preprocessing instead of notebooks.**
+**/!\\ It has been moved to preprocessing instead of notebooks.**
 Notebook to fusion bsnip1, candi, cnp and schizconnect in one database nammed schiz. Please look at 
 the google doc nammed "Travail base de données schizophrène" for more information.
 
