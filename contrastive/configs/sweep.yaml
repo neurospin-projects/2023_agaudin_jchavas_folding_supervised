@@ -4,7 +4,7 @@ project: 2023_brain_regions_grid_searches
 method: random
 metric:
   goal: minimize
-  name: gs_criterion_best
+  name: gs_criterion
 parameters:
   lr:
     distribution: log_uniform_values
