@@ -223,8 +223,8 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/jchavas/Runs/61_classifier_regresser/Output/flanker/2023-09-19_SFmedian",
-         datasets=["SFmedian_HCP_stratified_extreme_Flanker_left",
-                   "SFmedian_HCP_stratified_extreme_Flanker_right"],
+pipeline("/volatile/jc225751/Runs/61_classifier_regresser/Program/Output/2023-09-28_fissure_collateral",
+         datasets=["fissure_collateral_HCP_stratified_extreme_Flanker_left",
+                   "fissure_collateral_HCP_stratified_extreme_Flanker_right"],
          label='Flanker_AgeAdj_class',
          short_name='flanker_class', overwrite=False, use_best_model=True)
