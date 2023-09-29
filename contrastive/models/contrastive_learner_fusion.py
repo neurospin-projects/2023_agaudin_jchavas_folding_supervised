@@ -109,6 +109,13 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         else:
             raise ValueError(f"No underlying backbone with backbone name {config.backbone_name}")
         
+        # freeze the backbone weights if required
+        if config.freeze_encoders:
+            for backbone in self.backbones:
+                backbone.freeze()
+            log.info("The model's encoders weights are frozen. Set 'freeze_encoders' \
+in the config to False to unfreeze them.")
+
         # rename variables
         concat_latent_spaces_size = config.backbone_output_size * n_datasets
 
@@ -700,8 +707,9 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         else:
             return X_tsne
 
+
     def save_best_auc_model(self, current_val_auc, current_train_auc, save_path='./logs/'):
-        """Saves best parameters if best val auc"""
+        """Saves aucs and model weights if best val auc"""
         if self.current_epoch == 0:
             best_val_auc = 0
             best_train_auc = 0
@@ -964,12 +972,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 save_path = './' + self.loggers[0].experiment.log_dir + '/train_auc.json'
                 with open(save_path, 'r') as file:
                     train_auc = json.load(file)['train_auc']
-                self.log('diff_auc',
-                         float(train_auc - val_auc),
-                         on_epoch=True)
-                self.log('learning_rate',
-                         self.optimizers().param_groups[0]['lr'],
-                         on_epoch=True)
+                self.log('diff_auc', float(train_auc - val_auc), on_epoch=True)
             else:
                 train_auc = 0.5
             

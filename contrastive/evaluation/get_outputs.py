@@ -46,36 +46,7 @@ def preprocess_config(sub_dir, datasets, label):
     return cfg
 
 
-def save_outputs_as_csv(outputs, filenames, labels, csv_path=None, verbose=False):
-    columns_names = ['dim'+str(i+1) for i in range(outputs.shape[1])]
-    values = pd.DataFrame(outputs.numpy(), columns=columns_names)
-    labels = pd.DataFrame(labels, columns=['labels']).astype(int)
-    filenames = pd.DataFrame(filenames, columns=['ID'])
-    df_outputs = pd.concat([labels, values, filenames], axis=1)
-    
-    # remove one copy each ID
-    df_outputs = df_outputs.groupby('ID').mean()
-    df_outputs.labels = df_outputs.labels.astype(int)
-
-    if verbose:
-        print("outputs:", df_outputs.iloc[:10, :])
-        print("nb of elements:", df_outputs.shape[0])
-
-    # Solves the case in which index type is tensor
-    if len(df_outputs.index) > 0:  # avoid cases where empty df
-        if type(df_outputs.index[0]) != str:
-            index = [idx.item() for idx in df_outputs.index]
-            index_name = df_outputs.index.name
-            df_outputs.index = index
-            df_outputs.index.names = [index_name]
-
-    if csv_path:
-        df_outputs.to_csv(csv_path)
-    else:
-        return df_outputs
-
-
-def compute_embeddings(config, model_path, folder_name=None, use_best_model=False):
+def compute_outputs(config, model_path, folder_name=None, use_best_model=False):
     """Compute the embeddings (= output of the backbone(s)) for a given model. 
     It relies on the hydra config framework, especially the backbone, datasets 
     and model parts.
@@ -116,30 +87,28 @@ def compute_embeddings(config, model_path, folder_name=None, use_best_model=Fals
 
     # get the data and compute auc
         # train and val auc
-    train_loader = data_module.train_dataloader()
-    val_loader = data_module.val_dataloader()
-    test_loader = data_module.test_dataloader()
+    loaders_dict = {}
+    loaders_dict['train'] = data_module.train_dataloader()
+    loaders_dict['val'] = data_module.val_dataloader()
+    loaders_dict['test'] = data_module.test_dataloader()
 
     # test_intra
     try:
         test_intra_loader = data_module.test_intra_dataloader()
-        test_intra_out, test_intra_filenames, test_intra_labels = \
-            model.compute_outputs_skeletons(test_intra_loader)
-        full_save_path = save_path + '/test_intra_outputs.csv'
-        save_outputs_as_csv(test_intra_out, test_intra_filenames,
-                            test_intra_labels, full_save_path)
+        loaders_dict['test_intra'] = test_intra_loader
     except:
         log.info("No test intra for this dataset.")
-    
-    # train-val-test outputs
-    loaders = {'train': train_loader,
-               'val': val_loader,
-               'test': test_loader}
-    for subset in loaders.keys():
-        loader = loaders[subset]
+
+    # compute and save outputs
+    full_csv = pd.DataFrame([])
+    for subset in loaders_dict.keys():
+        loader = loaders_dict[subset]
         outputs, filenames, labels = model.compute_outputs_skeletons(loader)
         full_save_path = save_path + f'/{subset}_outputs.csv'
-        save_outputs_as_csv(outputs, filenames, labels, full_save_path)
+        subset_csv = save_outputs_as_csv(outputs, filenames, labels, full_save_path)
+        full_csv = pd.concat([full_csv, subset_csv], axis=0)
+    full_csv.to_csv(save_path + '/full_outputs.csv')
+    log.info("Outputs saved")
 
     # save what are the datasets have been used for the performance computation
     datasets = config.dataset.keys()
@@ -167,13 +136,18 @@ def get_outputs(model_path, datasets, label, short_name, use_best_model):
         yaml.dump(omegaconf.OmegaConf.to_yaml(cfg), file)
 
     folder_name = get_save_folder_name(datasets, short_name)
-    compute_embeddings(cfg, os.path.abspath(model_path),
-                       folder_name=folder_name,
-                       use_best_model=use_best_model)
+    compute_outputs(cfg, os.path.abspath(model_path),
+                    folder_name=folder_name,
+                    use_best_model=False)
+    if use_best_model:  # do both
+        cfg = preprocess_config(model_path, datasets, label)
+        compute_outputs(cfg, os.path.abspath(model_path),
+                        folder_name='best_model_'+folder_name,
+                        use_best_model=True)
 
 
-get_outputs(model_path='/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-20/15-42-18_0',
-            datasets=["cingulate_schiz_strat_bis"],
-            label='diagnosis',
-            short_name='cing_schiz_strat_bis',
+get_outputs(model_path='/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-09-08/no_cal_pretrained',
+            datasets=["cing_ACCpatterns_recrop"],
+            label='Right_PCS',
+            short_name='ACC',
             use_best_model=True)
