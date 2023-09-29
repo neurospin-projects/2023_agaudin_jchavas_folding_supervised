@@ -996,7 +996,8 @@ in the config to False to unfreeze them.")
                                                   self.current_epoch)
                 
             # save the model that has the best val auc during train
-            best_val_auc, best_train_auc = self.save_best_criterion_model(val_auc, train_auc, save_path='./logs/')
+            #best_val_auc, best_train_auc = self.save_best_criterion_model(val_auc, train_auc, save_path='./logs/')
+            best_val_auc, best_train_auc = self.save_best_auc_model(val_auc, train_auc, save_path='./logs/')
 
             # log best grid search criterion for wandb (if used)
             if self.config.wandb.grid_search:
