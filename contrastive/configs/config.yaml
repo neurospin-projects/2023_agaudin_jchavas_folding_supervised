@@ -3,8 +3,8 @@ defaults:
   - augmentations: foldlabel
   - backbone: ConvNet
   - classifier: svm
-  # - dataset/central_precentral_HCP_stratified_extreme_Flanker_left
-  # - dataset/central_precentral_HCP_stratified_extreme_Flanker_right
+  - dataset/central_precentral_HCP_stratified_extreme_Flanker_left
+  - dataset/central_precentral_HCP_stratified_extreme_Flanker_right
   - embeddings: embeddings
   - hydra: local
   - label: Flanker_AgeAdj_class
@@ -13,7 +13,7 @@ defaults:
   - platform: cuda_not_brainvisa
   - projection_head: sigmoid
   - trainer: classifier
-  - wandb: sweep
+  - wandb: identity
   - override hydra/job_logging: custom
 
 data: ${oc.dict.values:dataset}
