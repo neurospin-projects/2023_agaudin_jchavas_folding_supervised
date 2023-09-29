@@ -1,6 +1,6 @@
 # @package dataset.fissure_lateral_HCP_stratified_extreme_Flanker_right
 dataset_name: fissure_lateral_HCP_stratified_extreme_Flanker_right
-pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp-/Rtop-separated/crops/2mm/F.C.L.p.-subsc.-F.C.L.a.-INSULA./mask/Rskeleton.pkl
+pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/F.C.L.p.-subsc.-F.C.L.a.-INSULA./mask/Rskeleton.pkl
 numpy_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/F.C.L.p.-subsc.-F.C.L.a.-INSULA./mask/Rskeleton.npy
 subjects_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/F.C.L.p.-subsc.-F.C.L.a.-INSULA./mask/Rskeleton_subject.csv
 crop_dir: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/F.C.L.p.-subsc.-F.C.L.a.-INSULA./mask/Rcrops

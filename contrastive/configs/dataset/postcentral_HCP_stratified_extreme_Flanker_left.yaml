@@ -1,12 +1,12 @@
 # @package dataset.postcentral_HCP_stratified_extreme_Flanker_left
 dataset_name: postcentral_HCP_stratified_extreme_Flanker_left
-pickle_normal: /volatile/jc225751/Runs/61_classifier_regresser/Input/crops/S.Po.C./mask/Lskeleton.pkl
-numpy_all: /volatile/jc225751/Runs/61_classifier_regresser/Input/crops/S.Po.C./mask/Lskeleton.npy
-subjects_all: /volatile/jc225751/Runs/61_classifier_regresser/Input/crops/S.Po.C./mask/Lskeleton_subject.csv
-crop_dir: /volatile/jc225751/Runs/61_classifier_regresser/Input/crops/S.Po.C./mask/Lcrops
-foldlabel_dir: /volatile/jc225751/Runs/61_classifier_regresser/Input/crops/S.Po.C./mask/Llabels
-foldlabel_all: /volatile/jc225751/Runs/61_classifier_regresser/Input/crops/S.Po.C./mask/Llabel.npy
-subjects_foldlabel_all: /volatile/jc225751/Runs/61_classifier_regresser/Input/crops/S.Po.C./mask/Llabel_subject.csv
+pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/S.Po.C./mask/Lskeleton.pkl
+numpy_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/S.Po.C./mask/Lskeleton.npy
+subjects_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/S.Po.C./mask/Lskeleton_subject.csv
+crop_dir: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/S.Po.C./mask/Lcrops
+foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/S.Po.C./mask/Llabels
+foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/S.Po.C./mask/Llabel.npy
+subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/S.Po.C./mask/Llabel_subject.csv
 crop_file_suffix: _cropped_skeleton.nii.gz
 pickle_benchmark: 
 train_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/extreme_flanker_train_subjects.csv

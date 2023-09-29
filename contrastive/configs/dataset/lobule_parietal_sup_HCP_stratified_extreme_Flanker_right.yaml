@@ -1,6 +1,6 @@
 # @package dataset.lobule_parietal_sup_HCP_stratified_extreme_Flanker_right
 dataset_name: lobule_parietal_sup_HCP_stratified_extreme_Flanker_right
-pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp-/Rtop-separated/crops/2mm/Robule_parietal_sup./mask/Rskeleton.pkl
+pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/Robule_parietal_sup./mask/Rskeleton.pkl
 numpy_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/Robule_parietal_sup./mask/Rskeleton.npy
 subjects_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/Robule_parietal_sup./mask/Rskeleton_subject.csv
 crop_dir: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/Robule_parietal_sup./mask/Rcrops

@@ -1,6 +1,6 @@
 # @package dataset.fronto-parietal_medial_face_HCP_stratified_extreme_Flanker_left
 dataset_name: fronto-parietal_medial_face_HCP_stratified_extreme_Flanker_left
-pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp-/Rtop-separated/crops/2mm/fronto-parietal_medial_face./mask/Lskeleton.pkl
+pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/fronto-parietal_medial_face./mask/Lskeleton.pkl
 numpy_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/fronto-parietal_medial_face./mask/Lskeleton.npy
 subjects_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/fronto-parietal_medial_face./mask/Lskeleton_subject.csv
 crop_dir: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/fronto-parietal_medial_face./mask/Lcrops
