@@ -1,0 +1,10 @@
+# @package dataset.L_frites
+dataset_name: L_frites
+numpy_all: /neurospin/dico/data/deep_folding/current/datasets/benchmarks/frites/Larrays.npy
+subjects_all: /neurospin/dico/data/deep_folding/current/datasets/benchmarks/frites/subjects.csv
+crop_dir: /neurospin/dico/data/deep_folding/current/datasets/benchmarks/frites/crops
+crop_file_suffix: _cropped_skeleton.nii.gz
+train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/benchmarks/frites/train_val_subjects.csv
+subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/benchmarks/frites/labels.csv
+subject_column_name: 'Sub_ID'
+input_size: (1, 20, 42, 38)

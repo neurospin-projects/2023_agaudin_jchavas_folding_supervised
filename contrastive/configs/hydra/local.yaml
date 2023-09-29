@@ -1,8 +1,15 @@
 # @package _global_
+output_dir: ../../Output
+sweep_day: ${now:%Y-%m-%d}
+suffix_dir: ""
+sweep_dir: ${output_dir}/${sweep_day}${suffix_dir}
+run_time: ${now:%H-%M-%S}
 hydra:
+  job:
+    chdir: True
   run:
-    dir: ../../../Output/regresser/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: ${sweep_dir}/${run_time}_${get_train_seed:}
   sweep:
-    dir: ../../../Output/regresser/${now:%Y-%m-%d}
-    subdir: ${now:%H-%M-%S}_${hydra.job.num}
-checkpoint_dir: ../../Output
+    dir: ${sweep_dir}
+    subdir: ${run_time}_${hydra.job.num}
+checkpoint_dir: output_dir

@@ -1,4 +1,4 @@
-# @package _global_
+# @package dataset.cingulate_Utrecht_dHCP
 dataset_name: cingulate_Utrecht_dHCP
 pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/utrecht_dHCP/crops/2mm/F.C.M.ant./mask/Rskeleton.pkl
 #beware: subjects all are only the test subjects ? (SVM)
@@ -15,5 +15,4 @@ pickle_benchmark:
 train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/utrecht_dHCP/crops/2mm/F.C.M.ant./mask/Rskeleton_subject_train_val.csv
 subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/utrecht_dHCP/crops/2mm/F.C.M.ant./mask/preterm_labels.csv
 subject_column_name: 'Subject'
-label_names: ["preterm"]
 n_max: 1080

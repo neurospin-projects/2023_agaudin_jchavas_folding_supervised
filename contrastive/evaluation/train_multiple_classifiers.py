@@ -16,13 +16,15 @@ from joblib import cpu_count
 from functools import partial
 
 from sklearn.preprocessing import StandardScaler
-from contrastive.models.binary_classifier import BinaryClassifier
-from sklearn.svm import LinearSVR, SVC
+# from contrastive.models.binary_classifier import BinaryClassifier
+from sklearn.svm import SVC
+from sklearn.neural_network import MLPClassifier
 
 from contrastive.data.utils import read_labels
 
 from contrastive.utils.config import process_config
 from contrastive.utils.logs import set_root_logger_level, set_file_logger
+from contrastive.evaluation.utils_pipelines import save_used_label
 
 from sklearn.utils._testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
@@ -70,23 +72,23 @@ def load_embeddings(dir_path, labels_path, config):
                                    axis=0, ignore_index=False)
 
     embeddings.sort_index(inplace=True)
-    print("sorted embeddings:", embeddings.head())
+    log.debug(f"sorted embeddings: {embeddings.head()}")
 
     # get the labels (0 = no paracingulate, 1 = paracingulate)
     # and match them to the embeddings
     # /!\ use read_labels
     label_scaling = (None if 'label_scaling' not in config.keys()
                      else config.label_scaling)
-    labels = read_labels(labels_path, config.subject_column_name,
+    labels = read_labels(labels_path, config.data[0].subject_column_name,
                          config.label_names, label_scaling)
     labels.rename(columns={config.label_names[0]: 'label'}, inplace=True)
     labels = labels[labels.Subject.isin(embeddings.index)]
     labels.sort_values(by='Subject', inplace=True, ignore_index=True)
-    print("sorted labels", labels.head())
+    log.debug(f"sorted labels: {labels.head()}")
 
     embeddings = embeddings[embeddings.index.isin(labels.Subject)]
     embeddings.sort_index(inplace=True)
-    print("sorted embeddings:", embeddings.head())
+    log.debug(f"sorted embeddings: {embeddings.head()}")
 
     # /!\ multiple labels is not handled
 
@@ -125,7 +127,7 @@ def load_and_format_embeddings(dir_path, labels_path, config):
 
 
 def compute_indicators(Y, proba_pred):
-    # compute ROC curve and auc
+    """Compute ROC curve and auc, and accuracy."""
     if type(Y) == torch.tensor:
         labels_true = Y.detach_().numpy()
     else:
@@ -147,8 +149,9 @@ def compute_auc(column, label_col=None):
     return roc_auc_score(label_col, column)
 
 
-# get a model with performance that is representative of the group
 def get_average_model(labels_df):
+    """Get a model with performance that is representative of the group, 
+    i.e. the one with the median auc."""
     aucs = labels_df.apply(compute_auc, args=[labels_df.label])
     aucs = aucs[aucs.index != 'label']
     aucs = aucs[aucs == aucs.quantile(interpolation='nearest')]
@@ -157,6 +160,8 @@ def get_average_model(labels_df):
 
 def post_processing_results(labels, embeddings, Curves, aucs, accuracies,
                             values, columns_names, mode, results_save_path):
+    """Get the mean and the median AUC and accuracy, plot the ROC curves and 
+    the generated files."""
 
     labels_true = labels.label.values.astype('float64')
 
@@ -211,148 +216,9 @@ def post_processing_results(labels, embeddings, Curves, aucs, accuracies,
     # DEBUG embeddings.to_csv(results_save_path+f"/effective_embeddings.csv",
     #                         index=True)
 
-    return
 
-
-def train_nn_classifiers(config):
-    # set up load and save paths
-    train_embs_path = config.training_embeddings
-    train_lab_paths = config.training_labels
-
-    # if not specified, the embeddings are the ones used for training
-
-    EoI_path = (config.embeddings_of_interest if config.embeddings_of_interest
-                else train_embs_path)
-    LoI_path = (config.labels_of_interest if config.labels_of_interest
-                else train_lab_paths)
-
-    # if not specified, the outputs of the classifier will be stored next
-    # to the embeddings used to generate them
-    results_save_path = (config.results_save_path if config.results_save_path
-                         else EoI_path)
-    if not os.path.isdir(results_save_path):
-        results_save_path = os.path.dirname(results_save_path)
-
-    # import the embeddings (supposed to be already computed)
-    X_train, X_test, Y_train, Y_test, labels_train, labels_test = \
-        load_and_format_embeddings(train_embs_path, train_lab_paths, config)
-
-    # create objects that will be filled during the loop
-    train_prediction_matrix = np.zeros(
-        (labels_train.shape[0], config.n_repeat))
-    test_prediction_matrix = np.zeros((labels_test.shape[0], config.n_repeat))
-
-    Curves = {'train': [],
-              'test': []}
-    aucs = {'train': [],
-            'test': []}
-    accuracies = {'train': [],
-                  'test': []}
-
-    # loop to train the classifiers
-    for i in range(config.n_repeat):
-        print("model number", i)
-
-        if i == 0:
-            hidden_layers = list(config.classifier_hidden_layers)
-            layers_shapes = [np.shape(X_train)[1]]+hidden_layers+[1]
-
-        bin_class = BinaryClassifier(layers_shapes,
-                                     activation=config.classifier_activation,
-                                     loss=config.classifier_loss)
-
-        if i == 0:
-            print("model", bin_class)
-
-        class_train_set = TensorDataset(X_train, Y_train)
-        train_loader = DataLoader(
-            class_train_set, batch_size=config.class_batch_size)
-
-        trainer = pl.Trainer(max_epochs=config.class_max_epochs,
-                             logger=False, enable_checkpointing=False)
-        trainer.fit(model=bin_class, train_dataloaders=train_loader)
-
-        # load new embeddings and labels if needed
-        if (EoI_path == train_embs_path) and (LoI_path == train_lab_paths):
-            pass
-        else:
-            pass
-
-        # predict labels with the classifier (both for train and test sets)
-        labels_pred_train = bin_class.forward(X_train).detach().numpy()
-        labels_pred_test = bin_class.forward(X_test).detach().numpy()
-        # save the predicted labels
-        train_prediction_matrix[:, i] = labels_pred_train.flatten()
-        test_prediction_matrix[:, i] = labels_pred_test.flatten()
-
-        # compute indicators for train
-        curves, roc_auc, accuracy = compute_indicators(
-            Y_train, labels_pred_train)
-        Curves['train'].append(curves)
-        aucs['train'].append(roc_auc)
-        accuracies['train'].append(accuracy)
-
-        # compute indicators for test
-        curves, roc_auc, accuracy = compute_indicators(
-            Y_test, labels_pred_test)
-        Curves['test'].append(curves)
-        aucs['test'].append(roc_auc)
-        accuracies['test'].append(accuracy)
-
-        # plot the histogram of predicted values
-        """with_paracingulate = labels[labels.label == 1]
-        without_paracingulate = labels[labels.label == 0]
-
-        print(with_paracingulate.shape[0], "-", without_paracingulate.shape[0])
-
-        x_min = min(0, np.min(labels.predicted))
-        x_max = max(1, np.max(labels.predicted))
-
-        plt.figure()
-        plt.hist(without_paracingulate.predicted,
-                 bins=np.arange(x_min,x_max,0.01), alpha=0.6)
-        plt.hist(with_paracingulate.predicted,
-                 bins=np.arange(x_min,x_max,0.01), alpha=0.6, color='r')
-        plt.legend(['without_paracingulate', "with_paracingulate"])
-
-        ax = plt.gca()
-        plt.vlines([0.5], ax.get_ylim()[0], ax.get_ylim()[1], color='black')
-
-        plt.savefig(results_save_path+"/prediction_histogram.png")"""
-
-    # add the predictions to the df where the true values are
-    columns_names = ["predicted_"+str(i) for i in range(config.n_repeat)]
-    train_preds = pd.DataFrame(
-        train_prediction_matrix, columns=columns_names,
-        index=labels_train.index)
-    labels_train = pd.concat([labels_train, train_preds], axis=1)
-
-    test_preds = pd.DataFrame(test_prediction_matrix,
-                              columns=columns_names, index=labels_test.index)
-    labels_test = pd.concat([labels_test, test_preds], axis=1)
-
-    # evaluation of the aggregation of the models
-    values = {}
-
-    for mode in ['train', 'test']:
-        if mode == 'train':
-            labels = labels_train
-        elif mode == 'test':
-            labels = labels_test
-
-        post_processing_results(
-            labels, Curves, aucs, accuracies, values,
-            columns_names, mode, results_save_path)
-        # values is changed in place
-
-    with open(results_save_path+"/values.json", 'w+') as file:
-        json.dump(values, file)
-
-    plt.close('all')
-
-
-def train_one_svm_classifier(config, inputs, i=0):
-    """Trains one SVC.
+def train_one_classifier(config, inputs, i=0):
+    """Trains one classifier, whose type is set in config_no_save.
 
     Args:
         - config: config file
@@ -372,22 +238,26 @@ def train_one_svm_classifier(config, inputs, i=0):
         Y_test = inputs['Y_test']
     outputs = {}
 
+    # choose the classifier type
+    # /!\ The chosen classifier must have a predict_proba method.
+    if config.classifier_name == 'svm':
+        model = SVC(kernel='linear', probability=True,
+                    max_iter=config.class_max_epochs, random_state=i)
+    elif config.classifier_name == 'neural_network':
+        model = MLPClassifier(hidden_layer_sizes=config.classifier_hidden_layers,
+                              activation=config.classifier_activation,
+                              batch_size=config.class_batch_size,
+                              max_iter=config.class_max_epochs, random_state=i)
+    else:
+        raise ValueError(f"The chosen classifier ({config.classifier_name}) is not handled by the pipeline. \
+Choose a classifier type that exists in configs/classifier.")
+    
     # SVC predict_proba
-    model = SVC(kernel='linear', probability=True,
-                max_iter=config.class_max_epochs, random_state=i)
     labels_proba = cross_val_predict(model, X, Y, cv=5, method='predict_proba')
     curves, roc_auc, accuracy = compute_indicators(Y, labels_proba)
     outputs['proba_of_1'] = labels_proba[:, 1]
 
-    # SVR
-    # model = LinearSVR(max_iter=config.class_max_epochs,
-    #                   random_state=i) # set the params here
-    # labels_pred = cross_val_predict(model, X, Y, cv=5)
-    # curves, roc_auc, accuracy = compute_indicators(Y, labels_pred)
-    # outputs['labels_pred'] = labels_pred
-
     # Stores in outputs dict
-
     outputs['curves'] = curves
     outputs['roc_auc'] = roc_auc
     outputs['accuracy'] = accuracy
@@ -404,31 +274,33 @@ def train_one_svm_classifier(config, inputs, i=0):
 
 
 @ignore_warnings(category=ConvergenceWarning)
-def train_svm_classifiers(config):
+def train_n_repeat_classifiers(config):
+    """Sets up the save paths, loads the embeddings and then loops 
+    to train the n_repeat (=250) classifiers."""
     # import the data
 
     # set up load and save paths
     train_embs_path = config.training_embeddings
     test_embs_path = config.test_embeddings
     # /!\ in fact all_labels (=train_val and test labels)
-    train_lab_paths = config.training_labels
+    train_lab_paths = config.data[0].subject_labels_file
 
     # if not specified, the embeddings the results are created from
     # are the ones used for training
-    log.info("training_labels file in train_svm_classifiers = "
-             f"{train_lab_paths}")
-
     EoI_path = (config.embeddings_of_interest if config.embeddings_of_interest
                 else train_embs_path)
-    LoI_path = (config.labels_of_interest if config.labels_of_interest
-                else train_lab_paths)
 
     # if not specified, the outputs of the classifier will be stored next
     # to the embeddings used to generate them
     results_save_path = (config.results_save_path if config.results_save_path
                          else EoI_path)
+    # remove the 'full_embeddings.csv if it is there
     if not os.path.isdir(results_save_path):
         results_save_path = os.path.dirname(results_save_path)
+    # add a subfolder with the evaluated label as name
+    results_save_path = results_save_path + "/" + config.label_names[0]
+    if not os.path.exists(results_save_path):
+        os.makedirs(results_save_path)
 
     embeddings, labels = load_embeddings(
         train_embs_path, train_lab_paths, config)
@@ -437,14 +309,15 @@ def train_svm_classifiers(config):
 
     Y = labels.label
 
-    if np.unique(Y).shape[0] > 2:
-        per_50 = np.percentile(Y, 50.)
-        Z = Y.copy(deep=True)
-        Z[Y <= per_50] = 0
-        Z[Y > per_50] = 1
-        Z = Z.astype(int)
-        labels.label = Z.copy(deep=True)
-        Y = labels.label
+    # debug regression
+    # if np.unique(Y).shape[0] > 2:
+    #     per_50 = np.percentile(Y, 50.)
+    #     Z = Y.copy(deep=True)
+    #     Z[Y <= per_50] = 0
+    #     Z[Y > per_50] = 1
+    #     Z = Z.astype(int)
+    #     labels.label = Z.copy(deep=True)
+    #     Y = labels.label
 
     if test_embs_path:
         test_embeddings, test_labels = load_embeddings(
@@ -486,14 +359,14 @@ def train_svm_classifiers(config):
     if _parallel:
         print(f"Computation done IN PARALLEL: {config.n_repeat} times")
         print(f"Number of subjects used by the SVM: {len(inputs['X'])}")
-        func = partial(train_one_svm_classifier, config, inputs)
+        func = partial(train_one_classifier, config, inputs)
         outputs = pqdm(repeats, func, n_jobs=define_njobs())
     else:
         outputs = []
         print("Computation done SERIALLY")
         for i in repeats:
             print("model number", i)
-            outputs.append(train_one_svm_classifier(config, inputs, i))
+            outputs.append(train_one_classifier(config, inputs, i))
 
     # Put together the results
     for i, o in enumerate(outputs):
@@ -543,29 +416,24 @@ def train_svm_classifiers(config):
     # plt.show()
     plt.close('all')
 
+    save_used_label(os.path.dirname(results_save_path), config)
+
 
 @hydra.main(config_name='config_no_save', config_path="../configs")
 def train_classifiers(config):
-    config = process_config(config)
+    """Train classifiers (either SVM or neural networks) to classify target embeddings
+    with the given label.
+    
+    All the relevant information should be passed thanks to the input config.
+    
+    It saves txt files containg the acuuracies, the aucs and figures of the ROC curves."""
 
-    print("\nIn train_classifiers, after process_config, "
-          f"training_labels = {config['training_labels']}\n")
+    config = process_config(config)
 
     set_root_logger_level(config.verbose)
 
-    # runs the analysis with the chosen type of classifiers
-    if config.classifier_name == 'neural_network':
-        train_nn_classifiers(config)
-
-    elif config.classifier_name == 'svm':
-        train_svm_classifiers(config)
-
-    else:
-        raise ValueError(
-            f"The classifer type {config.classifier_name} "
-            "you are asking for is not implemented."
-            "Please change the config.classifier used in the config file "
-            "you are calling to solve the problem.")
+    # the choice of the classifiers' type is now inside the function 
+    train_n_repeat_classifiers(config)
 
 
 if __name__ == "__main__":

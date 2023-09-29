@@ -17,10 +17,10 @@ best_model = False
 generate_bdd_models(folders, bdd, visited, verbose=False, dataset=dataset)
 
 bdd = pd.DataFrame(bdd)
-print("Number of subjects:", bdd.shape[0])
+print("Number of models:", bdd.shape[0])
 if bdd.empty:
     raise ValueError(
-        "Empty dataframe => no subject selected: "
+        "Empty dataframe => no model selected: "
         "you should check 'folders' or 'dataset'")
 
 for col in bdd.columns:

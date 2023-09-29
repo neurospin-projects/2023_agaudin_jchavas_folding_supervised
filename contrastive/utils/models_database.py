@@ -1,13 +1,14 @@
 import os
+import glob
 import json
 import yaml
 import pandas as pd
 
 from tensorflow.python.summary.summary_iterator import summary_iterator
 
-"""
-This file contains functions to create a database containing all the models.
-These functions are used in the generate_bdd python file"""
+
+# This file contains functions to create a database containing all the models.
+# These functions are used in the generate_bdd python file.
 
 
 # get all the subdirectories (not files) of a given directory
@@ -19,8 +20,8 @@ def get_subdirs(directory):
     return sub_dirs
 
 
-# get logs of a given model. They have to follow the hydra templating
 def get_path2logs(model_path):
+    """Gets logs of a given model. They have to follow the hydra templating"""
     # get the right templating for the log files
     if os.path.exists(model_path + "/logs/default/version_0"):
         path = model_path + "/logs/default/version_0"
@@ -32,9 +33,9 @@ def get_path2logs(model_path):
     return path
 
 
-# get the train and validation losses of a model
-# it must follow the hydra templating
 def get_loss(model_path, save=False, verbose=False):
+    """Gets the train and validation losses of a model. It must follow 
+    the hydra templating"""
 
     path = get_path2logs(model_path)
 
@@ -67,14 +68,23 @@ def get_loss(model_path, save=False, verbose=False):
             print(final_losses)
     else:
         return loss_train, loss_val
+    
+
+def list_to_tuple(dico):
+    """Changes the list values of a dictionary into tuples. Works in place."""
+    for key in dico:
+        if type(dico[key]) == list:
+            dico[key] = tuple(dico[key])
 
 
-# get the relevant information from a model, i.e. losses, performances (classifiers' accuracy
-# and auc for a given dataset) and config parameters
-# Also computes an exclusion criteria (being locked in a trivial minimum) based on the histogram
-# of outputs similarities
-# Returns a dictionary containing this information
 def process_model(model_path, dataset='cingulate_ACCpatterns', verbose=True):
+    """Gets the relevant information from a model, i.e. losses, performances (classifiers' accuracy
+    and auc for a given dataset) and config parameters.
+    
+    Also computes an exclusion criteria (being locked in a trivial minimum) based on the histogram
+    of outputs similarities.
+    
+    Returns a dictionary containing this information."""
     # generate a dictionnary with the model's parameters and performances
     model_dict = {}
     model_dict['model_path'] = model_path
@@ -119,12 +129,15 @@ def process_model(model_path, dataset='cingulate_ACCpatterns', verbose=True):
             model_dict[f"{good_model_dict['quantile-percentage']}_quantile"] = good_model_dict['quantile']
     else:
         model_dict['exclude'] = False
+    
+    # convert list in tuples in order to avoid hash issues later
+    list_to_tuple(model_dict)
 
     return model_dict
 
 
-# Do the same than process_model but for model's best state weights, saved 'by hand'
 def process_best_model(model_path, dataset='cingulate_ACCpatterns'):
+    """Does the same than process_model but for model's best state weights, saved 'by hand'"""
     # generate a dictionnary with the model's parameters and performances
     model_dict = {}
     model_dict['model_path'] = model_path
@@ -149,12 +162,58 @@ def process_best_model(model_path, dataset='cingulate_ACCpatterns'):
         losses = json.load(file3)
         model_dict.update(losses)
 
+    # convert list in tuples in order to avoid hash issues later
+    list_to_tuple(model_dict)
+
     return model_dict
 
 
-# fill the dictionnary bdd_models with the parameters and performances of all the bdd models
+def process_supervised_model(model_path, dataset, verbose=True):
+    """Gets the relevant information from a supervised model, i.e. losses, ouitput aucs 
+    and config parameters.
+    
+    Returns a dictionary containing this information."""
+    # generate a dictionnary with the model's parameters and performances
+    model_dict = {}
+    model_dict['model_path'] = model_path
+
+    # read performances
+    paths = glob.glob(model_path + rf"/{dataset}_supervised_results/aucs*.json")
+    for path in paths:
+        with open(path, 'r') as file:
+            values = json.load(file)
+            keys = list(values.keys())
+            if 'best' in path:
+                for key in keys:
+                    values['best_' + key] = values.pop(key)
+            model_dict.update(values)
+
+    # read parameters
+    with open(model_path+'/partial_config.yaml', 'r') as file2:
+        partial_config = yaml.load(file2, Loader=yaml.FullLoader)
+        model_dict.update(partial_config)
+
+    # compute losses if necessary
+    log_path = get_path2logs(model_path)
+    if not os.path.exists(os.path.join(log_path, "final_losses.json")):
+        if verbose:
+            print(f"Get the losses for {model_path}.")
+        get_loss(model_path, save=True, verbose=verbose)
+
+    # get the final losses
+    with open(os.path.join(log_path, "final_losses.json"), 'r') as file3:
+        losses = json.load(file3)
+        model_dict.update(losses)
+
+    # convert list in tuples in order to avoid hash issues later
+    list_to_tuple(model_dict)
+
+    return model_dict
+
+
 def generate_bdd_models(folders, bdd_models, visited, dataset='cingulate_ACCpatterns',
-                        verbose=True, best_model=False):
+                        best_model=False, supervised=False, verbose=True):
+    """Fills the dictionnary bdd_models with the parameters and performances of all the bdd models"""
     # depth first exploration of folders to treat all the models in it
 
     if verbose:
@@ -175,23 +234,31 @@ def generate_bdd_models(folders, bdd_models, visited, dataset='cingulate_ACCpatt
                 if os.path.exists(dir_path+'/.hydra/config.yaml'):
                     print("Treating", dir_path)
                     # check if values and parameters computed for the model
-                    if os.path.exists(dir_path + f"/{dataset}_embeddings/values.json"):
-                        if not best_model:
-                            model_dict = process_model(
-                                dir_path, dataset=dataset)
-                            bdd_models.append(model_dict)
-                        else:
-                            if os.path.exists(dir_path + f"/{dataset}_embeddings_best_model/values.json"):
-                                model_dict = process_best_model(
+                    if not supervised:
+                        if os.path.exists(dir_path + f"/{dataset}_embeddings/values.json"):
+                            if not best_model:
+                                model_dict = process_model(
                                     dir_path, dataset=dataset)
                                 bdd_models.append(model_dict)
+                            else:
+                                if os.path.exists(dir_path + f"/{dataset}_embeddings_best_model/values.json"):
+                                    model_dict = process_best_model(
+                                        dir_path, dataset=dataset)
+                                    bdd_models.append(model_dict)
 
-                        if verbose:
-                            print("End model", len(folders), len(bdd_models))
+                            if verbose:
+                                print("End model", len(folders), len(bdd_models))
 
-                    else:
-                        print(f"Model does not have embeddings and their evaluation OR \
+                        else:
+                            print(f"Model does not have embeddings and their evaluation OR \
 they are done with another database than {dataset}")
+                    else:  # supervised case
+                        paths = glob.glob(dir_path + rf"/{dataset}_supervised_results/aucs*.json")
+                        if paths != []:
+                            model_dict = process_supervised_model(dir_path, dataset=dataset)
+                            bdd_models.append(model_dict)
+                        else:
+                            print(f"Model has not been evaluated on any dataset.")
 
                 else:
                     print(f"{dir_path} not associated to a model. Continue")
@@ -204,7 +271,7 @@ they are done with another database than {dataset}")
                         print("End recursive", len(folders), len(bdd_models))
 
                     generate_bdd_models(folders, bdd_models, visited, dataset=dataset,
-                                        verbose=verbose, best_model=best_model)
+                                        supervised=supervised, best_model=best_model, verbose=verbose)
 
             else:
                 print(f"{dir_path} is a file. Continue.")
@@ -212,7 +279,7 @@ they are done with another database than {dataset}")
                     print("End file", len(bdd_models))
 
 
-def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False, dropnan=False):
+def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False, dropnan=False, exclude=False):
     """
     - bdd_models: pandas dataframe containing the models path, performances, and parameters. Created by
     generate_bdd_models.
@@ -233,9 +300,6 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False, dropna
     # bdd_models.drop_duplicates(inplace=True, ignore_index=True)
     # bdd_models = bdd_models.iloc[bdd_models.astype(str).drop_duplicates().index]
 
-    # deal with '[' and ']'
-    # TODO
-
     # specify git branch
     if git_branch:
         bdd_models['git_branch'] = [
@@ -245,17 +309,20 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False, dropna
         bdd_models.loc[bdd_models.backbone_name ==
                        'pointnet', 'git_branch'] = 'pointnet'
 
-    # add mismatch exclusion reason (not the same dimension for latent space and output)
-    bdd_models['exclude'] = 'False'
+    if exclude:
+        # add mismatch exclusion reason (not the same dimension for latent space and output)
+        bdd_models['exclude'] = 'False'
 
-    # add sigmoid exclusion reason
-    bdd_models['exclude'].mask(bdd_models.model_path.str.contains(
-        'sigmoid'), 'sigmoid', inplace=True)
+        # add sigmoid exclusion reason
+        bdd_models['exclude'].mask(bdd_models.model_path.str.contains(
+            'sigmoid'), 'sigmoid', inplace=True)
 
     # exclude models with a different structure
-    bdd_models['exclude'].mask(bdd_models.git_branch.str.contains(
-        'joel'), 'structure', inplace=True)
-    # bdd_models.loc[(bdd_models.model_path.str.contains('#')),'exclude'] = 'structure'
+    # bdd_models['exclude'].mask(bdd_models.git_branch.str.contains(
+    #     'joel'), 'structure', inplace=True)
+    
+    # remove manually excluded models
+    bdd_models.loc[(bdd_models.model_path.str.contains('#')),'exclude'] = 'manually_excluded'
 
     # remove columns where the values never change
     remove = []
@@ -276,9 +343,9 @@ def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False, dropna
     return bdd_models
 
 
-# import the last database (new_bdd), sorted by decreasing auc
-# remove excluded models
 def import_bdd(path=None, verbose=False):
+    """Imports the last database (new_bdd), sorted by decreasing auc.
+    Removes excluded models."""
     if path == None:
         path = "/neurospin/dico/agaudin/Runs/new_bdd_models.csv"
     if verbose:
@@ -299,8 +366,8 @@ def import_bdd(path=None, verbose=False):
     return clean_bdd
 
 
-# load and sort embeddings from a given model
 def load_model_embs(model_path, embs='full', dataset="cingulate_ACCpatterns", verbose=False):
+    """Loads and sorts embeddings from a given model"""
     path = model_path+f'/{dataset}_embeddings/{embs}_embeddings.csv'
     if not os.path.exists(path):
         raise ValueError(
@@ -311,8 +378,8 @@ def load_model_embs(model_path, embs='full', dataset="cingulate_ACCpatterns", ve
     return model_embs
 
 
-# load and sort predictions of a given model's svm
 def load_model_preds(model_path, dataset="cingulate_ACCpatterns", verbose=False):
+    """Loads and sorts predictions of a given model's svm"""
     path = model_path+f'/{dataset}_embeddings/cross_val_predicted_labels.csv'
     if not os.path.exists(path):
         raise ValueError(

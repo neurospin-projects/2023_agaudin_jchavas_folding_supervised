@@ -36,6 +36,9 @@
 Tools to create datasets
 """
 
+import pandas as pd
+import numpy as np
+
 # only if foldlabel == True
 try:
     from deep_folding.brainvisa.utils.save_data import quality_checks
@@ -45,36 +48,30 @@ except ImportError:
 
 from contrastive.utils.logs import set_file_logger, set_root_logger_level
 
-from contrastive.data.datasets import ContrastiveDataset
-from contrastive.data.datasets import ContrastiveDataset_Visualization
-from contrastive.data.datasets import ContrastiveDataset_WithLabels
-from contrastive.data.datasets import ContrastiveDataset_WithFoldLabels
-from contrastive.data.datasets import \
-    ContrastiveDataset_WithLabels_WithFoldLabels
-from contrastive.data.datasets import \
-    ContrastiveDataset_WithLabels_WithFoldLabels_Resize
-from contrastive.data.datasets import ContrastiveDataset_Both
-from contrastive.data.datasets import ContrastiveDataset_WithLabels_Both
-from contrastive.data.datasets_copy import ContrastiveDatasetFusion
+from contrastive.data.datasets import ContrastiveDatasetFusion
 
-from contrastive.data.utils import *
+from contrastive.data.utils import \
+    check_subject_consistency, extract_data, check_if_same_subjects,\
+    check_if_same_shape, check_if_skeleton, extract_data_with_labels,\
+    read_labels
 
 import logging
+
 log = set_file_logger(__file__)
 root = logging.getLogger()
 
 
-def sanity_checks_without_labels(config, skeleton_output):
+def sanity_checks_without_labels(config, skeleton_output, reg):
     # Loads and separates in train_val/test set foldlabels if requested
-    check_subject_consistency(config.subjects_all,
-                              config.subjects_foldlabel_all)
+    check_subject_consistency(config.data[reg].subjects_all,
+                              config.data[reg].subjects_foldlabel_all)
     # in order to avoid logging twice the same information
     if root.level == 20:  # root logger in INFO mode
         set_root_logger_level(0)
     # add all the other created objects in the next line
-    foldlabel_output = extract_data(config.foldlabel_all,
-                                    config.foldlabel_dir,
-                                    config)
+    foldlabel_output = extract_data(config.data[reg].foldlabel_all,
+                                    config.data[reg].crop_dir,
+                                    config, reg)
     if root.level == 10:  # root logger in WARNING mode
         set_root_logger_level(1)
     log.info("foldlabel data loaded")
@@ -102,44 +99,91 @@ def create_sets_without_labels(config):
         train_dataset, val_dataset, test_datasetset, train_val_dataset (tuple)
     """
 
-    # Loads and separates in train_val/test skeleton crops
-    skeleton_output = extract_data(config.numpy_all, config.crop_dir, config)
+    skeleton_all = []
+    foldlabel_all = []
+    
+    # checks consistency among regions
+    if len(config.data) > 1:
+        for reg in range(len(config.data)-1):
+            check_if_same_csv(config.data[0].subjects_all,
+                              config.data[reg+1].subjects_all,
+                              "subjects_all")
+            if 'train_val_csv_file' in config.data[0].keys():
+                check_if_same_csv(config.data[0].train_val_csv_file,
+                                config.data[reg+1].train_val_csv_file,
+                                "train_csv")
+            else:
+                check_if_same_csv(config.data[0].train_csv_file,
+                                config.data[reg+1].train_csv_file,
+                                "train_csv")
+            check_if_numpy_same_length(config.data[0].numpy_all,
+                                       config.data[1].numpy_all,
+                                       "numpy_all")
+            if config.foldlabel:
+                check_if_numpy_same_length(config.data[0].foldlabel_all,
+                                           config.data[1].foldlabel_all,
+                                           "foldlabel_all")
 
-    # Loads and separates in train_val/test set foldlabels if requested
-    if (config.foldlabel) and (config.mode != 'evaluation'):
-        foldlabel_output = sanity_checks_without_labels(config,
-                                                        skeleton_output)
-    else:
-        log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
+    for reg in range(len(config.data)):
+        # Loads and separates in train_val/test skeleton crops
+        skeleton_output = extract_data(
+            config.data[reg].numpy_all,
+            config.data[reg].crop_dir, config, reg)
+        skeleton_all.append(skeleton_output)
+
+        # Loads and separates in train_val/test set foldlabels if requested
+        if config.apply_augmentations and config.foldlabel:
+            foldlabel_output = sanity_checks_without_labels(config,
+                                                            skeleton_output,
+                                                            reg)
+        else:
+            foldlabel_output = None
+            log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
+        
+        foldlabel_all.append(foldlabel_output)
+            
 
     # Creates the dataset from these data by doing some preprocessing
     datasets = {}
-    for subset_name in skeleton_output.keys():
-        # select the augmentation method
-        if config.apply_augmentations:
-            if config.foldlabel:  # branch_clipping
-                foldlabel_array = foldlabel_output[subset_name][1]
-            else:  # cutout
-                foldlabel_array = None  # no nedd of fold labels
-        else:  # no augmentation
-            foldlabel_array = None
+    for subset_name in skeleton_all[0].keys():
+        log.debug(subset_name)
+        # Concatenates filenames
+        filenames = [skeleton_output[subset_name][0]
+                     for skeleton_output in skeleton_all]
+        # Concatenates arrays
+        arrays = [skeleton_output[subset_name][1]
+                  for skeleton_output in skeleton_all]
+
+        # Concatenates foldabel arrays
+        foldlabel_arrays = []
+        for foldlabel_output in foldlabel_all:
+            # select the augmentation method
+            if config.apply_augmentations:
+                if config.foldlabel:  # branch_clipping
+                    foldlabel_array = foldlabel_output[subset_name][1]
+                else:  # cutout
+                    foldlabel_array = None  # no need of fold labels
+            else:  # no augmentation
+                foldlabel_array = None
+            foldlabel_arrays.append(foldlabel_array)
+
+        # Checks if equality of filenames and labels
+        check_if_list_of_equal_dataframes(
+            filenames,
+            "filenames, " + subset_name)
 
         datasets[subset_name] = ContrastiveDatasetFusion(
-            filenames=skeleton_output[subset_name][0],
-            array=skeleton_output[subset_name][1],
-            foldlabel_array=foldlabel_array,
+            filenames=filenames,
+            arrays=arrays,
+            foldlabel_arrays=foldlabel_arrays,
             config=config,
             apply_transform=config.apply_augmentations)
-
-    # # just to have the same data format as train and val
-    # test_dataset, _ = torch.utils.data.random_split(
-    #     test_dataset,
-    #     [len(test_dataset),0])
 
     return datasets
 
 
-def sanity_checks_with_labels(config, skeleton_output, subject_labels):
+def sanity_checks_with_labels(config, skeleton_output, subject_labels, reg):
+    """Checks alignment of the generated objects."""
     # remove test_intra if not in config
     subsets = [key for key in skeleton_output.keys()]
     if 'test_intra_csv_file' not in config.keys():
@@ -153,11 +197,11 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
         for subset_name in subsets:
             compare_array_aims_files(skeleton_output[subset_name][0],
                                      skeleton_output[subset_name][1],
-                                     config.crop_dir)
+                                     config.data[reg].crop_dir)
 
     # Makes some sanity checks on ordering of label subjects
     for subset_name in subsets:
-        check_if_same_subjects(skeleton_output[subset_name][0],
+        check_if_same_subjects(skeleton_output[subset_name][0][['Subject']],
                                skeleton_output[subset_name][2][['Subject']],
                                f"{subset_name} labels")
 
@@ -167,15 +211,16 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
         and (config.foldlabel)
         and (config.mode != 'evaluation')
     ):
-        check_subject_consistency(config.subjects_all,
-                                  config.subjects_foldlabel_all)
+        check_subject_consistency(config.data[reg].subjects_all,
+                                  config.data[reg].subjects_foldlabel_all)
         # in order to avoid logging twice the same information
         if root.level == 20:  # root logger in INFO mode
             set_root_logger_level(0)
-        foldlabel_output = extract_data_with_labels(config.foldlabel_all,
-                                                    subject_labels,
-                                                    config.foldlabel_dir,
-                                                    config)
+        foldlabel_output = extract_data_with_labels(
+            config.data[reg].foldlabel_all,
+            subject_labels,
+            config.data[reg].foldlabel_dir,
+            config, reg)
         if root.level == 10:  # root logger in WARNING mode
             set_root_logger_level(1)
         log.info("foldlabel data loaded")
@@ -201,7 +246,7 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
             for subset_name in foldlabel_output.keys():
                 compare_array_aims_files(foldlabel_output[subset_name][0],
                                          foldlabel_output[subset_name][1],
-                                         config.foldlabel_dir)
+                                         config.data[reg].foldlabel_dir)
 
     else:
         log.info("foldlabel data NOT requested. Foldlabel data NOT loaded")
@@ -210,53 +255,154 @@ def sanity_checks_with_labels(config, skeleton_output, subject_labels):
     return foldlabel_output
 
 
+def check_if_list_of_equal_dataframes(list_of_df, key):
+    """Checks if it is a list of equal dataframes"""
+    if len(list_of_df) > 1:
+        df0 = list_of_df[0]
+        for df in list_of_df[1:]:
+            if not df0.equals(df):
+                raise ValueError(
+                    f"List of dataframes are not equal: {key}"
+                    "First dataframe head:\n"
+                    f"{df0.head()}\n"
+                    "Other dataframe head:\n"
+                    f"{df.head()}\n"    
+                    f"length of first dataframe = {len(df0)}\n"
+                    f"length of other dataframe = {len(df)}"               
+                    )
+
+
+def check_if_same_csv(csv_file_1, csv_file_2, key, header='infer'):
+    """Checks if the two csv are identical"""
+    csv1 = pd.read_csv(csv_file_1, header=header)
+    csv2 = pd.read_csv(csv_file_2, header=header)
+    if not csv1.equals(csv2):
+        raise ValueError(
+            f"Input {key} csv files are not equal"
+            "First dataframe head:\n"
+            f"{csv1.head()}\n"
+            "Other dataframe head:\n"
+            f"{csv2.head()}\n"
+            f"length of first dataframe ({csv_file_1}) = {len(csv1)}\n"
+            f"length of other dataframe ({csv_file_2}) = {len(csv2)}"
+        )
+
+
+def check_if_numpy_same_length(npy_file_1, npy_file_2, key):
+    """Checks if the two numpy arrays have the same length"""
+    arr1 = np.load(npy_file_1)
+    arr2 = np.load(npy_file_2)
+    if len(arr1) != len(arr2):
+        raise ValueError(
+            f"Input {key} numpy files don't have the same length"
+        )
+
+
 def create_sets_with_labels(config):
     """Creates train, validation and test sets when there are labels
 
     Args:
         config (Omegaconf dict): contains configuration parameters
+        reg: region number
     Returns:
         train_dataset, val_dataset, test_datasetset, train_val_dataset (tuple)
     """
 
-    # Gets labels for all subjects
-    # Column subject_column_name is renamed 'Subject'
-    label_scaling = (None if 'label_scaling' not in config.keys()
-                     else config.label_scaling)
-    subject_labels = read_labels(config.subject_labels_file,
-                                 config.subject_column_name,
-                                 config.label_names,
-                                 label_scaling)
+    skeleton_all = []
+    foldlabel_all = []
+    
+    # checks consistency among regions
+    if len(config.data) > 1:
+        for reg in range(len(config.data)-1):
+            check_if_same_csv(config.data[0].subject_labels_file,
+                              config.data[reg+1].subject_labels_file,
+                              "subject_labels")         
+            check_if_same_csv(config.data[0].subjects_all,
+                              config.data[reg+1].subjects_all,
+                              "subjects_all")
+            if 'train_val_csv_file' in config.data[0].keys():
+                check_if_same_csv(config.data[0].train_val_csv_file,
+                                config.data[reg+1].train_val_csv_file,
+                                "train_val_csv", header=None)
+            check_if_numpy_same_length(config.data[0].numpy_all,
+                                       config.data[1].numpy_all,
+                                       "numpy_all")
+            if config.foldlabel:
+                check_if_numpy_same_length(config.data[0].foldlabel_all,
+                                           config.data[1].foldlabel_all,
+                                           "foldlabel_all")
 
-    if config.environment == "brainvisa" and config.checking:
-        quality_checks(config.subjects_all, config.numpy_all,
-                       config.crop_dir, parallel=True)
+    for reg in range(len(config.data)):
+        # Gets labels for all subjects
+        # Column subject_column_name is renamed 'Subject'
+        label_scaling = (None if 'label_scaling' not in config.keys()
+                         else config.data[reg].label_scaling)
+        #retrocompatibility 
+        label_names = config.label_names if 'label_names' in config else config.data[0].label_names
+        subject_labels = read_labels(
+            config.data[reg].subject_labels_file,
+            config.data[reg].subject_column_name,
+            label_names,
+            label_scaling)
 
-    # Loads and separates in train_val/test skeleton crops
-    skeleton_output = extract_data_with_labels(
-        config.numpy_all, subject_labels, config.crop_dir, config)
+        if config.environment == "brainvisa" and config.checking:
+            quality_checks(config.data[reg].subjects_all,
+                           config.data[reg].numpy_all,
+                           config.data[reg].crop_dir, parallel=True)
 
-    foldlabel_output = sanity_checks_with_labels(
-        config, skeleton_output, subject_labels)
+        # Loads and separates in train_val/test skeleton crops
+        skeleton_output = extract_data_with_labels(
+            config.data[reg].numpy_all, subject_labels,
+            config.data[reg].crop_dir, config, reg)
+
+        foldlabel_output = sanity_checks_with_labels(
+            config, skeleton_output, subject_labels, reg)
+
+        skeleton_all.append(skeleton_output)
+        foldlabel_all.append(foldlabel_output)
 
     # Creates the dataset from these data by doing some preprocessing
     datasets = {}
-    for subset_name in skeleton_output.keys():
-        # select the augmentation method
-        if config.apply_augmentations:
-            if config.foldlabel:  # branch_clipping
-                foldlabel_array = foldlabel_output[subset_name][1]
-            else:  # cutout
-                foldlabel_array = None  # no need of fold labels
-        else:  # no augmentation
-            foldlabel_array = None
-
+    for subset_name in skeleton_all[0].keys():
         log.debug(subset_name)
+        # Concatenates filenames
+        filenames = [skeleton_output[subset_name][0]
+                     for skeleton_output in skeleton_all]
+        # Concatenates arrays
+        arrays = [skeleton_output[subset_name][1]
+                  for skeleton_output in skeleton_all]
+
+        # Concatenates foldabel arrays
+        foldlabel_arrays = []
+        for foldlabel_output in foldlabel_all:
+            # select the augmentation method
+            if config.apply_augmentations:
+                if config.foldlabel:  # branch_clipping
+                    foldlabel_array = foldlabel_output[subset_name][1]
+                else:  # cutout
+                    foldlabel_array = None  # no need of fold labels
+            else:  # no augmentation
+                foldlabel_array = None
+            foldlabel_arrays.append(foldlabel_array)
+
+        # Concatenates labels
+        labels = [skeleton_output[subset_name][2]
+                  for skeleton_output in skeleton_all]
+
+        # Checks if equality of filenames and labels
+        check_if_list_of_equal_dataframes(
+            filenames,
+            "filenames, " + subset_name)
+        check_if_list_of_equal_dataframes(
+            labels,
+            "labels, " + subset_name)
+
+        # Builds subset-name=train/val/test dataset
         datasets[subset_name] = ContrastiveDatasetFusion(
-            filenames=skeleton_output[subset_name][0],
-            array=skeleton_output[subset_name][1],
-            foldlabel_array=foldlabel_array,
-            labels=skeleton_output[subset_name][2],
+            filenames=filenames,
+            arrays=arrays,
+            foldlabel_arrays=foldlabel_arrays,
+            labels=labels,
             config=config,
             apply_transform=config.apply_augmentations)
 

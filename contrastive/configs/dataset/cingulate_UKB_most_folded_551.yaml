@@ -1,0 +1,16 @@
+# @package dataset.cingulate_UKB_most_folded_551
+dataset_name: cingulate_UKB_most_folded_551
+# pickle_normal: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rskeleton.pkl
+numpy_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/UkBioBank/crops/2mm/CINGULATE/mask/subsets/Rskeleton_most_folded_551.npy
+subjects_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/UkBioBank/crops/2mm/CINGULATE/mask/subsets/Rskeleton_most_folded_551_subject.csv
+crop_dir: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rcrops
+foldlabel_dir: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rlabels
+#pickle_foldlabel: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/UkBioBank/crops/2mm/CINGULATE/mask/Rlabel.pkl
+foldlabel_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/UkBioBank/crops/2mm/CINGULATE/mask/subsets/Rlabel_most_folded_551.npy
+subjects_foldlabel_all: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/UkBioBank/crops/2mm/CINGULATE/mask/subsets/Rlabel_most_folded_551_subject.csv
+crop_file_suffix: _cropped_skeleton.nii.gz
+pickle_benchmark: 
+train_val_csv_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/datasets/UkBioBank/gyrification_based_subsets/most_folded_551.csv
+subject_labels_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/UkBioBank/participants.csv
+subject_column_name: 'Subject'
+input_size: (1, 17, 40, 38)

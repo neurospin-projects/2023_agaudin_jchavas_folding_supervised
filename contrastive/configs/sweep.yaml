@@ -1,0 +1,36 @@
+program: train.py
+entity: joel-chavas
+project: inhibitory
+method: random
+metric:
+  goal: minimize
+  name: gs_criterion
+parameters:
+  lr:
+    distribution: log_uniform_values
+    min: 0.0001
+    max: 0.01
+  drop_rate:
+    min: 0.05
+    max: 0.3
+  gamma:
+    min: 0.7
+    max: 1.0
+  +dataset:
+    value: [postcentral_HCP_stratified_extreme_Flanker_left, postcentral_HCP_stratified_extreme_Flanker_right]
+  output_dir:
+    value: /volatile/jc225751/Runs/61_classifier_regresser/Program/Output
+  suffix_dir:
+    value: _postcentral
+  # sigma_noise:
+  #   min: 0.
+  #   max: 0.5
+  # max_angle:
+  #   min: 0
+  #   max: 6
+
+command:
+  - ${env}
+  - python3
+  - ${program}
+  - ${args_no_hyphens}

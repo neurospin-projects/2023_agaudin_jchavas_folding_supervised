@@ -4,7 +4,8 @@ both: False
 apply_augmentations: True
 foldlabel: False
 fill_value: 0
-patch_size: [1, 9, 22, 21]
+patch_size: [1, 11, 25, 25]
 max_angle: 6
 checkerboard_size: 4
 keep_bottom: True
+sigma_noise: 0.2  # set to positive to allow noise

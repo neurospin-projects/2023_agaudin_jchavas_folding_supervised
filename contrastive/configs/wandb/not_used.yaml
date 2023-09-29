@@ -1,0 +1,4 @@
+grid_search: False
+lambda_gs_crit: 2
+entity: joel-chavas
+project: flanker-test

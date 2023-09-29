@@ -154,9 +154,9 @@ class CrossEntropyLoss_Classification(nn.Module):
     Cross entropy loss between outputs and labels
     """
 
-    def __init__(self, device=None):
+    def __init__(self, device=None, class_weights=None):
         super().__init__()
-        self.loss = nn.CrossEntropyLoss()
+        self.loss = nn.CrossEntropyLoss(weight=class_weights)
 
     def forward(self, output_i, output_j, labels):
         output_i = output_i.float()
@@ -167,7 +167,7 @@ class CrossEntropyLoss_Classification(nn.Module):
         loss_j = self.loss(output_j,
                            labels[:, 0])
 
-        return (loss_i + loss_j)
+        return 100.*(loss_i + loss_j)
 
     def __str__(self):
         return f"{type(self).__name__}"
@@ -188,9 +188,9 @@ class MSELoss_Regression(nn.Module):
         labels = labels.float()
 
         loss_i = self.loss(output_i,
-                           labels[:, 0])
+                           labels)
         loss_j = self.loss(output_j,
-                           labels[:, 0])
+                           labels)
 
         return 100*(loss_i + loss_j)
 

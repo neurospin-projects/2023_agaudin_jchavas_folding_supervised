@@ -106,6 +106,7 @@ class PaddingTensor(object):
         arr = tensor.numpy()
         orig_shape = arr.shape
         padding = []
+        # print(f"SHAPES: {orig_shape} - {self.shape}")
         for orig_i, final_i in zip(orig_shape, self.shape):
             shape_i = final_i - orig_i
             half_shape_i = shape_i // 2
@@ -223,8 +224,17 @@ def remove_branches_up_to_percent(arr_foldlabel, arr_skel,
 
     if keep_bottom:
         arr_foldlabel = remove_bottom_branches(arr_foldlabel)
+    # if keep_bottom:
+    #     arr_foldlabel_without_bottom = remove_bottom_branches(arr_foldlabel)
+    #     branches, counts = np.unique(arr_foldlabel_without_bottom,
+    #                                  return_counts=True)
+    # else:
+    #     branches, counts = np.unique(arr_foldlabel,
+    #                                  return_counts=True)
 
-    branches, counts = np.unique(arr_foldlabel, return_counts=True)
+    branches, counts = np.unique(arr_foldlabel,
+                                 return_counts=True)
+
     total_pixels = count_non_null(arr_skel)
     # We take as index branches indexes that are not 0
     log.debug(f"Number of branches = {branches.size}")
@@ -695,3 +705,14 @@ class ResizeTensor(object):
                            order=0)
 
         return torch.from_numpy(resized_arr)
+
+
+class GaussianNoiseTensor(object):
+    """Add gaussian noise to a 3D image."""
+
+    def __init__(self, sigma):
+        self.sigma = sigma
+    
+    def __call__(self, tensor):
+        noise = torch.randn(tensor.shape)
+        return tensor + self.sigma * noise

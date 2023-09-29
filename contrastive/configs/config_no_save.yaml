@@ -1,12 +1,18 @@
 defaults:
-  - hydra: no_save
-  - dataset: cingulate_ACCpatterns
-  - model: SimCLR
-  - mode: encoder
+  - _self_
   - augmentations: no_augmentation
   - backbone: ConvNet
-  - platform: cuda_not_brainvisa
-  - trainer: default
   - classifier: svm
+  - dataset/STs_schiz_L_strat_bis
   - embeddings: embeddings
+  - hydra: no_save
+  - label: diagnosis
+  - mode: classifier
+  - model: SimCLR_fusion
+  - platform: cuda_not_brainvisa
+  - projection_head: relu
+  - trainer: default
+  - wandb/identity
   - override hydra/job_logging: custom
+
+data: ${oc.dict.values:dataset}

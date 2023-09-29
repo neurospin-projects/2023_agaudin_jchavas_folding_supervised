@@ -1,4 +1,4 @@
-# @package _global_
+# @package dataset.left_cingulate_HCP_full_top-separated
 dataset_name: left_cingulate_HCP_full_top-separated
 pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/CINGULATE/mask/Lskeleton.pkl
 numpy_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/CINGULATE/mask/Lskeleton.npy
@@ -12,5 +12,4 @@ pickle_benchmark:
 train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/CINGULATE/mask/Lskeleton_subject_full.csv
 subject_labels_file: /neurospin/dico/data/deep_folding/papers/miccai2023/Input/csv/hcp/participants.csv
 subject_column_name: 'Subject'
-label_names: ["Gender"]
-n_max: 1080
+input_size: (1, 20, 42, 38)

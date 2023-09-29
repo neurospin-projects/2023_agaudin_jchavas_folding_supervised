@@ -28,13 +28,14 @@ import os
 import glob
 
 from contrastive.utils.config import process_config
-from contrastive.models.contrastive_learner_visualization import \
-    ContrastiveLearner_Visualization
 from contrastive.data.datamodule import DataModule_Evaluation
+from contrastive.evaluation.utils_pipelines import save_used_datasets
+from contrastive.models.contrastive_learner_fusion import \
+    ContrastiveLearnerFusion
 
 
 def embeddings_to_pandas(embeddings, csv_path=None, verbose=False):
-    """Homogenize column names and saves to pandas
+    """Homogenize column names and saves to pandas.
 
     Args:
         embeddings: Output of the compute_representations function
@@ -43,9 +44,9 @@ def embeddings_to_pandas(embeddings, csv_path=None, verbose=False):
     """
     columns_names = ['dim'+str(i+1) for i in range(embeddings[0].shape[1])]
     values = pd.DataFrame(embeddings[0].numpy(), columns=columns_names)
-    labels = embeddings[1]
-    labels = pd.DataFrame(labels, columns=['ID'])
-    df_embeddings = pd.concat([labels, values], axis=1)
+    filenames = embeddings[1]
+    filenames = pd.DataFrame(filenames, columns=['ID'])
+    df_embeddings = pd.concat([filenames, values], axis=1)
 
     # remove one copy each ID
     df_embeddings = \
@@ -56,11 +57,12 @@ def embeddings_to_pandas(embeddings, csv_path=None, verbose=False):
         print("nb of elements:", df_embeddings.shape[0])
 
     # Solves the case in which index type is tensor
-    if type(df_embeddings.index[0]) != str:
-        index = [idx.item() for idx in df_embeddings.index]
-        index_name = df_embeddings.index.name
-        df_embeddings.index = index
-        df_embeddings.index.names = [index_name]
+    if len(df_embeddings.index) > 0:  # avoid cases where empty df
+        if type(df_embeddings.index[0]) != str:
+            index = [idx.item() for idx in df_embeddings.index]
+            index_name = df_embeddings.index.name
+            df_embeddings.index = index
+            df_embeddings.index.names = [index_name]
 
     if csv_path:
         df_embeddings.to_csv(csv_path)
@@ -70,9 +72,15 @@ def embeddings_to_pandas(embeddings, csv_path=None, verbose=False):
 
 @hydra.main(config_name='config_no_save', config_path="../configs")
 def compute_embeddings(config):
+    """Compute the embeddings (= output of the backbone(s)) for a given model. 
+    It relies on the hydra config framework, especially the backbone, datasets 
+    and model parts.
+    
+    It saves csv files for each subset of the datasets (train, val, test_intra, 
+    test) and one with all subjects."""
+    
     config = process_config(config)
 
-    config.mode = 'evaluation'
     config.apply_augmentations = False
     config.with_labels = False
 
@@ -84,22 +92,19 @@ def compute_embeddings(config):
     # then load hydra weights.
     print("No trained_model.pt saved. Create a new instance and load weights.")
 
-    model = ContrastiveLearner_Visualization(config, sample_data=data_module)
+    model = ContrastiveLearnerFusion(config, sample_data=data_module)
     # fetch and load weights
     paths = config.model_path+"/logs/*/version_0/checkpoints"+r'/*.ckpt'
     if 'use_best_model' in config.keys():
         paths = config.model_path+"/logs/best_model_weights.pt"
     files = glob.glob(paths)
-    print("model_weights:", files[0])
+    #print("model_weights:", files[0])
     cpkt_path = files[0]
     checkpoint = torch.load(
         cpkt_path, map_location=torch.device(config.device))
     model.load_state_dict(checkpoint['state_dict'])
 
     model.eval()
-
-    print(config.model)
-    print(config.backbone_name)
 
     # create folder where to save the embeddings
     embeddings_path = config.embeddings_save_path
@@ -159,6 +164,8 @@ def compute_embeddings(config):
     full_df.to_csv(embeddings_path+"/full_embeddings.csv")
 
     print("ALL EMBEDDINGS GENERATED: OK")
+
+    save_used_datasets(embeddings_path, config.dataset.keys())
 
 
 if __name__ == "__main__":

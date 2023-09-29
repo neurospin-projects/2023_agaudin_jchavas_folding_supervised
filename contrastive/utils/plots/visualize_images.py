@@ -79,9 +79,9 @@ def plot_bucket(img, buffer):
                           False -> plots the figure
     """
 
-    arr = img[0, 0, :, :, :]
+    arr = img[0][0, 0, :, :, :]
     logger.debug(np.unique(arr, return_counts=True))
-    logger.debug(img.shape)
+    logger.debug(img[0].shape)
     logger.debug(arr.shape)
     bucket = np.argwhere(arr)
     bucket_t = (bucket).T
