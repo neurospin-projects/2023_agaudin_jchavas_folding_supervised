@@ -1,0 +1,5 @@
+# @package wandb
+grid_search: True
+entity: aymeric-gaudin
+project: 2023_brain_regions_grid_searches
+lambda_gs_crit: 2
