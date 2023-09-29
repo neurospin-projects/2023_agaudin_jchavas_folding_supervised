@@ -24,5 +24,6 @@ nb_subjects: -1
 random: False
 random_state: 25
 # Parameters of step scheduler
+scheduler: False
 step_size: 5
 gamma: 0.8

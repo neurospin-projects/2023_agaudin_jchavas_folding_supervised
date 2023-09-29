@@ -326,18 +326,17 @@ in the config to False to unfreeze them.")
             filter(lambda p: p.requires_grad, self.parameters()),
             lr=self.config.lr,
             weight_decay=self.config.weight_decay)
-        scheduler = torch.optim.lr_scheduler.StepLR(
-            optimizer,
-            step_size=self.config.step_size,
-            gamma=self.config.gamma)
+        return_dict = {"optimizer": optimizer}
 
-        return {
-            "optimizer": optimizer,
-            "lr_scheduler": {
-                "scheduler": scheduler,
-                "interval": "epoch"
-            }
-        }
+        if 'scheduler' in self.config.keys() and self.config.scheduler:
+            scheduler = torch.optim.lr_scheduler.StepLR(
+                optimizer,
+                step_size=self.config.step_size,
+                gamma=self.config.gamma)
+            return_dict["lr_scheduler"] = {"scheduler": scheduler,
+                                           "interval": "epoch"}
+
+        return return_dict
 
 
     def nt_xen_loss(self, z_i, z_j):
