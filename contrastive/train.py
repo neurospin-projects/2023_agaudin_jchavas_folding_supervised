@@ -133,13 +133,15 @@ def train(config):
     else:
         summary(model, device='cpu')
 
+    # define the early stoppings
     early_stop_callback = \
         EarlyStopping(monitor="val_loss",
                       patience=config.early_stopping_patience)
     
     early_stop_overfitting = \
         EarlyStopping(monitor="diff_auc",
-                      divergence_threshold=config.diff_auc_threshold)
+                      divergence_threshold=config.diff_auc_threshold,
+                      patience=config.max_epochs)
 
     callbacks = [early_stop_callback]
     if config.mode in ['classifier', 'regresser']:
@@ -161,17 +163,12 @@ def train(config):
         accelerator='gpu',
         devices=1,
         max_epochs=config.max_epochs,
-        # callbacks=callbacks,
+        callbacks=callbacks,
         logger=loggers,
         #flush_logs_every_n_steps=config.nb_steps_per_flush_logs,
         log_every_n_steps=config.log_every_n_steps,
         #auto_lr_find=True
         )
-
-    # # find the best lr
-    # log.info("Find the best learning rate...")
-    # data_module.setup()
-    # trainer.tune(model, data_module.train_dataloader(), data_module.val_dataloader())
 
     # start training
     trainer.fit(model, data_module, ckpt_path=config.checkpoint_path)

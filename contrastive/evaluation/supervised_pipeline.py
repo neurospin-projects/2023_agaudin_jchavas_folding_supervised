@@ -234,8 +234,8 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
                     # and correct it to suit what is needed for classifiers
                     cfg = preprocess_config(sub_dir, datasets, label)
                     log.debug(f"CONFIG FILE {type(cfg)}")
-                    # log.debug(json.dumps(omegaconf.OmegaConf.to_container(
-                    #     cfg, resolve=True), indent=4, sort_keys=True))
+                    log.debug(json.dumps(omegaconf.OmegaConf.to_container(
+                        cfg, resolve=True), indent=4, sort_keys=True))
                     # save the modified config next to the real one
                     with open(sub_dir+'/.hydra/config_evaluation.yaml', 'w') \
                             as file:

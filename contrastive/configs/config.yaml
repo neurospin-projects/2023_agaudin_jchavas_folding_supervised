@@ -3,16 +3,16 @@ defaults:
   - augmentations: foldlabel
   - backbone: ConvNet
   - classifier: svm
-  - dataset/central_precentral_HCP_stratified_extreme_Flanker_left
-  - dataset/central_precentral_HCP_stratified_extreme_Flanker_right
+  - dataset/pericalcarine_schiz_R_strat_bis
+  - dataset/pericalcarine_schiz_L_strat_bis
   - embeddings: embeddings
   - hydra: local
-  - label: Flanker_AgeAdj_class
+  - label: diagnosis
   - mode: classifier
   - model: SimCLR_fusion
   - platform: cuda_not_brainvisa
-  - projection_head: sigmoid
-  - trainer: classifier
+  - projection_head: relu
+  - trainer: default
   - wandb: identity
   - override hydra/job_logging: custom
 

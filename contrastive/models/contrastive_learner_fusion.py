@@ -434,7 +434,8 @@ in the config to False to unfreeze them.")
             # optional for batch logging purposes
             "log": logs}
 
-        batch_dictionary['learning_rate'] = self.optimizers().param_groups[0]['lr']
+        if self.config.scheduler:
+            batch_dictionary['learning_rate'] = self.optimizers().param_groups[0]['lr']
 
         if self.config.with_labels:
             # add label_loss (a part of the loss) to log
@@ -857,10 +858,11 @@ in the config to False to unfreeze them.")
             avg_loss,
             self.current_epoch)
 
-        self.loggers[0].experiment.add_scalar(
-            "Learning rate",
-            self.optimizers().param_groups[0]['lr'],
-            self.current_epoch)
+        if self.config.scheduler:
+            self.loggers[0].experiment.add_scalar(
+                "Learning rate",
+                self.optimizers().param_groups[0]['lr'],
+                self.current_epoch)
 
         # logging using wandb logger (if used)
         if self.config.wandb.grid_search:
@@ -989,10 +991,6 @@ in the config to False to unfreeze them.")
                     self.loggers[0].experiment.add_scalar('gs_criterion',
                                                           gs_crit,
                                                           self.current_epoch)
-            # logs AUC using tensorboard logger
-            self.loggers[0].experiment.add_scalar('AUC/val',
-                                                  val_auc,
-                                                  self.current_epoch)
                 
             # save the model that has the best val auc during train
             #best_val_auc, best_train_auc = self.save_best_criterion_model(val_auc, train_auc, save_path='./logs/')
