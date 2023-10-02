@@ -168,7 +168,7 @@ def process_best_model(model_path, dataset='cingulate_ACCpatterns'):
     return model_dict
 
 
-def process_supervised_model(model_path, verbose=True):
+def process_supervised_model(model_path, dataset, verbose=True):
     """Gets the relevant information from a supervised model, i.e. losses, ouitput aucs 
     and config parameters.
     
@@ -178,7 +178,7 @@ def process_supervised_model(model_path, verbose=True):
     model_dict['model_path'] = model_path
 
     # read performances
-    paths = glob.glob(model_path + r"/*_supervised_results/aucs*.json")
+    paths = glob.glob(model_path + rf"/{dataset}_supervised_results/aucs*.json")
     for path in paths:
         with open(path, 'r') as file:
             values = json.load(file)
@@ -253,9 +253,9 @@ def generate_bdd_models(folders, bdd_models, visited, dataset='cingulate_ACCpatt
                             print(f"Model does not have embeddings and their evaluation OR \
 they are done with another database than {dataset}")
                     else:  # supervised case
-                        paths = glob.glob(dir_path + r"/*_supervised_results/aucs*.json")
+                        paths = glob.glob(dir_path + rf"/{dataset}_supervised_results/aucs*.json")
                         if paths != []:
-                            model_dict = process_supervised_model(dir_path)
+                            model_dict = process_supervised_model(dir_path, dataset=dataset)
                             bdd_models.append(model_dict)
                         else:
                             print(f"Model has not been evaluated on any dataset.")

@@ -3,17 +3,17 @@ defaults:
   - augmentations: foldlabel
   - backbone: ConvNet
   - classifier: svm
-  - dataset/lobule_parietal_sup_schiz_R_strat_bis
-  - dataset/lobule_parietal_sup_schiz_L_strat_bis
+  - dataset/central_precentral_HCP_stratified_extreme_Flanker_left
+  - dataset/central_precentral_HCP_stratified_extreme_Flanker_right
   - embeddings: embeddings
   - hydra: local
-  - label: diagnosis
+  - label: Flanker_AgeAdj_class
   - mode: classifier
   - model: SimCLR_fusion
   - platform: cuda_not_brainvisa
-  - projection_head: relu
-  - trainer: default
-  - wandb/identity
+  - projection_head: sigmoid
+  - trainer: classifier
+  - wandb: identity
   - override hydra/job_logging: custom
 
 data: ${oc.dict.values:dataset}

@@ -1,0 +1,19 @@
+# @package dataset.fronto-parietal_medial_face_HCP_stratified_extreme_Flanker_right
+dataset_name: fronto-parietal_medial_face_HCP_stratified_extreme_Flanker_right
+pickle_normal: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/fronto-parietal_medial_face./mask/Rskeleton.pkl
+numpy_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/fronto-parietal_medial_face./mask/Rskeleton.npy
+subjects_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/fronto-parietal_medial_face./mask/Rskeleton_subject.csv
+crop_dir: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/fronto-parietal_medial_face./mask/Rcrops
+foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/fronto-parietal_medial_face./mask/Rlabels
+foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/fronto-parietal_medial_face./mask/Rlabel.npy
+subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/crops/2mm/fronto-parietal_medial_face./mask/Rlabel_subject.csv
+crop_file_suffix: _cropped_skeleton.nii.gz
+pickle_benchmark: 
+train_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/extreme_flanker_train_subjects.csv
+val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/extreme_flanker_val_subjects.csv
+test_csv_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/extreme_flanker_test_subjects.csv
+# subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/hcp/participants_age_continuous.csv
+subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/hcp-top-separated/participants.csv
+subject_column_name: 'Subject'
+label_scaling:
+input_size: (1, 24, 82, 58)

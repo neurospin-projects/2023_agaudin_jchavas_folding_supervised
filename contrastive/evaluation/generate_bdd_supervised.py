@@ -12,7 +12,7 @@ folders = ["/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2/
 bdd = []
 visited = []
 
-generate_bdd_models(folders, bdd, visited, supervised=True, verbose=False)
+generate_bdd_models(folders, bdd, visited, dataset="flanker_class", supervised=True, verbose=False)
 
 bdd = pd.DataFrame(bdd)
 print("Number of models:", bdd.shape[0])

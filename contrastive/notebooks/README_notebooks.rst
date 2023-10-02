@@ -75,4 +75,8 @@ technical_tests/test_scaling
 ----------------------------
 Notebook to test which scaler to add before running the classification.
 
+visualize_flanker_results
+-------------------------
+Notebook to generate the color map of brain sulci with anatomist ; used for grid search visualization.
+
 

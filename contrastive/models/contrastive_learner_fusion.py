@@ -155,6 +155,10 @@ in the config to False to unfreeze them.")
         else:
             self.class_weights = None
 
+        # Keeps track of losses
+        self.training_step_outputs = []
+        self.validation_step_outputs = []
+
     def forward(self, x):
         embeddings = []
         for i in range(self.n_datasets):
@@ -247,10 +251,10 @@ in the config to False to unfreeze them.")
             'histo_sim_zij', histogram_sim_zij, self.current_epoch)
 
         # Computes histogram of weights
-        histogram_weights = plot_histogram_weights(self.weights,
-                                                   buffer=True)
-        self.loggers[0].experiment.add_image(
-            'histo_weights', histogram_weights, self.current_epoch)
+        # histogram_weights = plot_histogram_weights(self.weights,
+        #                                            buffer=True)
+        # self.loggers[0].experiment.add_image(
+        #     'histo_weights', histogram_weights, self.current_epoch)
 
 
     def plot_scatter_matrices(self, dataloader, key):
@@ -320,12 +324,19 @@ in the config to False to unfreeze them.")
         """Adam optimizer"""
         optimizer = torch.optim.Adam(
             filter(lambda p: p.requires_grad, self.parameters()),
-            lr=self.lr,
+            lr=self.config.lr,
             weight_decay=self.config.weight_decay)
-        # steps = 140
-        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, steps)
+        return_dict = {"optimizer": optimizer}
 
-        return optimizer
+        if 'scheduler' in self.config.keys() and self.config.scheduler:
+            scheduler = torch.optim.lr_scheduler.StepLR(
+                optimizer,
+                step_size=self.config.step_size,
+                gamma=self.config.gamma)
+            return_dict["lr_scheduler"] = {"scheduler": scheduler,
+                                           "interval": "epoch"}
+
+        return return_dict
 
 
     def nt_xen_loss(self, z_i, z_j):
@@ -415,11 +426,15 @@ in the config to False to unfreeze them.")
         #self.log('Loss/Train', float(batch_loss), on_epoch=True)
         logs = {"train_loss": float(batch_loss)}
 
+        self.training_step_outputs.append(batch_loss)
+
         batch_dictionary = {
             # REQUIRED: It is required for us to return "loss"
             "loss": batch_loss,
             # optional for batch logging purposes
             "log": logs}
+
+        batch_dictionary['learning_rate'] = self.optimizers().param_groups[0]['lr']
 
         if self.config.with_labels:
             # add label_loss (a part of the loss) to log
@@ -722,8 +737,49 @@ in the config to False to unfreeze them.")
             self.loggers[1].log_metrics({'AUC/Train_best': best_train_auc},
                                         step=self.current_epoch)
         return best_val_auc, best_train_auc
+    
+    def save_best_criterion_model(self, current_val_auc, current_train_auc, save_path='./logs/'):
+        """Saves best parameters if best criterion"""
+        if self.current_epoch <= 5: # takes best model only after epoch 5
+            best_val_auc = 0
+            best_train_auc = 0
+            best_criterion = 0
+        elif self.current_epoch > 5:
+            with open(save_path + "best_model_params.json", 'r') as file:
+                best_model_params = json.load(file)
+                best_val_auc = best_model_params['best_val_auc']
+                best_train_auc = best_model_params['best_train_auc']
+                best_criterion = best_model_params['best_criterion']
 
-    def training_epoch_end(self, outputs):
+        current_criterion = compute_grid_search_criterion(
+                                current_train_auc,
+                                current_val_auc,
+                                lambda_gs_crit=self.config.wandb.lambda_gs_crit)
+
+        if ((current_criterion < best_criterion) or (best_criterion == 0)):
+            torch.save({'state_dict': self.state_dict()},
+                       save_path + 'best_model_weights.pt')
+            best_model_params = {
+                'epoch': self.current_epoch,
+                'best_val_auc': current_val_auc,
+                'best_train_auc': current_train_auc,
+                'best_criterion': current_criterion}
+            with open(save_path + "best_model_params.json", 'w') as file:
+                json.dump(best_model_params, file)
+            best_val_auc = current_val_auc
+            best_train_auc = current_train_auc
+            best_criterion = current_criterion
+        
+        # log the best AUC for wandb (if used)
+        if self.config.wandb.grid_search:
+            self.loggers[1].log_metrics({'AUC/Val_best': best_val_auc},
+                                        step=self.current_epoch)
+            self.loggers[1].log_metrics({'AUC/Train_best': best_train_auc},
+                                        step=self.current_epoch)
+            
+        return best_val_auc, best_train_auc
+
+    def on_train_epoch_end(self):
         """Computation done at the end of the epoch"""
 
         # score = 0
@@ -750,13 +806,16 @@ in the config to False to unfreeze them.")
                     self.plot_histograms()
 
                 # Plots scatter matrices
-                self.plot_scatter_matrices()
+                self.plot_scatter_matrices(
+                     self.sample_data.train_dataloader(),
+                     "train",
+                )
 
-                # Plots scatter matrices with label values
-                score = self.plot_scatter_matrices_with_labels(
-                    self.sample_data.train_dataloader(),
-                    "train",
-                    self.config.mode)
+                # # Plots scatter matrices with label values
+                # score = self.plot_scatter_matrices_with_labels(
+                #     self.sample_data.train_dataloader(),
+                #     "train",
+                #     self.config.mode)
                 # Computes histogram of sim_zij
                 histogram_sim_zij = plot_histogram(self.sim_zij, buffer=True)
                 self.loggers[0].experiment.add_image(
@@ -765,14 +824,17 @@ in the config to False to unfreeze them.")
         if self.config.mode in ['classifier', 'regresser']:
             train_auc = self.compute_output_auc(
                 self.sample_data.train_dataloader())
+            
             # log train auc for tensorboard
             self.loggers[0].experiment.add_scalar(
                 "AUC/Train",
                 train_auc,
                 self.current_epoch)
+            
             # log train auc for wandb (if used)
             if self.config.wandb.grid_search:
                 self.loggers[1].log_metrics({'AUC/Train': train_auc}, step=self.current_epoch)
+
             # save train_auc to use it during validation end step
             auc_dict = {'train_auc': train_auc}
             save_path = './' + self.loggers[0].experiment.log_dir + '/train_auc.json'
@@ -787,22 +849,30 @@ in the config to False to unfreeze them.")
             self.plot_views()
 
         # calculates average loss
-        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        avg_loss = torch.stack([x for x in self.training_step_outputs]).mean()
 
         # logging using tensorboard logger
         self.loggers[0].experiment.add_scalar(
             "Loss/Train",
             avg_loss,
             self.current_epoch)
+
+        self.loggers[0].experiment.add_scalar(
+            "Learning rate",
+            self.optimizers().param_groups[0]['lr'],
+            self.current_epoch)
+
         # logging using wandb logger (if used)
         if self.config.wandb.grid_search:
             self.loggers[1].log_metrics({'Loss/Train': avg_loss}, 
-                                    step=self.current_epoch)
+                                        step=self.current_epoch)
         # if score != 0:
         #     self.loggers[0].experiment.add_scalar(
         #         "Score/Train",
         #         score,
         #         self.current_epoch)
+
+        self.training_step_outputs.clear()  # free memory
 
 
     def validation_step(self, val_batch, batch_idx):
@@ -845,6 +915,7 @@ in the config to False to unfreeze them.")
             "val_loss": batch_loss,
             # optional for batch logging purposes
             "log": logs}
+        self.validation_step_outputs.append(batch_loss)
 
         if self.config.with_labels:
             # add label_loss (a part of the loss) to log
@@ -855,7 +926,7 @@ in the config to False to unfreeze them.")
         return batch_dictionary
 
 
-    def validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self):
         """Computation done at the end of each validation epoch"""
 
         # score = 0
@@ -918,9 +989,13 @@ in the config to False to unfreeze them.")
                     self.loggers[0].experiment.add_scalar('gs_criterion',
                                                           gs_crit,
                                                           self.current_epoch)
+            # logs AUC using tensorboard logger
+            self.loggers[0].experiment.add_scalar('AUC/val',
+                                                  val_auc,
+                                                  self.current_epoch)
                 
-
             # save the model that has the best val auc during train
+            #best_val_auc, best_train_auc = self.save_best_criterion_model(val_auc, train_auc, save_path='./logs/')
             best_val_auc, best_train_auc = self.save_best_auc_model(val_auc, train_auc, save_path='./logs/')
 
             # log best grid search criterion for wandb (if used)
@@ -937,7 +1012,7 @@ in the config to False to unfreeze them.")
                                                           self.current_epoch)
 
         # calculates average loss
-        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
+        avg_loss = torch.stack([x for x in self.validation_step_outputs]).mean()
 
         # logs losses using tensorboard logger
         self.loggers[0].experiment.add_scalar(
@@ -975,3 +1050,5 @@ in the config to False to unfreeze them.")
                     'epoch': self.current_epoch, 'best_loss': avg_loss}
                 with open(save_path+"best_model_params.json", 'w') as file:
                     json.dump(best_model_params, file)
+
+        self.validation_step_outputs.clear()  # free memory

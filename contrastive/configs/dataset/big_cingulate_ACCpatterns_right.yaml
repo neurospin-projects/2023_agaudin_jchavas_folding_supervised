@@ -1,0 +1,14 @@
+# @package dataset.big_cingulate_ACCpatterns_right
+dataset_name: big_cingulate_ACCpatterns_right
+numpy_all: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/BIG_CINGULATE/mask/Rskeleton.npy
+subjects_all: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/BIG_CINGULATE/mask/Rskeleton_subject.csv
+foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/BIG_CINGULATE/mask/Rlabel.npy
+subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/BIG_CINGULATE/mask/Rlabel_subject.csv
+crop_dir: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/BIG_CINGULATE/mask/Rcrops
+crop_file_suffix: _cropped_skeleton.nii.gz
+foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/crops/2mm/BIG_CINGULATE/mask/Rlabels
+pickle_benchmark: 
+train_val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/train_val_ACCpatterns.csv
+subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/ACCpatterns/subjects_labels.csv
+subject_column_name: 'long_name'
+input_size: (1, 17, 67, 54)

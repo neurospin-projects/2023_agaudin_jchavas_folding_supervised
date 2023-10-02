@@ -175,7 +175,9 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
             print(f"{sub_dir} is a file. Continue.")
 
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-29",
-datasets=["cingulate_schiz", "cingulate_schiz_left"], short_name='cing_schiz',
-label='diagnosis', classifier_name='svm', overwrite=False, use_best_model=True,
-test_only=False, verbose=False)
+embeddings_pipeline("/volatile2/jc225751/Runs/61_classifier_regresser/Program/Output/2023-09-13_SimCLR_pretrained_UKB",
+        datasets=["cingulate_HCP_stratified_extreme_Flanker_left",
+                  "cingulate_HCP_stratified_extreme_Flanker_right"],
+        label='Flanker_AgeAdj_class',
+        short_name='flanker_class', overwrite=False, use_best_model=True,
+        test_only=False, verbose=False)

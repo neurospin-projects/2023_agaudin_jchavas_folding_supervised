@@ -21,7 +21,7 @@ setup(
                       'torchvision',
                       'torch-summary',
                       'tensorboard',
-                      'hydra.core',
+                      'hydra-core',
                       'hydra-joblib-launcher',
                       'dataclasses',
                       'OmegaConf',
@@ -37,9 +37,12 @@ setup(
                       'seaborn',
                       'statsmodels',
                       'umap-learn',
+                      'numpy',
                       'plotly',
                       'pqdm',
-                      'wandb'
+                      'wandb',
+                      'odfpy',
+                      'captum'
                       ],
     extras_require={"anatomist": ['deep_folding @ \
                         git+https://git@github.com/neurospin/deep_folding',
