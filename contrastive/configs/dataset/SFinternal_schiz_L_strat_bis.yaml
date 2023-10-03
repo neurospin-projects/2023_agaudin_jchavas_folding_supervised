@@ -1,5 +1,5 @@
-# @package dataset.SFinferior_schiz_L_strat_bis
-dataset_name: SFinferior_schiz_L_strat_bis
+# @package dataset.SFinternal_schiz_L_strat_bis
+dataset_name: SFinternal_schiz_L_strat_bis
 numpy_all: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/S.F.int.-S.R./mask/Lskeleton.npy
 subjects_all: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/S.F.int.-S.R./mask/Lskeleton_subject.csv
 foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/S.F.int.-S.R./mask/Llabel.npy

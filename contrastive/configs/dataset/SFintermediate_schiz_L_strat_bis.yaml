@@ -13,4 +13,4 @@ test_intra_csv_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/ne
 test_csv_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/new_stratification/test_subjects.csv
 subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/used_schiz_subjects.csv
 subject_column_name: 'participant_id'
-input_size: (1, 16, 45, 31)
+input_size: (1, 30, 51, 50)
