@@ -233,9 +233,6 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
                     # get the config
                     # and correct it to suit what is needed for classifiers
                     cfg = preprocess_config(sub_dir, datasets, label)
-                    log.debug(f"CONFIG FILE {type(cfg)}")
-                    log.debug(json.dumps(omegaconf.OmegaConf.to_container(
-                        cfg, resolve=True), indent=4, sort_keys=True))
                     # save the modified config next to the real one
                     with open(sub_dir+'/.hydra/config_evaluation.yaml', 'w') \
                             as file:
@@ -261,7 +258,7 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-09-29",
-         datasets=["central_precentral_HCP_stratified_extreme_Flanker_left", 'central_precentral_HCP_stratified_extreme_Flanker_right'], label='Flanker_AgeAdj_class',
-         short_name='flanker', overwrite=False, use_best_model=True,
-         save_outputs=True)
+pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2/STs_br/both2",
+         datasets=["STs_br_schiz_R_strat_bis", 'STs_br_schiz_L_strat_bis'],
+         label='diagnosis', short_name='schiz_diag', overwrite=False, use_best_model=True,
+         save_outputs=False)

@@ -115,6 +115,7 @@ This section is useful only if you want to run several sweeps with only one comm
 **/!\\** If you want to run sweeps on different regions, you have to add the dataset keyword to the ``sweep.yaml``. But because datasets are not keywords of the config just like for example ``lr`` is, you have to change a bit the config files writting. You need to follow the following convention:
 
 .. code-block:: yaml
+    
     +dataset:
         value: [region_right, region_left]
 

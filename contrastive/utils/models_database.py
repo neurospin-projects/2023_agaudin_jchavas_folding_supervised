@@ -177,6 +177,15 @@ def process_supervised_model(model_path, dataset, verbose=True):
     model_dict = {}
     model_dict['model_path'] = model_path
 
+    # read epoch at which the model has been reached
+    try:
+        with open(model_path + f"/logs/best_model_params.json", 'r') as file:
+            params = json.load(file)
+            epoch_dict = {'best_model_epoch': params['epoch']}
+            model_dict.update(epoch_dict)
+    except:
+        pass
+
     # read performances
     paths = glob.glob(model_path + rf"/{dataset}_supervised_results/aucs*.json")
     for path in paths:
@@ -279,12 +288,13 @@ they are done with another database than {dataset}")
                     print("End file", len(bdd_models))
 
 
-def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False, dropnan=False, exclude=False):
+def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False, dropnan=True, exclude=False):
     """
-    - bdd_models: pandas dataframe containing the models path, performances, and parameters. Created by
-    generate_bdd_models.
-    - hard_remove: list of columns to remove from the dataframe
-    - git_branch: bool to add a column indicating the branch/Run/author the models were generated with."""
+    Arguments:
+        - bdd_models: pandas dataframe containing the models path, performances, and parameters. Created by
+        generate_bdd_models.
+        - hard_remove: list of columns to remove from the dataframe
+        - git_branch: bool to add a column indicating the branch/Run/author the models were generated with."""
 
     # specify dataset if not done
     if "dataset_name" in bdd_models.columns:
