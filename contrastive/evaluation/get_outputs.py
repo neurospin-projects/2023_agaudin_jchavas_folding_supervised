@@ -172,8 +172,9 @@ def get_outputs(model_path, datasets, label, short_name, use_best_model):
                        use_best_model=use_best_model)
 
 
-get_outputs(model_path='/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-06-20/15-42-18_0',
-            datasets=["cingulate_schiz_strat_bis"],
-            label='diagnosis',
-            short_name='cing_schiz_strat_bis',
+get_outputs(model_path='/volatile/jc225751/Runs/61_classifier_regresser/Program/Output/2023-09-25_SFinferior/2023-09-26_SFinferior/00-58-55_42',
+            datasets=["postcentral_HCP_stratified_extreme_Flanker_left",
+                      "postcentral_HCP_stratified_extreme_Flanker_right"],
+            label='Flanker_AgeAdj_class',
+            short_name='flanker_class',
             use_best_model=True)
