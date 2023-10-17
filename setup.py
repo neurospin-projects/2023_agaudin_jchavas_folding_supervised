@@ -41,7 +41,8 @@ setup(
                       'plotly',
                       'pqdm',
                       'wandb',
-                      'odfpy'
+                      'odfpy',
+                      'captum'
                       ],
     extras_require={"anatomist": ['deep_folding @ \
                         git+https://git@github.com/neurospin/deep_folding',

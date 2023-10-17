@@ -4,6 +4,12 @@
 import os
 import yaml
 import re
+import pandas as pd
+
+from contrastive.utils.logs import set_root_logger_level, set_file_logger
+
+log = set_file_logger(__file__)
+
 
 
 def get_save_folder_name(datasets, short_name):
@@ -145,3 +151,42 @@ def detect_collisions(sweep_path):
         if os.path.isdir(run_path):
             if detect_collision(run_path):
                 print(run)
+
+
+def save_outputs_as_csv(outputs, filenames, labels, csv_path=None, verbose=False):
+    """Save and returns outputs of a model to its canonical form from a tensor. If
+    the given save_path doesn't exist, creates it.
+    
+    Arguments:
+        - outputs: the output tensor to save.
+        - filenames: the ordered subjects names associated to the outputs.
+        - labels: the ordered true labels associated to the outputs.
+        - csv_path: the path where to save the csv. If None, only returns
+        the pandas dataframe.
+        - verbose: verbose."""
+    columns_names = ['dim'+str(i+1) for i in range(outputs.shape[1])]
+    values = pd.DataFrame(outputs.numpy(), columns=columns_names)
+    labels = pd.DataFrame(labels, columns=['labels']).astype(int)
+    filenames = pd.DataFrame(filenames, columns=['ID'])
+    df_outputs = pd.concat([labels, values, filenames], axis=1)
+    
+    # remove one copy each ID
+    df_outputs = df_outputs.groupby('ID').mean()
+    df_outputs.labels = df_outputs.labels.astype(int)
+
+    if verbose:
+        print("outputs:", df_outputs.iloc[:10, :])
+        print("nb of elements:", df_outputs.shape[0])
+
+    # Solves the case in which index type is tensor
+    if len(df_outputs.index) > 0:  # avoid cases where empty df
+        if type(df_outputs.index[0]) != str:
+            index = [idx.item() for idx in df_outputs.index]
+            index_name = df_outputs.index.name
+            df_outputs.index = index
+            df_outputs.index.names = [index_name]
+
+    if csv_path:
+        df_outputs.to_csv(csv_path)
+
+    return df_outputs

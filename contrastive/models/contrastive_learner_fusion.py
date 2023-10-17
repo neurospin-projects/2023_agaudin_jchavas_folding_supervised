@@ -109,6 +109,13 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         else:
             raise ValueError(f"No underlying backbone with backbone name {config.backbone_name}")
         
+        # freeze the backbone weights if required
+        if config.freeze_encoders:
+            for backbone in self.backbones:
+                backbone.freeze()
+            log.info("The model's encoders weights are frozen. Set 'freeze_encoders' \
+in the config to False to unfreeze them.")
+
         # rename variables
         concat_latent_spaces_size = config.backbone_output_size * n_datasets
 
@@ -319,18 +326,17 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             filter(lambda p: p.requires_grad, self.parameters()),
             lr=self.config.lr,
             weight_decay=self.config.weight_decay)
-        scheduler = torch.optim.lr_scheduler.StepLR(
-            optimizer,
-            step_size=self.config.step_size,
-            gamma=self.config.gamma)
+        return_dict = {"optimizer": optimizer}
 
-        return {
-            "optimizer": optimizer,
-            "lr_scheduler": {
-                "scheduler": scheduler,
-                "interval": "epoch"
-            }
-        }
+        if 'scheduler' in self.config.keys() and self.config.scheduler:
+            scheduler = torch.optim.lr_scheduler.StepLR(
+                optimizer,
+                step_size=self.config.step_size,
+                gamma=self.config.gamma)
+            return_dict["lr_scheduler"] = {"scheduler": scheduler,
+                                           "interval": "epoch"}
+
+        return return_dict
 
 
     def nt_xen_loss(self, z_i, z_j):
@@ -700,8 +706,9 @@ class ContrastiveLearnerFusion(pl.LightningModule):
         else:
             return X_tsne
 
+
     def save_best_auc_model(self, current_val_auc, current_train_auc, save_path='./logs/'):
-        """Saves best parameters if best val auc"""
+        """Saves aucs and model weights if best val auc"""
         if self.current_epoch == 0:
             best_val_auc = 0
             best_train_auc = 0
@@ -964,12 +971,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                 save_path = './' + self.loggers[0].experiment.log_dir + '/train_auc.json'
                 with open(save_path, 'r') as file:
                     train_auc = json.load(file)['train_auc']
-                self.log('diff_auc',
-                         float(train_auc - val_auc),
-                         on_epoch=True)
-                self.log('learning_rate',
-                         self.optimizers().param_groups[0]['lr'],
-                         on_epoch=True)
+                self.log('diff_auc', float(train_auc - val_auc), on_epoch=True)
             else:
                 train_auc = 0.5
             
@@ -993,7 +995,8 @@ class ContrastiveLearnerFusion(pl.LightningModule):
                                                   self.current_epoch)
                 
             # save the model that has the best val auc during train
-            best_val_auc, best_train_auc = self.save_best_criterion_model(val_auc, train_auc, save_path='./logs/')
+            #best_val_auc, best_train_auc = self.save_best_criterion_model(val_auc, train_auc, save_path='./logs/')
+            best_val_auc, best_train_auc = self.save_best_auc_model(val_auc, train_auc, save_path='./logs/')
 
             # log best grid search criterion for wandb (if used)
             if self.config.wandb.grid_search:
