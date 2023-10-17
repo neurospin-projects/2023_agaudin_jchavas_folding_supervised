@@ -437,7 +437,8 @@ in the config to False to unfreeze them.")
         if self.config.scheduler:
             batch_dictionary['learning_rate'] = self.optimizers().param_groups[0]['lr']
 
-        if self.config.with_labels:
+        if self.config.with_labels and self.config.mode == 'encoder' \
+        and self.config.proportion_pure_contrastive != 1:
             # add label_loss (a part of the loss) to log
             self.log('train_label_loss', float(batch_label_loss))
             logs['train_label_loss'] = float(batch_label_loss)
@@ -919,7 +920,8 @@ in the config to False to unfreeze them.")
             "log": logs}
         self.validation_step_outputs.append(batch_loss)
 
-        if self.config.with_labels:
+        if self.config.with_labels and self.config.mode == 'encoder' \
+        and self.config.proportion_pure_contrastive != 1:
             # add label_loss (a part of the loss) to log
             self.log('val_label_loss', float(batch_label_loss))
             logs['val_label_loss'] = float(batch_label_loss)
