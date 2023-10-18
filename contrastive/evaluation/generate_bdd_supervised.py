@@ -7,11 +7,11 @@ from contrastive.utils.models_database import *
 
 # construct the database
 
-folders = [f"/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2"]
+folders = [f"/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step3/occipital_structure"]
 bdd = []
 visited = []
 
-generate_bdd_models(folders, bdd, visited, dataset="schiz_diag", supervised=True, verbose=False)
+generate_bdd_models(folders, bdd, visited, dataset="schiz_diag", hard_adds=['encoder_depth'], supervised=True, verbose=False)
 
 bdd = pd.DataFrame(bdd)
 print("Number of models:", bdd.shape[0])
@@ -28,8 +28,8 @@ bdd = post_process_bdd_models(bdd, hard_remove=[], git_branch=False, dropnan=Tru
 
 
 # save the database
-name = "step2"
-save_path = f"/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches"
+name = "occipital"
+save_path = f"/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step3"
 bdd.to_csv(os.path.join(save_path, f"bdd_{name}.csv"), index=True)
 
 
