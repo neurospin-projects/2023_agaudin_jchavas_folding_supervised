@@ -146,8 +146,8 @@ def get_outputs(model_path, datasets, label, short_name, use_best_model):
                         use_best_model=True)
 
 
-get_outputs(model_path='/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-09-08/no_cal_pretrained',
-            datasets=["cing_ACCpatterns_recrop"],
-            label='Right_PCS',
-            short_name='ACC',
+get_outputs(model_path='/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2/occipital/both/10-03-21_227',
+            datasets=["occipital_schiz_R_strat_bis", "occipital_schiz_L_strat_bis"],
+            label='diagnosis',
+            short_name='schiz_diag_bis',
             use_best_model=True)

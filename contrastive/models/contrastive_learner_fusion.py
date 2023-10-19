@@ -110,7 +110,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             raise ValueError(f"No underlying backbone with backbone name {config.backbone_name}")
         
         # freeze the backbone weights if required
-        if config.freeze_encoders:
+        if 'freeze_encoders' in config.keys() and config.freeze_encoders:
             for backbone in self.backbones:
                 backbone.freeze()
             log.info("The model's encoders weights are frozen. Set 'freeze_encoders' \
@@ -129,7 +129,7 @@ in the config to False to unfreeze them.")
 
         # set projection head activation
         activation = config.projection_head_name
-        log.info(f"activation = {activation}")
+        log.debug(f"activation = {activation}")
         self.projection_head = ProjectionHead(
             num_representation_features=num_representation_features,
             layers_shapes=layers_shapes,
