@@ -372,7 +372,7 @@ def read_labels(subject_labels_file, subject_column_name,
     """Extracts labels from label file. Returns a dataframe with labels"""
 
     # Loads labels file
-    subject_labels_file = subject_labels_file
+    subject_labels_file = subject_labels_file  # ?
     subject_labels = pd.read_csv(subject_labels_file)
     log.info(f"Subject_labels_file = {subject_labels_file}")
     log.debug(f"Subject_labels head just when loaded = "

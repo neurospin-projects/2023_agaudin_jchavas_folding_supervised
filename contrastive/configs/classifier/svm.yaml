@@ -2,8 +2,6 @@
 # define path and parameters needed for the classifier on the latent space
 classifier_name: svm
 training_embeddings: /neurospin/dico/data/deep_folding/current/datasets/schiz/morphometry_statistics/F.C.M.ant/shape_embs.csv
-test_embeddings: 
-embeddings_of_interest:
 results_save_path:
 labels_of_interest:
 class_max_epochs: 5000
