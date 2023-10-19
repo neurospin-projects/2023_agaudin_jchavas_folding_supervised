@@ -1,7 +1,7 @@
 # @package _global_
 batch_size: 16
 pin_mem: True
-lr: 0.0007
+lr: 0.001
 weight_decay: 5.0e-05
 max_epochs: 101
 nb_epochs_per_saving: 1

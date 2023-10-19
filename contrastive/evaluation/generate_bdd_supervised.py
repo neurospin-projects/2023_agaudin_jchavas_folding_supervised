@@ -7,7 +7,7 @@ from contrastive.utils.models_database import *
 
 # construct the database
 
-folders = [f"/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step3/occipital_structure"]
+folders = [f"/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step3/occipital_structure/densenet"]
 bdd = []
 visited = []
 
