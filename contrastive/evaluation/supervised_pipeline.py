@@ -261,7 +261,11 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
             print(f"{sub_dir} is a file. Continue.")
 
 
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-09-29",
-         datasets=["central_precentral_HCP_stratified_extreme_Flanker_left", 'central_precentral_HCP_stratified_extreme_Flanker_right'], label='Flanker_AgeAdj_class',
-         short_name='flanker', overwrite=False, use_best_model=True,
+pipeline("/neurospin/dico/data/deep_folding/history/2023-09_joel-flanker/Output/2023-09-28_SOr_olfactif",
+         datasets=["SOr_olfactif_HCP_stratified_extreme_Flanker_left",
+                   "SOr_olfactif_HCP_stratified_extreme_Flanker_right"],
+         label='Flanker_AgeAdj_class',
+         short_name='flanker_class',
+         overwrite=True,
+         use_best_model=True,
          save_outputs=True)

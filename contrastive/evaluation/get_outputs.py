@@ -146,7 +146,8 @@ def get_outputs(model_path, datasets, label, short_name, use_best_model):
                         use_best_model=True)
 
 get_outputs(model_path='/volatile/jc225751/Runs/61_classifier_regresser/Program/Output/2023-09-25_SFinferior/2023-09-26_SFinferior/00-58-55_42',
-            datasets=["postcentral_HCP_stratified_extreme_Flanker_left",
-                      "postcentral_HCP_stratified_extreme_Flanker_right"],
+            datasets=["SFinferior_HCP_stratified_extreme_Flanker_left",
+                      "SFinferior_HCP_stratified_extreme_Flanker_right"],
             label='Flanker_AgeAdj_class',
             short_name='flanker_class',
+            use_best_model=True)
