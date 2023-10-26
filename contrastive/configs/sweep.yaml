@@ -4,7 +4,7 @@ project: 2023_brain_regions_grid_searches
 method: random
 metric:
   goal: minimize
-  name: gs_criterion
+  name: gs_criterion_best
 parameters:
   lr:
     distribution: log_uniform_values
@@ -21,12 +21,12 @@ parameters:
     max: 6
   
   +dataset:
-    value: [frontal_schiz_R_strat_bis, frontal_schiz_L_strat_bis]
+    value: [UKB/occipital_UKB_R, UKB/occipital_UKB_L]
   
   output_dir:
     value: /neurospin/dico/agaudin/Runs/09_new_repo/Output
   suffix_dir:
-    value: _frontal
+    value: _occipital_UKB
 
 command:
   - ${env}

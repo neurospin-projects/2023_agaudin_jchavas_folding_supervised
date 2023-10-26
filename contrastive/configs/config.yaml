@@ -3,12 +3,12 @@ defaults:
   - augmentations: foldlabel
   - backbone: ConvNet
   - classifier: svm
-  # - dataset/occipital_schiz_R_strat_bis
-  # - dataset/occipital_schiz_L_strat_bis
+  - dataset/UKB/occipital_UKB_R
+  - dataset/UKB/occipital_UKB_L
   - embeddings: embeddings
   - hydra: local
   - label: diagnosis
-  - mode: classifier
+  - mode: encoder
   - model: SimCLR_fusion
   - platform: cuda_not_brainvisa
   - projection_head: relu
