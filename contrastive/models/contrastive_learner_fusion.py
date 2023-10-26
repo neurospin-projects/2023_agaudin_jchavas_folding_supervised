@@ -910,7 +910,8 @@ in the config to False to unfreeze them.")
         
         # values useful for early stoppings
         self.log('val_loss', float(batch_loss), on_epoch=True)
-        self.log('diff_auc', float(0))
+        if self.config.mode in ['classifier', 'regresser']:
+            self.log('diff_auc', float(0))
         # logs- a dictionary
         logs = {"val_loss": float(batch_loss)}
         batch_dictionary = {
