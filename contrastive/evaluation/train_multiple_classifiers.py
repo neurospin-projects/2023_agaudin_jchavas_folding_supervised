@@ -184,8 +184,8 @@ def post_processing_results(labels, embeddings, Curves, aucs, accuracies,
     plt.plot(roc_curve_mean[0], roc_curve_mean[1],
              color='black', label='agregated model (mean)')
     plt.legend()
-    plt.title(f"{subset} {mode} ROC curves")
-    plt.savefig(results_save_path+f"/{subset}_{mode}_ROC_curves.png")
+    plt.title(f"{subset} ROC curves")
+    plt.savefig(results_save_path+f"/{subset}_ROC_curves.png")
 
     # compute accuracy and area under the curve
     print(f"{subset} cross_val accuracy",
