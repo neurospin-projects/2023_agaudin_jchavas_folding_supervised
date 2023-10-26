@@ -256,19 +256,7 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
             print(f"{sub_dir} is a file. Continue.")
 
 if __name__ == "__main__":
-    pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step3/occipital/densenet",    
+    pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step3/occipital/densenet_gridsearch",    
             datasets=["occipital_schiz_R_strat_bis", 'occipital_schiz_L_strat_bis'],
-            label='diagnosis', short_name='schiz_diag', overwrite=True, use_best_model=True,
+            label='diagnosis', short_name='schiz_diag', overwrite=False, use_best_model=True,
             save_outputs=True)
-    
-    # regions = os.listdir("/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2")
-    # lesconnasses1sur3 = ['occipito_temporal', 'fissure_parieto_occipital', 'inferior_temporal', 'precentral',
-    #          'FIP']
-    # lesconnasses2sur3 = ['postcentral', 'pericalcarine', 'SFintermediate', 'STs', 'fissure_lateral']
-    # lesconnasses3sur3 = ['fissure_collateral',
-    #          'SC_sylv', 'SFmedian', 'BROCA', 'lobule_parietal_sup']
-    # for region in lesconnasses3sur3:
-    #     pipeline(f"/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2/{region}",
-    #             datasets=[f"{region}_schiz_R_strat_bis", f'{region}_schiz_L_strat_bis'],
-    #             label='diagnosis', short_name='schiz_diag', overwrite=True, use_best_model=True,
-    #             save_outputs=True)
