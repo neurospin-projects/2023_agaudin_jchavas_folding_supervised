@@ -77,7 +77,7 @@ def list_to_tuple(dico):
             dico[key] = tuple(dico[key])
 
 
-def process_model(model_path, dataset='cingulate_ACCpatterns', verbose=True):
+def process_model(model_path, dataset='cingulate_ACCpatterns', hard_adds=[], verbose=True):
     """Gets the relevant information from a model, i.e. losses, performances (classifiers' accuracy
     and auc for a given dataset) and config parameters.
     
@@ -102,6 +102,13 @@ def process_model(model_path, dataset='cingulate_ACCpatterns', verbose=True):
     with open(model_path+'/partial_config.yaml', 'r') as file2:
         partial_config = yaml.load(file2, Loader=yaml.FullLoader)
         model_dict.update(partial_config)
+    
+    # add parameters that are not in the partial config
+    if hard_adds != []:
+        with open(model_path+'/.hydra/config.yaml', 'r') as file_full_config:
+            full_config = yaml.load(file_full_config, Loader=yaml.FullLoader)
+            for key in hard_adds:
+                model_dict[key] = full_config[key]
 
     # compute losses if necessary
     log_path = get_path2logs(model_path)
@@ -136,7 +143,7 @@ def process_model(model_path, dataset='cingulate_ACCpatterns', verbose=True):
     return model_dict
 
 
-def process_best_model(model_path, dataset='cingulate_ACCpatterns'):
+def process_best_model(model_path, dataset='cingulate_ACCpatterns', hard_adds=[]):
     """Does the same than process_model but for model's best state weights, saved 'by hand'"""
     # generate a dictionnary with the model's parameters and performances
     model_dict = {}
@@ -155,6 +162,13 @@ def process_best_model(model_path, dataset='cingulate_ACCpatterns'):
     with open(model_path+'/partial_config.yaml', 'r') as file2:
         partial_config = yaml.load(file2, Loader=yaml.FullLoader)
         model_dict.update(partial_config)
+        
+    # add parameters that are not in the partial config
+    if hard_adds != []:
+        with open(model_path+'/.hydra/config.yaml', 'r') as file_full_config:
+            full_config = yaml.load(file_full_config, Loader=yaml.FullLoader)
+            for key in hard_adds:
+                model_dict[key] = full_config[key]
 
     # get the final losses
     log_path = model_path + '/logs'
@@ -168,7 +182,7 @@ def process_best_model(model_path, dataset='cingulate_ACCpatterns'):
     return model_dict
 
 
-def process_supervised_model(model_path, dataset, verbose=True):
+def process_supervised_model(model_path, dataset, hard_adds=[], verbose=True):
     """Gets the relevant information from a supervised model, i.e. losses, ouitput aucs 
     and config parameters.
     
@@ -176,6 +190,15 @@ def process_supervised_model(model_path, dataset, verbose=True):
     # generate a dictionnary with the model's parameters and performances
     model_dict = {}
     model_dict['model_path'] = model_path
+
+    # read epoch at which the model has been reached
+    try:
+        with open(model_path + f"/logs/best_model_params.json", 'r') as file:
+            params = json.load(file)
+            epoch_dict = {'best_model_epoch': params['epoch']}
+            model_dict.update(epoch_dict)
+    except:
+        pass
 
     # read performances
     paths = glob.glob(model_path + rf"/{dataset}_supervised_results/aucs*.json")
@@ -192,6 +215,13 @@ def process_supervised_model(model_path, dataset, verbose=True):
     with open(model_path+'/partial_config.yaml', 'r') as file2:
         partial_config = yaml.load(file2, Loader=yaml.FullLoader)
         model_dict.update(partial_config)
+    
+    # add parameters that are not in the partial config
+    if hard_adds != []:
+        with open(model_path+'/.hydra/config.yaml', 'r') as file_full_config:
+            full_config = yaml.load(file_full_config, Loader=yaml.FullLoader)
+            for key in hard_adds:
+                model_dict[key] = full_config[key]
 
     # compute losses if necessary
     log_path = get_path2logs(model_path)
@@ -212,7 +242,7 @@ def process_supervised_model(model_path, dataset, verbose=True):
 
 
 def generate_bdd_models(folders, bdd_models, visited, dataset='cingulate_ACCpatterns',
-                        best_model=False, supervised=False, verbose=True):
+                        best_model=False, supervised=False, hard_adds=[], verbose=True):
     """Fills the dictionnary bdd_models with the parameters and performances of all the bdd models"""
     # depth first exploration of folders to treat all the models in it
 
@@ -238,12 +268,12 @@ def generate_bdd_models(folders, bdd_models, visited, dataset='cingulate_ACCpatt
                         if os.path.exists(dir_path + f"/{dataset}_embeddings/values.json"):
                             if not best_model:
                                 model_dict = process_model(
-                                    dir_path, dataset=dataset)
+                                    dir_path, dataset=dataset, hard_adds=hard_adds)
                                 bdd_models.append(model_dict)
                             else:
                                 if os.path.exists(dir_path + f"/{dataset}_embeddings_best_model/values.json"):
                                     model_dict = process_best_model(
-                                        dir_path, dataset=dataset)
+                                        dir_path, dataset=dataset, hard_adds=hard_adds)
                                     bdd_models.append(model_dict)
 
                             if verbose:
@@ -255,7 +285,8 @@ they are done with another database than {dataset}")
                     else:  # supervised case
                         paths = glob.glob(dir_path + rf"/{dataset}_supervised_results/aucs*.json")
                         if paths != []:
-                            model_dict = process_supervised_model(dir_path, dataset=dataset)
+                            model_dict = process_supervised_model(dir_path, dataset=dataset, 
+                                                                  hard_adds=hard_adds)
                             bdd_models.append(model_dict)
                         else:
                             print(f"Model has not been evaluated on any dataset.")
@@ -271,7 +302,8 @@ they are done with another database than {dataset}")
                         print("End recursive", len(folders), len(bdd_models))
 
                     generate_bdd_models(folders, bdd_models, visited, dataset=dataset,
-                                        supervised=supervised, best_model=best_model, verbose=verbose)
+                                        supervised=supervised, best_model=best_model,
+                                        hard_adds=hard_adds, verbose=verbose)
 
             else:
                 print(f"{dir_path} is a file. Continue.")
@@ -279,12 +311,14 @@ they are done with another database than {dataset}")
                     print("End file", len(bdd_models))
 
 
-def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False, dropnan=False, exclude=False):
+def post_process_bdd_models(bdd_models, hard_remove=[], git_branch=False, dropnan=True, exclude=False):
     """
-    - bdd_models: pandas dataframe containing the models path, performances, and parameters. Created by
-    generate_bdd_models.
-    - hard_remove: list of columns to remove from the dataframe
-    - git_branch: bool to add a column indicating the branch/Run/author the models were generated with."""
+    Arguments:
+        - bdd_models: pandas dataframe containing the models path, performances, and parameters. Created by
+        generate_bdd_models.
+        - hard_remove: list of columns to remove from the dataframe
+        - git_branch: bool to add a column indicating the branch/Run/author the models were generated with.
+        - dropnan: bool. Tells if the columns with one value non NaN value and Nan are removed."""
 
     # specify dataset if not done
     if "dataset_name" in bdd_models.columns:

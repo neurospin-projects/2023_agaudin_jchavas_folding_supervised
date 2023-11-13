@@ -139,7 +139,7 @@ def compute_embeddings(config):
     test_embeddings_df.to_csv(embeddings_path+"/test_embeddings.csv")
 
     # same thing for test_intra if it exists
-    if 'test_intra_csv_file' in config.keys():
+    try:
         print("TEST INTRA SET")
         test_intra_embeddings = model.compute_representations(
             data_module.test_intra_dataloader())
@@ -147,6 +147,8 @@ def compute_embeddings(config):
         test_intra_embeddings_df = embeddings_to_pandas(test_intra_embeddings)
         test_intra_embeddings_df.to_csv(
             embeddings_path+"/test_intra_embeddings.csv")
+    except:
+        print("No test_intra set")
 
     # same thing on the train_val dataset
     print("TRAIN_VAL SET")
@@ -156,10 +158,18 @@ def compute_embeddings(config):
 
     # same thing on the entire dataset
     print("FULL SET")
-    full_df = pd.concat([train_embeddings_df,
-                         val_embeddings_df,
-                         test_embeddings_df],
-                        axis=0)
+    try:
+        full_df = pd.concat([train_embeddings_df,
+                             val_embeddings_df,
+                             test_intra_embeddings_df,
+                             test_embeddings_df],
+                             axis=0)
+    except:
+        full_df = pd.concat([train_embeddings_df,
+                             val_embeddings_df,
+                             test_embeddings_df],
+                             axis=0)
+
     full_df = full_df.sort_values(by='ID')
     full_df.to_csv(embeddings_path+"/full_embeddings.csv")
 

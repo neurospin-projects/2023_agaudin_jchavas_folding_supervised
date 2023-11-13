@@ -133,6 +133,7 @@ def train(config):
     else:
         summary(model, device='cpu')
 
+    # define the early stoppings
     early_stop_callback = \
         EarlyStopping(monitor="val_loss",
                       patience=config.early_stopping_patience)
@@ -168,11 +169,6 @@ def train(config):
         log_every_n_steps=config.log_every_n_steps,
         #auto_lr_find=True
         )
-
-    # # find the best lr
-    # log.info("Find the best learning rate...")
-    # data_module.setup()
-    # trainer.tune(model, data_module.train_dataloader(), data_module.val_dataloader())
 
     # start training
     trainer.fit(model, data_module, ckpt_path=config.checkpoint_path)

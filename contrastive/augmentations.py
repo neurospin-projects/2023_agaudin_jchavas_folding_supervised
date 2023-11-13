@@ -264,7 +264,9 @@ def remove_branches_up_to_percent(arr_foldlabel, arr_skel,
     percent_pixels_removed = (total_pixels-total_pixels_after)/total_pixels*100
     log.debug(f"Minimum expected % removed pixels = {percentage}")
     log.debug(f"% removed pixels = {percent_pixels_removed}")
-    assert (percent_pixels_removed >= percentage)
+
+    assert (total_pixels == 0 or percent_pixels_removed >= percentage), \
+        f"{percent_pixels_removed} >= {percentage}, total_pixels : {total_pixels}"
 
     return arr_skel_without_branches
 

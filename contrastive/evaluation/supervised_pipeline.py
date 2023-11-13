@@ -133,23 +133,18 @@ def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=Tru
         loaders_dict['test_intra'] = test_intra_loader
     except:
         log.info("No test intra for this dataset.")
+    
+    # create a save path is necessary
+    save_path = model_path+f"/{folder_name}_supervised_results"
+    log.debug(f"Save path = {save_path}")
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
 
     # compute aucs
     aucs_dict = {}
     for subset_name, loader in loaders_dict.items():
         aucs_dict[subset_name+"_auc"] = model.compute_output_auc(loader)
     log.info(aucs_dict)
-
-    # compute grad cam if only one encoder (doesn't work otherwise)
-    if len(config.data) == 1:
-        attributions_dict = compute_all_grad_cams(loaders_dict, model,
-                                                  with_labels=config.with_labels)
-
-    # create a save path is necessary
-    save_path = model_path+f"/{folder_name}_supervised_results"
-    log.debug(f"Save path = {save_path}")
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
 
     # save the aucs
     if use_best_model:
@@ -159,8 +154,10 @@ def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=Tru
     with open(json_path, 'w') as file:
         json.dump(aucs_dict, file)
 
-    # save grad cam if computed
+    # compute and save grad cam if required
     if len(config.data) == 1:
+        attributions_dict = compute_all_grad_cams(loaders_dict, model,
+                                                  with_labels=config.with_labels)
         if use_best_model:
             filename = '/attributions_best_model.pkl'
         else:
@@ -170,6 +167,7 @@ def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=Tru
 
     # compute and save outputs if required
     if save_outputs:
+        log.info("Generate the outputs of the model.")
         # set the save path
         if use_best_model:
             outputs_save_path = os.path.join(save_path, 'best_model_outputs')
@@ -180,7 +178,7 @@ def supervised_auc_eval(config, model_path, folder_name=None, use_best_model=Tru
             os.makedirs(outputs_save_path)
         
         full_csv = pd.DataFrame([])
-        # compute the ouptu for each subset
+        # compute the output for each subset
         for subset in loaders_dict.keys():
             loader = loaders_dict[subset]
             outputs, filenames, labels = model.compute_outputs_skeletons(loader)
@@ -233,9 +231,6 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
                     # get the config
                     # and correct it to suit what is needed for classifiers
                     cfg = preprocess_config(sub_dir, datasets, label)
-                    log.debug(f"CONFIG FILE {type(cfg)}")
-                    # log.debug(json.dumps(omegaconf.OmegaConf.to_container(
-                    #     cfg, resolve=True), indent=4, sort_keys=True))
                     # save the modified config next to the real one
                     with open(sub_dir+'/.hydra/config_evaluation.yaml', 'w') \
                             as file:
@@ -260,8 +255,8 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
         else:
             print(f"{sub_dir} is a file. Continue.")
 
-
-pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/2023-09-29",
-         datasets=["central_precentral_HCP_stratified_extreme_Flanker_left", 'central_precentral_HCP_stratified_extreme_Flanker_right'], label='Flanker_AgeAdj_class',
-         short_name='flanker', overwrite=False, use_best_model=True,
-         save_outputs=True)
+if __name__ == "__main__":
+    pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step3/occipital/recrop_threshold1",    
+            datasets=["occipital_schiz_R_strat_bis_threshold1", 'occipital_schiz_L_strat_bis_threshold1'],
+            label='diagnosis', short_name='schiz_diag', overwrite=False, use_best_model=True,
+            save_outputs=True)

@@ -14,7 +14,7 @@ visited = []
 # parameter to use or not the model with the best validation loss
 best_model = False
 
-generate_bdd_models(folders, bdd, visited, verbose=False, dataset=dataset)
+generate_bdd_models(folders, bdd, visited, hard_adds=[], verbose=False, dataset=dataset)
 
 bdd = pd.DataFrame(bdd)
 print("Number of models:", bdd.shape[0])

@@ -42,14 +42,27 @@ def define_njobs():
     return max(nb_cpus - 2, 1)
 
 
-def load_embeddings(dir_path, labels_path, config):
+def load_embeddings(dir_path, labels_path, config, subset='full'):
     """Load the embeddings and the labels.
+
+    Arguments:
+        - dir_path: path where the embeddings are stored. Either 
+        the folder that contains them or directly the target file.
+        - labels_path: the file where the labels are stored.
+        - config: the omegaconf object related to the current ANN model.
+        - subset: str. Target subset of the data the classifiers will be trained 
+        on. Usually either 'train', 'val', 'train_val', 'test' or 'test_intra'.
     """
     # load embeddings
     # if targeting directly the target csv file
     if not os.path.isdir(dir_path):
         embeddings = pd.read_csv(dir_path, index_col=0)
     # if only giving the directory (implies constraints on the file name)
+    # take only a specified subset
+    elif subset != 'full':
+        embeddings = pd.read_csv(
+                dir_path+f'/{subset}_embeddings.csv', index_col=0)
+    # takes all the subjects
     else:
         if os.path.exists(dir_path+'/full_embeddings.csv'):
             embeddings = pd.read_csv(
@@ -64,12 +77,17 @@ def load_embeddings(dir_path, labels_path, config):
                 dir_path+'/val_embeddings.csv', index_col=0)
             test_embeddings = pd.read_csv(
                 dir_path+'/test_embeddings.csv', index_col=0)
-
-            # regroup them in one dataframe (discuss with Joël)
-            embeddings = pd.concat([train_embeddings,
-                                    val_embeddings,
-                                    test_embeddings],
-                                   axis=0, ignore_index=False)
+            embs_list = [train_embeddings, val_embeddings,
+                         test_embeddings]
+            try:
+                test_intra_embeddings = pd.read_csv(
+                    dir_path+'/test_intra_embeddings.csv', index_col=0)
+                embs_list.append(test_intra_embeddings)
+            except:
+                pass
+                
+            # regroup them in one dataframe
+            embeddings = pd.concat(embs_list, axis=0, ignore_index=False)
 
     embeddings.sort_index(inplace=True)
     log.debug(f"sorted embeddings: {embeddings.head()}")
@@ -93,37 +111,6 @@ def load_embeddings(dir_path, labels_path, config):
     # /!\ multiple labels is not handled
 
     return embeddings, labels
-
-
-# used for torch neural network (special formatting required)
-def load_and_format_embeddings(dir_path, labels_path, config):
-    # load embeddings
-    embeddings, labels = load_embeddings(dir_path, labels_path, config)
-    names_col = 'ID' if 'ID' in embeddings.columns else 'Subject'
-
-    # create train-test datasets
-    if config.classifier_test_size:
-        embeddings_train, embeddings_test, labels_train, labels_test = \
-            train_test_split(embeddings, labels,
-                             test_size=config.classifier_test_size,
-                             random_state=config.classifier_seed)
-    else:  # no train-test sets for the classifier
-        embeddings_train = embeddings_test = embeddings
-        labels_train = labels_test = labels
-
-    # cast the dataset to the torch format
-    X_train = embeddings_train.loc[:, embeddings_train.columns != names_col]
-    X_train = torch.from_numpy(X_train.values).type(torch.FloatTensor)
-
-    X_test = embeddings_test.loc[:, embeddings_test.columns != names_col]
-    X_test = torch.from_numpy(X_test.values).type(torch.FloatTensor)
-
-    Y_train = torch.from_numpy(labels_train.label.values.astype(
-        'float32')).type(torch.FloatTensor)
-    Y_test = torch.from_numpy(labels_test.label.values.astype(
-        'float32')).type(torch.FloatTensor)
-
-    return X_train, X_test, Y_train, Y_test, labels_train, labels_test
 
 
 def compute_indicators(Y, proba_pred):
@@ -159,7 +146,7 @@ def get_average_model(labels_df):
 
 
 def post_processing_results(labels, embeddings, Curves, aucs, accuracies,
-                            values, columns_names, mode, results_save_path):
+                            values, columns_names, mode, subset, results_save_path):
     """Get the mean and the median AUC and accuracy, plot the ROC curves and 
     the generated files."""
 
@@ -197,21 +184,21 @@ def post_processing_results(labels, embeddings, Curves, aucs, accuracies,
     plt.plot(roc_curve_mean[0], roc_curve_mean[1],
              color='black', label='agregated model (mean)')
     plt.legend()
-    plt.title(f"{mode} ROC curves")
-    plt.savefig(results_save_path+f"/{mode}_ROC_curves.png")
+    plt.title(f"{subset} ROC curves")
+    plt.savefig(results_save_path+f"/{subset}_ROC_curves.png")
 
     # compute accuracy and area under the curve
-    print(f"{mode} accuracy",
+    print(f"{subset} cross_val accuracy",
           np.mean(accuracies[mode]),
           np.std(accuracies[mode]))
-    print(f"{mode} AUC", np.mean(aucs[mode]), np.std(aucs[mode]))
+    print(f"{subset} cross_val AUC", np.mean(aucs[mode]), np.std(aucs[mode]))
 
-    values[f'{mode}_total_accuracy'] = \
+    values[f'{subset}_total_accuracy'] = \
         [np.mean(accuracies[mode]), np.std(accuracies[mode])]
-    values[f'{mode}_auc'] = [np.mean(aucs[mode]), np.std(aucs[mode])]
+    values[f'{subset}_auc'] = [np.mean(aucs[mode]), np.std(aucs[mode])]
 
     # save predicted labels
-    labels.to_csv(results_save_path+f"/{mode}_predicted_probas.csv",
+    labels.to_csv(results_save_path+f"/{subset}_predicted_probas.csv",
                   index=False)
     # DEBUG embeddings.to_csv(results_save_path+f"/effective_embeddings.csv",
     #                         index=True)
@@ -225,17 +212,13 @@ def train_one_classifier(config, inputs, i=0):
         - inputs: dictionary containing the input data,
         with X key containing embeddings
         and Y key labels. If a test set is defined,
-        IT also contains X and Y for the test set.
+        it also contains X and Y for the test set.
         - i: seed for the SVM.
         Is automatically changed in each call of train_svm_classifiers.
     """
 
     X = inputs['X']
     Y = inputs['Y']
-    test_embs_path = inputs['test_embs_path']
-    if test_embs_path:
-        X_test = inputs['X_test']
-        Y_test = inputs['Y_test']
     outputs = {}
 
     # choose the classifier type
@@ -262,82 +245,46 @@ Choose a classifier type that exists in configs/classifier.")
     outputs['roc_auc'] = roc_auc
     outputs['accuracy'] = accuracy
 
-    if test_embs_path:
-        labels_pred_test = model.predict(X_test)
-        curves, roc_auc, accuracy = compute_indicators(
-            Y_test, labels_pred_test)
-        outputs['curves_test'] = curves
-        outputs['roc_auc_test'] = roc_auc
-        outputs['accuracy_test'] = accuracy
-
     return outputs
 
 
 @ignore_warnings(category=ConvergenceWarning)
-def train_n_repeat_classifiers(config):
+def train_n_repeat_classifiers(config, subset='full'):
     """Sets up the save paths, loads the embeddings and then loops 
     to train the n_repeat (=250) classifiers."""
-    # import the data
+    ## import the data
 
     # set up load and save paths
     train_embs_path = config.training_embeddings
-    test_embs_path = config.test_embeddings
     # /!\ in fact all_labels (=train_val and test labels)
     train_lab_paths = config.data[0].subject_labels_file
-
-    # if not specified, the embeddings the results are created from
-    # are the ones used for training
-    EoI_path = (config.embeddings_of_interest if config.embeddings_of_interest
-                else train_embs_path)
 
     # if not specified, the outputs of the classifier will be stored next
     # to the embeddings used to generate them
     results_save_path = (config.results_save_path if config.results_save_path
-                         else EoI_path)
-    # remove the 'full_embeddings.csv if it is there
+                         else train_embs_path)
+
+    # remove the filename from the path if it is a file
     if not os.path.isdir(results_save_path):
-        results_save_path = os.path.dirname(results_save_path)
+        results_save_folder, _ = os.path.split(results_save_path)
+    else:
+        results_save_folder, _ = results_save_path, ''
     # add a subfolder with the evaluated label as name
-    results_save_path = results_save_path + "/" + config.label_names[0]
-    if not os.path.exists(results_save_path):
-        os.makedirs(results_save_path)
+    results_save_folder = results_save_folder + "/" + config.label_names[0]
+    if not os.path.exists(results_save_folder):
+        os.makedirs(results_save_folder)
 
     embeddings, labels = load_embeddings(
-        train_embs_path, train_lab_paths, config)
+        train_embs_path, train_lab_paths, config, subset=subset)
     names_col = 'ID' if 'ID' in embeddings.columns else 'Subject'
     X = embeddings.loc[:, embeddings.columns != names_col]
-
     Y = labels.label
-
-    # debug regression
-    # if np.unique(Y).shape[0] > 2:
-    #     per_50 = np.percentile(Y, 50.)
-    #     Z = Y.copy(deep=True)
-    #     Z[Y <= per_50] = 0
-    #     Z[Y > per_50] = 1
-    #     Z = Z.astype(int)
-    #     labels.label = Z.copy(deep=True)
-    #     Y = labels.label
-
-    if test_embs_path:
-        test_embeddings, test_labels = load_embeddings(
-            test_embs_path, train_lab_paths, config)
-        names_col = 'ID' if 'ID' in test_embeddings.columns else 'Subject'
-        X_test = test_embeddings.loc[:, test_embeddings.columns != names_col]
-        Y_test = test_labels.label
 
     # Builds objects where the results are saved
     Curves = {'cross_val': []}
     aucs = {'cross_val': []}
     accuracies = {'cross_val': []}
     proba_matrix = np.zeros((labels.shape[0], config.n_repeat))
-
-    if test_embs_path:
-        Curves['test'] = []
-        aucs['test'] = []
-        accuracies['test'] = []
-        prediction_matrix_test = np.zeros(
-            (test_labels.shape[0], config.n_repeat))
 
     # Configures loops
 
@@ -350,10 +297,6 @@ def train_n_repeat_classifiers(config):
     X = scaler.fit_transform(X)
 
     inputs['Y'] = Y
-    inputs['test_embs_path'] = test_embs_path
-    if test_embs_path:
-        inputs['X_test'] = X_test
-        inputs['Y_test'] = Y_test
 
     # Actual loop done config.n_repeat times
     if _parallel:
@@ -379,14 +322,6 @@ def train_n_repeat_classifiers(config):
         aucs['cross_val'].append(roc_auc)
         accuracies['cross_val'].append(accuracy)
 
-        if test_embs_path:
-            curves = o['curves_test']
-            roc_auc = o['roc_auc_test']
-            accuracy = o['accuracy_test']
-            Curves['test'].append(curves)
-            aucs['test'].append(roc_auc)
-            accuracies['test'].append(accuracy)
-
     # add the predictions to the df where the true values are
     columns_names = ["svm_"+str(i) for i in range(config.n_repeat)]
     probas = pd.DataFrame(
@@ -398,29 +333,22 @@ def train_n_repeat_classifiers(config):
     mode = 'cross_val'
     post_processing_results(labels, embeddings, Curves, aucs,
                             accuracies, values, columns_names,
-                            mode, results_save_path)
-    print(f"results_save_path = {results_save_path}")
-    with open(results_save_path+"/values.json", 'w+') as file:
+                            mode, subset, results_save_folder)
+    
+    # save results
+    print(f"results_save_path = {results_save_folder}")
+    filename = f"{subset}_values.json"
+    with open(os.path.join(results_save_folder, filename), 'w+') as file:
         json.dump(values, file)
-
-    if test_embs_path:
-        values = {}
-        mode = 'test'
-        post_processing_results(test_labels, test_embeddings, Curves, aucs,
-                                accuracies, values, columns_names, mode,
-                                results_save_path)
-
-        with open(results_save_path+"/values_test.json", 'w+') as file:
-            json.dump(values, file)
 
     # plt.show()
     plt.close('all')
 
-    save_used_label(os.path.dirname(results_save_path), config)
+    save_used_label(os.path.dirname(results_save_folder), config)
 
 
-@hydra.main(config_name='config_no_save', config_path="../configs")
-def train_classifiers(config):
+#@hydra.main(config_name='config_no_save', config_path="../configs")
+def train_classifiers(config, subsets=None):
     """Train classifiers (either SVM or neural networks) to classify target embeddings
     with the given label.
     
@@ -432,8 +360,11 @@ def train_classifiers(config):
 
     set_root_logger_level(config.verbose)
 
-    # the choice of the classifiers' type is now inside the function 
-    train_n_repeat_classifiers(config)
+    for subset in subsets:
+        print("\n")
+        log.info(f"USING SUBSET {subset}")
+        # the choice of the classifiers' type is now inside the function 
+        train_n_repeat_classifiers(config, subset=subset)
 
 
 if __name__ == "__main__":

@@ -151,7 +151,7 @@ class DenseNet(pl.LightningModule):
                                     num_output_features=num_output_features)
                 self.encoder.add_module('transition%d' % (i + 1), trans)
                 num_features = num_output_features
-            print("NUM FEATURES", num_features)
+            # print("NUM FEATURES", num_features)
         
         # Transition from blocks to representation space
         self.encoder.add_module('Relu', nn.ReLU())

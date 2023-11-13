@@ -110,7 +110,7 @@ class ContrastiveLearnerFusion(pl.LightningModule):
             raise ValueError(f"No underlying backbone with backbone name {config.backbone_name}")
         
         # freeze the backbone weights if required
-        if config.freeze_encoders:
+        if 'freeze_encoders' in config.keys() and config.freeze_encoders:
             for backbone in self.backbones:
                 backbone.freeze()
             log.info("The model's encoders weights are frozen. Set 'freeze_encoders' \
@@ -129,7 +129,7 @@ in the config to False to unfreeze them.")
 
         # set projection head activation
         activation = config.projection_head_name
-        log.info(f"activation = {activation}")
+        log.debug(f"activation = {activation}")
         self.projection_head = ProjectionHead(
             num_representation_features=num_representation_features,
             layers_shapes=layers_shapes,
@@ -434,9 +434,11 @@ in the config to False to unfreeze them.")
             # optional for batch logging purposes
             "log": logs}
 
-        batch_dictionary['learning_rate'] = self.optimizers().param_groups[0]['lr']
+        if self.config.scheduler:
+            batch_dictionary['learning_rate'] = self.optimizers().param_groups[0]['lr']
 
-        if self.config.with_labels:
+        if self.config.with_labels and self.config.mode == 'encoder' \
+        and self.config.proportion_pure_contrastive != 1:
             # add label_loss (a part of the loss) to log
             self.log('train_label_loss', float(batch_label_loss))
             logs['train_label_loss'] = float(batch_label_loss)
@@ -857,10 +859,11 @@ in the config to False to unfreeze them.")
             avg_loss,
             self.current_epoch)
 
-        self.loggers[0].experiment.add_scalar(
-            "Learning rate",
-            self.optimizers().param_groups[0]['lr'],
-            self.current_epoch)
+        if self.config.scheduler:
+            self.loggers[0].experiment.add_scalar(
+                "Learning rate",
+                self.optimizers().param_groups[0]['lr'],
+                self.current_epoch)
 
         # logging using wandb logger (if used)
         if self.config.wandb.grid_search:
@@ -907,7 +910,8 @@ in the config to False to unfreeze them.")
         
         # values useful for early stoppings
         self.log('val_loss', float(batch_loss), on_epoch=True)
-        self.log('diff_auc', float(0))
+        if self.config.mode in ['classifier', 'regresser']:
+            self.log('diff_auc', float(0))
         # logs- a dictionary
         logs = {"val_loss": float(batch_loss)}
         batch_dictionary = {
@@ -917,7 +921,8 @@ in the config to False to unfreeze them.")
             "log": logs}
         self.validation_step_outputs.append(batch_loss)
 
-        if self.config.with_labels:
+        if self.config.with_labels and self.config.mode == 'encoder' \
+        and self.config.proportion_pure_contrastive != 1:
             # add label_loss (a part of the loss) to log
             self.log('val_label_loss', float(batch_label_loss))
             logs['val_label_loss'] = float(batch_label_loss)
@@ -989,10 +994,6 @@ in the config to False to unfreeze them.")
                     self.loggers[0].experiment.add_scalar('gs_criterion',
                                                           gs_crit,
                                                           self.current_epoch)
-            # logs AUC using tensorboard logger
-            self.loggers[0].experiment.add_scalar('AUC/val',
-                                                  val_auc,
-                                                  self.current_epoch)
                 
             # save the model that has the best val auc during train
             #best_val_auc, best_train_auc = self.save_best_criterion_model(val_auc, train_auc, save_path='./logs/')

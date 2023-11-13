@@ -1,0 +1,16 @@
+# @package dataset.fronto-parietal_medial_face_schiz_L_strat_bis
+dataset_name: fronto-parietal_medial_face_schiz_L_strat_bis
+numpy_all: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/fronto-parietal_medial_face./mask/Lskeleton.npy
+subjects_all: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/fronto-parietal_medial_face./mask/Lskeleton_subject.csv
+foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/fronto-parietal_medial_face./mask/Llabel.npy
+subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/fronto-parietal_medial_face./mask/Llabel_subject.csv
+crop_dir: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/fronto-parietal_medial_face./mask/Lcrops
+crop_file_suffix: _cropped_skeleton.nii.gz
+foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/fronto-parietal_medial_face./mask/Llabels
+train_csv_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/new_stratification/train_subjects.csv
+val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/new_stratification/val_subjects.csv
+test_intra_csv_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/new_stratification/test_intra_subjects.csv
+test_csv_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/new_stratification/test_subjects.csv
+subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/used_schiz_subjects.csv
+subject_column_name: 'participant_id'
+input_size: (1, 27, 93, 61)

@@ -13,8 +13,8 @@ from sklearn.exceptions import ConvergenceWarning
 
 # Auxilary function used to process the config linked to the model.
 # For instance, change the embeddings save path to being next to the model.
-def preprocess_config(sub_dir, datasets, label, folder_name, classifier_name='svm', test_only=False,
-                       verbose=False):
+def preprocess_config(sub_dir, datasets, label, folder_name, classifier_name='svm',
+                      verbose=False):
     """Loads the associated config of the given model and changes what has to be done,
     mainly the datasets, the classifier type and a few other keywords.
     
@@ -25,8 +25,6 @@ def preprocess_config(sub_dir, datasets, label, folder_name, classifier_name='sv
         - folder_name: str. Name of the directory where to store both embeddings and aucs.
         - classifier_name: str. Should correspond to a classifier yaml file's name 
         (currently either 'svm' or 'neural_network').
-        - test_only: bool. If True, doesn't compute on the full dataset, but only on the
-        test part.
         - verbose: bool. Verbose.
         
     Output:
@@ -51,12 +49,8 @@ def preprocess_config(sub_dir, datasets, label, folder_name, classifier_name='sv
     cfg.model_path = sub_dir
     cfg.embeddings_save_path = \
         sub_dir + f"/{folder_name}_embeddings"
-    if test_only:
-        cfg.training_embeddings = \
-            sub_dir + f"/{folder_name}_embeddings/test_embeddings.csv"
-    else:
-        cfg.training_embeddings = \
-            sub_dir + f"/{folder_name}_embeddings/full_embeddings.csv"
+    cfg.training_embeddings = \
+        sub_dir + f"/{folder_name}_embeddings"
     cfg.apply_transformations = False
 
     return cfg
@@ -66,9 +60,11 @@ def preprocess_config(sub_dir, datasets, label, folder_name, classifier_name='sv
 # creates embeddings and train classifiers for all models contained in folder
 @ignore_warnings(category=ConvergenceWarning)
 def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_name='svm',
-                        overwrite=False, use_best_model=False, test_only=False, verbose=False):
-    """Pipeline to generate automatically the embeddings and compute the 
-    associated aucs for all the models contained in a given directory.
+                        overwrite=False, use_best_model=False, subsets=['full'],
+                        verbose=False):
+    """Pipeline to generate automatically the embeddings and compute the associated AUCs 
+    for all the models contained in a given directory. All the AUCs are computed with 
+    5-folds cross validation .
 
     Arguments:
         - dir_path: str. Path where the models are stored and where is applied 
@@ -82,8 +78,8 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
         - overwrite: bool. Redo the process on models where embeddings already exist.
         - use_best_model: bool. Use the best model saved during to generate embeddings. 
         The 'normal' model is always used, the best is only added.
-        - test_only: bool. If True, doesn't compute on the full dataset, but only on the
-        test part.
+        - subsets: list of subsets you want the SVM to learn on. Set to ['full'] if you
+        want to learn on all subjects in one go.
         - verbose: bool. Verbose.
     """
 
@@ -120,8 +116,7 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
                     # get the config and correct it to suit
                     # what is needed for classifiers
                     cfg = preprocess_config(sub_dir, datasets, label, folder_name,
-                                            classifier_name=classifier_name, 
-                                            test_only=test_only)
+                                            classifier_name=classifier_name)
                     if verbose:
                         print("CONFIG FILE", type(cfg))
                         print(json.dumps(omegaconf.OmegaConf.to_container(
@@ -136,11 +131,11 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
                     # reload config for train_classifiers to work properly
                     cfg = omegaconf.OmegaConf.load(
                         sub_dir+'/.hydra/config_classifiers.yaml')
-                    train_classifiers(cfg)
+                    train_classifiers(cfg, subsets=subsets)
 
                     # compute embeddings for the best model if saved
                     if (use_best_model and os.path.exists(sub_dir+'/logs/best_model_weights.pt')):
-                        print("COMPUTE AGAIN WITH THE BEST MODEL")
+                        print("\nCOMPUTE AGAIN WITH THE BEST MODEL\n")
                         # apply the functions
                         cfg = omegaconf.OmegaConf.load(
                             sub_dir+'/.hydra/config_classifiers.yaml')
@@ -150,18 +145,14 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
                         cfg = omegaconf.OmegaConf.load(
                             sub_dir+'/.hydra/config_classifiers.yaml')
                         cfg.use_best_model = True
-                        if test_only:
-                            cfg.training_embeddings = cfg.embeddings_save_path + \
-                            '_best_model/test_embeddings.csv'
-                        else:
-                            cfg.training_embeddings = cfg.embeddings_save_path + \
-                                '_best_model/full_embeddings.csv'
+                        cfg.training_embeddings = cfg.embeddings_save_path + \
+                            '_best_model'
                         cfg.embeddings_save_path = \
                             cfg.embeddings_save_path + '_best_model'
-                        train_classifiers(cfg)
+                        train_classifiers(cfg, subsets=subsets)
 
             else:
-                print(f"{sub_dir} not associated to a model. Continue")
+                print(f"\n{sub_dir} not associated to a model. Continue")
                 embeddings_pipeline(sub_dir,
                                     datasets=datasets,
                                     label=label,
@@ -169,15 +160,28 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
                                     classifier_name=classifier_name,
                                     overwrite=overwrite,
                                     use_best_model=use_best_model,
-                                    test_only=test_only,
+                                    subsets=subsets,
                                     verbose=verbose)
         else:
             print(f"{sub_dir} is a file. Continue.")
 
+if __name__ == "__main__":
+    embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2/cingulate",
+        datasets=["cingulate_schiz_strat_bis","cingulate_schiz_left_strat_bis"],
+        label='diagnosis',
+        short_name='schiz_diag', overwrite=False, use_best_model=True,
+        subsets=['train','val','test_intra','test'], verbose=False)
 
-embeddings_pipeline("/volatile2/jc225751/Runs/61_classifier_regresser/Program/Output/2023-09-13_SimCLR_pretrained_UKB",
-        datasets=["cingulate_HCP_stratified_extreme_Flanker_left",
-                  "cingulate_HCP_stratified_extreme_Flanker_right"],
-        label='Flanker_AgeAdj_class',
-        short_name='flanker_class', overwrite=False, use_best_model=True,
-        test_only=False, verbose=False)
+# if __name__ == "__main__":
+#     gs_path = "/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2"
+#     #regions = [region for region in os.listdir(gs_path) if not os.path.isfile(os.path.join(gs_path,region))]
+#     regions = ['SFintermediate', 'STs', 'fissure_lateral', 'fissure_collateral', 'SC_sylv', 'SFmedian', 'BROCA', 'lobule_parietal_sup']
+#     print(regions)
+#     for region in regions:
+#         print(region)
+#         if region not in ["cingulate"]:
+#             embeddings_pipeline(gs_path+f"/{region}",
+#                 datasets=[f"{region}_schiz_R_strat_bis",f"{region}_schiz_L_strat_bis"],
+#                 label='diagnosis',
+#                 short_name='schiz_latent_space', overwrite=False, use_best_model=True,
+#                 subsets=['train','val','test_intra','test'], verbose=False)
