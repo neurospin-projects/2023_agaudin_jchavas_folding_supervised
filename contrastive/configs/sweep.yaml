@@ -21,7 +21,7 @@ parameters:
     max: 6
   
   +dataset:
-    value: [UKB/occipital_UKB_R, UKB/occipital_UKB_L]
+    value: [occipital_schiz_R_strat_bis_threshold1, occipital_schiz_L_strat_bis_threshold1]
   
   output_dir:
     value: /neurospin/dico/agaudin/Runs/09_new_repo/Output

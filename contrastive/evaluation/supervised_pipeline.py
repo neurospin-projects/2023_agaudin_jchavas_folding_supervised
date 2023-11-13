@@ -256,7 +256,7 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
             print(f"{sub_dir} is a file. Continue.")
 
 if __name__ == "__main__":
-    pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step3/occipital/densenet_gridsearch",    
-            datasets=["occipital_schiz_R_strat_bis", 'occipital_schiz_L_strat_bis'],
+    pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step3/occipital/recrop_threshold1",    
+            datasets=["occipital_schiz_R_strat_bis_threshold1", 'occipital_schiz_L_strat_bis_threshold1'],
             label='diagnosis', short_name='schiz_diag', overwrite=False, use_best_model=True,
             save_outputs=True)

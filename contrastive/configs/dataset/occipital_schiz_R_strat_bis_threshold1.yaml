@@ -1,0 +1,16 @@
+# @package dataset.occipital_schiz_R_strat_bis_threshold1
+dataset_name: occipital_schiz_R_strat_bis_threshold1
+numpy_all: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/OCCIPITAL/threshold1/mask/Rskeleton.npy
+subjects_all: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/OCCIPITAL/threshold1/mask/Rskeleton_subject.csv
+foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/OCCIPITAL/threshold1/mask/Rlabel.npy
+subjects_foldlabel_all: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/OCCIPITAL/threshold1/mask/Rlabel_subject.csv
+crop_dir: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/OCCIPITAL/threshold1/mask/Rcrops
+crop_file_suffix: _cropped_skeleton.nii.gz
+foldlabel_dir: /neurospin/dico/data/deep_folding/current/datasets/schiz/crops/2mm/OCCIPITAL/threshold1/mask/Rlabels
+train_csv_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/new_stratification/train_subjects.csv
+val_csv_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/new_stratification/val_subjects.csv
+test_intra_csv_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/new_stratification/test_intra_subjects.csv
+test_csv_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/new_stratification/test_subjects.csv
+subject_labels_file: /neurospin/dico/data/deep_folding/current/datasets/schiz/used_schiz_subjects.csv
+subject_column_name: 'participant_id'
+input_size: (1, 35, 30, 46)

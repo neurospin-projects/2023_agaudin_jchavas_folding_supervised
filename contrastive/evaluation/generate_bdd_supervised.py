@@ -7,7 +7,7 @@ from contrastive.utils.models_database import *
 
 # construct the database
 
-folders = [f"/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step3/occipital_structure/densenet"]
+folders = [f"/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step3/occipital/recrop_threshold1"]
 bdd = []
 visited = []
 
@@ -28,8 +28,8 @@ bdd = post_process_bdd_models(bdd, hard_remove=[], git_branch=False, dropnan=Tru
 
 
 # save the database
-name = "occipital"
-save_path = f"/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step3"
+name = "occipital_recrop"
+save_path = f"/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step3/occipital/recrop_threshold1"
 bdd.to_csv(os.path.join(save_path, f"bdd_{name}.csv"), index=True)
 
 
