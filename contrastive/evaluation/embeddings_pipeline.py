@@ -165,9 +165,23 @@ def embeddings_pipeline(dir_path, datasets, label, short_name=None, classifier_n
         else:
             print(f"{sub_dir} is a file. Continue.")
 
+if __name__ == "__main__":
+    embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2/cingulate",
+        datasets=["cingulate_schiz_strat_bis","cingulate_schiz_left_strat_bis"],
+        label='diagnosis',
+        short_name='schiz_diag', overwrite=False, use_best_model=True,
+        subsets=['train','val','test_intra','test'], verbose=False)
 
-embeddings_pipeline("/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step3/occipital/SimCLR",
-    datasets=["occipital_schiz_R_strat_bis","occipital_schiz_L_strat_bis"],
-    label='diagnosis',
-    short_name='schiz_diag', overwrite=True, use_best_model=True,
-    subsets=['train','val','test_intra','test'], verbose=False)
+# if __name__ == "__main__":
+#     gs_path = "/neurospin/dico/agaudin/Runs/09_new_repo/Output/grid_searches/step2"
+#     #regions = [region for region in os.listdir(gs_path) if not os.path.isfile(os.path.join(gs_path,region))]
+#     regions = ['SFintermediate', 'STs', 'fissure_lateral', 'fissure_collateral', 'SC_sylv', 'SFmedian', 'BROCA', 'lobule_parietal_sup']
+#     print(regions)
+#     for region in regions:
+#         print(region)
+#         if region not in ["cingulate"]:
+#             embeddings_pipeline(gs_path+f"/{region}",
+#                 datasets=[f"{region}_schiz_R_strat_bis",f"{region}_schiz_L_strat_bis"],
+#                 label='diagnosis',
+#                 short_name='schiz_latent_space', overwrite=False, use_best_model=True,
+#                 subsets=['train','val','test_intra','test'], verbose=False)
