@@ -260,12 +260,12 @@ def pipeline(dir_path, datasets, label, short_name=None, overwrite=False, use_be
         else:
             print(f"{sub_dir} is a file. Continue.")
 
-
-pipeline("/neurospin/dico/data/deep_folding/history/2023-09_joel-flanker/Output/2023-09-28_SOr_olfactif",
-         datasets=["SOr_olfactif_HCP_stratified_extreme_Flanker_left",
-                   "SOr_olfactif_HCP_stratified_extreme_Flanker_right"],
-         label='Flanker_AgeAdj_class',
-         short_name='flanker_class',
-         overwrite=True,
-         use_best_model=True,
-         save_outputs=True)
+if __name__ == '__main__':
+    pipeline("/neurospin/dico/data/deep_folding/history/2023-09_joel-flanker/Output/2023-09-20_STs",
+            datasets=["STs_HCP_stratified_extreme_Flanker_left",
+                    "STs_HCP_stratified_extreme_Flanker_right"],
+            label='Flanker_AgeAdj_class',
+            short_name='flanker_class',
+            overwrite=True,
+            use_best_model=True,
+            save_outputs=True)
